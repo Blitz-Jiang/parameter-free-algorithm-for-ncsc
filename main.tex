@@ -1,0 +1,672 @@
+\documentclass{article}
+\input{header}
+
+\title{An Adaptive Universal Trust-Region Method\\with Additive Search Overhead}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We first give a refined analysis of the simple universal trust-region method that removes its multiplicative logarithmic factor.  We then present an adaptive variant for finding approximate second-order stationary points without knowing the Lipschitz constant of the Hessian.  The method uses a gradient-clipped regularization scale and a multiplier-aware acceptance test.  A logarithmic potential controls gradient-contraction steps, while a persistent regularization parameter amortizes rejected trials.  If the Hessian is $M$-Lipschitz continuous and $\rho_0\le c\sqrt M$ for a constant $c>0$, the adaptive method returns a point $\widehat x$ satisfying
+\[
+    \|\nabla f(\widehat x)\|\le \epsilon,
+    \qquad
+    \lambda_{\min}(\nabla^2 f(\widehat x))
+    \ge -O(\sqrt{M\epsilon})
+\]
+using
+\[
+    O\!\left(
+        \sqrt M\,(f(x_0)-f^*)\epsilon^{-3/2}
+        +\logp{\|\nabla f(x_0)\|/\epsilon}
+        +\logp{\sqrt M/\rho_0}
+    \right)
+\]
+trial steps.  Both logarithmic terms are additive.
+\end{abstract}
+
+\section{Problem and assumptions}
+
+We consider
+\begin{equation}\label{eq:problem}
+    \min_{x\in\R^n} f(x),
+\end{equation}
+where $f$ is twice continuously differentiable and bounded below by
+$f^*>-\infty$.  The construction follows the gradient-scaled
+trust-region framework of \citet{jiang2026utr}.
+
+\begin{assumption}\label{ass:hessian-lipschitz}
+There exists $M>0$ such that
+\begin{equation}\label{eq:hessian-lipschitz}
+    \|\nabla^2 f(x)-\nabla^2 f(y)\|
+    \le M\|x-y\|
+    \qquad \forall x,y\in\R^n.
+\end{equation}
+\end{assumption}
+
+Under \Cref{ass:hessian-lipschitz}, for all $x,d\in\R^n$,
+\begin{subequations}\label{eq:taylor}
+\begin{align}
+    \|\nabla f(x+d)-\nabla f(x)-\nabla^2 f(x)d\|
+    &\le \frac{M}{2}\|d\|^2, \label{eq:taylor-gradient}\\
+    f(x+d)-f(x)-\nabla f(x)^Td-
+    \frac12 d^T\nabla^2 f(x)d
+    &\le \frac{M}{6}\|d\|^3. \label{eq:taylor-function}
+\end{align}
+\end{subequations}
+
+For a prescribed $\epsilon>0$, the target conditions are
+\begin{equation}\label{eq:sosp-target}
+    \|\nabla f(x)\|\le\epsilon,
+    \qquad
+    \lambda_{\min}(\nabla^2 f(x))
+    \ge -O(\sqrt{M\epsilon}).
+\end{equation}
+For $t>0$, we use $\log_+(t):=\max\{\log t,0\}$.
+Let $\N_0:=\{0,1,2,\ldots\}$ and
+$\Delta_f:=f(x_0)-f^*$.
+
+\section{A refined count for the simple UTR method}
+
+Assume in this section that $M$ is known.  Let
+$a_k:=\|\nabla f(x_k)\|$.  The simple strategy of
+\citet{jiang2026utr} computes a global solution of
+\begin{equation}\label{eq:simple-subproblem}
+\begin{aligned}
+    \min_{d\in\R^n}\quad
+    &\nabla f(x_k)^Td+
+      \frac12d^T\left(
+          \nabla^2f(x_k)+\frac{\sqrt M}{3}\sqrt{a_k}I
+      \right)d,\\
+    \operatorname{s.t.}\quad
+    &\|d\|\le\frac{\sqrt{a_k}}{3\sqrt M}.
+\end{aligned}
+\end{equation}
+Let $\lambda_k$ be the trust-region multiplier.  With the convention
+$\inf\varnothing=\infty$, define
+\begin{equation}\label{eq:simple-stopping-time}
+    T_\epsilon
+    :=\inf\{t\in\N_0:a_t\le\epsilon\}
+    \in\N_0\cup\{\infty\}.
+\end{equation}
+
+\begin{theorem}[Refined simple-UTR complexity]\label{thm:simple-refined}
+Under \Cref{ass:hessian-lipschitz}, the method
+\eqref{eq:simple-subproblem} has $T_\epsilon<\infty$ and satisfies
+\begin{equation}\label{eq:simple-refined-bound}
+    T_\epsilon
+    \le
+    \left(81+\frac{6}{\log6}\right)
+       \sqrt M\,(f(x_0)-f^*)\epsilon^{-3/2}
+    +\frac{\logp{a_0/\epsilon}}{\log6}+1.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Write $g_k=\nabla f(x_k)$ and $H_k=\nabla^2f(x_k)$.  We first derive the
+two estimates used below.
+This is the specialization of the function-decrease and gradient-norm
+estimates in \citet{jiang2026utr}; the details are included here to make
+the argument self-contained.  Set
+\[
+    \sigma:=\frac{\sqrt M}{3},
+    \qquad
+    R_k:=\frac{\sqrt{a_k}}{3\sqrt M}.
+\]
+If $a_k=0$, the trust-region constraint forces $d_k=0$, and all the
+estimates below are immediate.  Hence consider an iteration with
+$a_k>0$.
+For a global solution $d_k$ of \eqref{eq:simple-subproblem}, the
+trust-region optimality conditions give a multiplier $\lambda_k\ge0$
+such that
+\begin{gather*}
+    \|d_k\|\le R_k,
+    \qquad
+    \lambda_k(\|d_k\|-R_k)=0,\\
+    (H_k+\sigma\sqrt{a_k}I+\lambda_k I)d_k=-g_k,
+    \qquad
+    H_k+\sigma\sqrt{a_k}I+\lambda_k I\succeq0.
+\end{gather*}
+Consequently, \eqref{eq:taylor-function}, stationarity, and positive
+semidefiniteness imply
+\begin{align}
+    f(x_{k+1})-f(x_k)
+    &\le g_k^Td_k+\frac12d_k^TH_kd_k
+       +\frac{M}{6}\|d_k\|^3 \notag\\
+    &=-\frac12d_k^T
+       (H_k+\sigma\sqrt{a_k}I+\lambda_k I)d_k
+       -\frac12(\sigma\sqrt{a_k}+\lambda_k)\|d_k\|^2
+       +\frac{M}{6}\|d_k\|^3 \notag\\
+    &\le-\left(
+       \frac{\sqrt{Ma_k}}{6}-\frac{M}{6}\|d_k\|
+       \right)\|d_k\|^2
+       -\frac{\lambda_k}{2}\|d_k\|^2.       \label{eq:simple-decrease-master}
+\end{align}
+Using $\|d_k\|\le R_k$ in the last line yields
+\begin{equation}\label{eq:simple-monotonicity}
+    f(x_k)-f(x_{k+1})
+    \ge
+    \frac{\sqrt{Ma_k}}{9}\|d_k\|^2
+    +\frac{\lambda_k}{2}\|d_k\|^2
+    \ge0.                                                   
+\end{equation}
+Likewise, \eqref{eq:taylor-gradient}, stationarity, and
+$\|d_k\|\le R_k$ give
+\begin{align}
+    a_{k+1}
+    &\le \|\nabla f(x_{k+1})-g_k-H_kd_k\|
+       +\|g_k+H_kd_k\| \notag\\
+    &\le \frac{M}{2}\|d_k\|^2
+       +(\sigma\sqrt{a_k}+\lambda_k)\|d_k\| \notag\\
+    &\le \frac{a_k}{18}+\frac{a_k}{9}
+       +\frac{\lambda_k\sqrt{a_k}}{3\sqrt M}
+     =\frac16a_k+\frac{\lambda_k\sqrt{a_k}}{3\sqrt M}.
+       \label{eq:simple-gradient-master}
+\end{align}
+If $\lambda_k>0$, complementarity gives $\|d_k\|=R_k$.
+Substitution into \eqref{eq:simple-monotonicity}, together with
+\eqref{eq:simple-gradient-master}, proves
+\begin{subequations}\label{eq:simple-coupled-bounds}
+\begin{align}
+    f(x_k)-f(x_{k+1})
+    &\ge
+      \frac{a_k^{3/2}}{81\sqrt M}
+      +\frac{\lambda_k a_k}{18M},
+      \label{eq:simple-coupled-decrease}\\
+    a_{k+1}
+    &\le
+      \frac16a_k+
+      \frac{\lambda_k\sqrt{a_k}}{3\sqrt M}.
+      \label{eq:simple-coupled-gradient}
+\end{align}
+\end{subequations}
+If $\lambda_k=0$, \eqref{eq:simple-gradient-master} gives
+\begin{equation}\label{eq:simple-interior-contraction}
+    a_{k+1}\le\frac16a_k.
+\end{equation}
+Equation \eqref{eq:simple-monotonicity} also shows directly that every
+step is monotone in function value.
+
+If $a_0\le\epsilon$, then $T_\epsilon=0$.  Hence assume
+$a_0>\epsilon$.  Fix any $N\in\N_0$ with $N<T_\epsilon$ and define
+\[
+\begin{aligned}
+    \mathcal B_N&:=\{0\le k<N:\lambda_k>0\},
+    &\mathcal I_N&:=\{0\le k<N:\lambda_k=0\},\\
+    q_k&:=\frac{\lambda_k}{\sqrt{Ma_k}}
+    \quad(k\in\mathcal B_N).&&
+\end{aligned}
+\]
+Since $a_k>\epsilon$ for $0\le k\le N$ and all steps are monotone,
+summing \eqref{eq:simple-coupled-decrease} over $\mathcal B_N$ gives
+\begin{equation}\label{eq:simple-boundary-sums}
+    |\mathcal B_N|
+    \le81\sqrt M\,\Delta_f\epsilon^{-3/2},
+    \qquad
+    \sum_{k\in\mathcal B_N}q_k
+    \le18\sqrt M\,\Delta_f\epsilon^{-3/2}.
+\end{equation}
+Moreover, for $k\in\mathcal B_N$,
+\eqref{eq:simple-coupled-gradient} implies
+\begin{equation}\label{eq:simple-log-jump}
+    \left[\log\frac{a_{k+1}}{a_k}\right]_+
+    \le
+    \left[\log\left(\frac16+\frac{q_k}{3}\right)\right]_+
+    \le\frac{q_k}{3}.
+\end{equation}
+Telescoping $\log a_k$ from $0$ to $N$ and using $a_N>\epsilon$
+gives
+\[
+    \log\frac{a_N}{a_0}
+    \le-|\mathcal I_N|\log6
+       +\frac13\sum_{k\in\mathcal B_N}q_k,
+\]
+and hence
+\begin{equation}\label{eq:simple-prefix-interior}
+    |\mathcal I_N|
+    \le\frac{
+       \log(a_0/\epsilon)
+       +\frac13\sum_{k\in\mathcal B_N}q_k
+    }{\log6}.
+\end{equation}
+Consequently, every $N\in\N_0$ with $N<T_\epsilon$ satisfies
+\begin{equation}\label{eq:simple-prefix-count}
+    N=|\mathcal B_N|+|\mathcal I_N|
+    \le
+    \left(81+\frac{6}{\log6}\right)
+       \sqrt M\,\Delta_f\epsilon^{-3/2}
+    +\frac{\log(a_0/\epsilon)}{\log6}.
+\end{equation}
+The right-hand side is finite.  Hence $T_\epsilon$ cannot be infinite,
+since otherwise \eqref{eq:simple-prefix-count} would hold for arbitrarily
+large finite $N$.  Thus $T_\epsilon<\infty$.  For $T_\epsilon\ge1$, apply
+\eqref{eq:simple-prefix-count} with $N=T_\epsilon-1$ and add the final
+step.  This proves
+\eqref{eq:simple-refined-bound}; the case $T_\epsilon=0$ is immediate.
+\end{proof}
+
+\section{Adaptive clipped universal trust-region method}
+
+Let $\rho_{\min}\le\rho_0$, $\gamma_+>1$, $\gamma_->1$, and
+$0<\eta\le 1/64$.  At an outer iterate $x_k$, define
+\begin{equation}\label{eq:clipped-scale}
+    g_k:=\nabla f(x_k),
+    \qquad
+    H_k:=\nabla^2 f(x_k),
+    \qquad
+    h_k:=\max\{\|g_k\|,\epsilon\}.
+\end{equation}
+For a trial value $\rho>0$, consider
+\begin{equation}\label{eq:subproblem}
+\begin{aligned}
+    \min_{d\in\R^n}\quad
+        &g_k^Td+\frac12d^T(H_k+\rho\sqrt{h_k}I)d,\\
+    \operatorname{s.t.}\quad
+        &\|d\|\le\frac{\sqrt{h_k}}{4\rho}.
+\end{aligned}
+\end{equation}
+The subproblem is solved globally.  Its trust-region multiplier is denoted
+by $\lambda\ge0$.
+
+\begin{lemma}[Trust-region optimality conditions]\label{lem:kkt}
+Let $(d,\lambda)$ be a global primal-dual solution of
+\eqref{eq:subproblem}.  Then
+\begin{subequations}\label{eq:kkt}
+\begin{gather}
+    \|d\|\le\frac{\sqrt{h_k}}{4\rho},
+        \label{eq:kkt-radius}\\
+    \lambda\left(\|d\|-\frac{\sqrt{h_k}}{4\rho}\right)=0,
+        \label{eq:kkt-complementarity}\\
+    (H_k+\rho\sqrt{h_k}I+\lambda I)d=-g_k,
+        \label{eq:kkt-stationarity}\\
+    H_k+\rho\sqrt{h_k}I+\lambda I\succeq0.
+        \label{eq:kkt-psd}
+\end{gather}
+\end{subequations}
+In particular, $\lambda>0$ implies
+$\|d\|=\sqrt{h_k}/(4\rho)$.
+\end{lemma}
+
+The trial is accepted if one of the following mutually exclusive tests
+holds:
+\begin{subequations}\label{eq:acceptance}
+\begin{align}
+    \lambda=0:\quad
+    &f(x_k+d)\le f(x_k),
+    \qquad
+    \|\nabla f(x_k+d)\|\le\frac12h_k;
+       \label{eq:acceptance-interior}\\
+    \lambda>0:\quad
+    &f(x_k)-f(x_k+d)
+       \ge\eta\left(
+           \frac{h_k^{3/2}}{\rho}+\lambda\|d\|^2
+       \right), \label{eq:acceptance-boundary-function}\\
+    &\|\nabla f(x_k+d)\|\le\frac12h_k+\lambda\|d\|.
+       \label{eq:acceptance-boundary-gradient}
+\end{align}
+\end{subequations}
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\caption{Adaptive clipped universal trust-region method}
+\label{alg:adaptive-utr}
+\KwIn{$x_0$, $\epsilon>0$, $\rho_0\ge\rho_{\min}>0$,
+      $\gamma_+>1$, $\gamma_->1$, $0<\eta\le1/64$}
+$k\leftarrow0$, $\rho\leftarrow\rho_0$\;
+\While{true}{
+    Compute $g_k,H_k,h_k$ from \eqref{eq:clipped-scale}\;
+    \Repeat{a step is accepted}{
+        \If{$\|g_k\|\le\epsilon$ and
+             $\lambda_{\min}(H_k)\ge-\rho\sqrt\epsilon$}{
+            \Return{$x_k$}\;
+        }
+        Solve \eqref{eq:subproblem} and obtain $(d,\lambda)$\;
+        Evaluate $f(x_k+d)$ and $\nabla f(x_k+d)$\;
+        \eIf{\eqref{eq:acceptance} holds}{
+            $x_{k+1}\leftarrow x_k+d$\;
+            $\rho\leftarrow\max\{\rho_{\min},\rho/\gamma_-\}$\;
+            $k\leftarrow k+1$\;
+            accept the step\;
+        }{
+            $\rho\leftarrow\gamma_+\rho$\;
+        }
+    }
+}
+\end{algorithm}
+
+The stopping test in Algorithm~\ref{alg:adaptive-utr} is evaluated for
+every trial value of $\rho$, including immediately after each rejected
+trial increases $\rho$.
+
+\section{Trial-step estimates}
+
+\begin{lemma}[Guaranteed trial outcome]\label{lem:large-rho}
+Suppose \Cref{ass:hessian-lipschitz} holds.  If
+\begin{equation}\label{eq:rho-threshold}
+    \rho^2\ge\frac{M}{6},
+\end{equation}
+then a trial of \Cref{alg:adaptive-utr} either satisfies the stopping
+test or satisfies the acceptance test \eqref{eq:acceptance}.
+\end{lemma}
+
+\begin{proof}
+If the stopping test holds, the algorithm returns before solving a
+subproblem.  Otherwise it solves \eqref{eq:subproblem}.  By
+\eqref{eq:taylor-function}, \eqref{eq:kkt-stationarity}, and
+\eqref{eq:kkt-psd},
+\begin{align}
+f(x_k+d)-f(x_k)
+&\le g_k^Td+\frac12d^TH_kd+\frac{M}{6}\|d\|^3 \notag\\
+&\le-\frac12(\rho\sqrt{h_k}+\lambda)\|d\|^2
+       +\frac{M}{6}\|d\|^3. \label{eq:trial-decrease-raw}
+\end{align}
+Using \eqref{eq:kkt-radius} and \eqref{eq:rho-threshold} gives
+\begin{equation}\label{eq:trial-decrease}
+    f(x_k)-f(x_k+d)
+    \ge\frac14\rho\sqrt{h_k}\,\|d\|^2
+       +\frac12\lambda\|d\|^2.
+\end{equation}
+Moreover, \eqref{eq:taylor-gradient} and
+\eqref{eq:kkt-stationarity} imply
+\begin{align}
+\|\nabla f(x_k+d)\|
+&\le \rho\sqrt{h_k}\,\|d\|+\lambda\|d\|
+       +\frac{M}{2}\|d\|^2 \notag\\
+&\le\left(\frac14+\frac{M}{32\rho^2}\right)h_k
+       +\lambda\|d\| \notag\\
+&\le\frac{7}{16}h_k+\lambda\|d\|
+ \le\frac12h_k+\lambda\|d\|. \label{eq:trial-gradient}
+\end{align}
+
+If $\lambda=0$, \eqref{eq:trial-decrease} and
+\eqref{eq:trial-gradient} give \eqref{eq:acceptance-interior}.  If
+$\lambda>0$, \Cref{lem:kkt} and \eqref{eq:trial-decrease} give
+\[
+    f(x_k)-f(x_k+d)
+    \ge\frac{h_k^{3/2}}{64\rho}
+       +\frac12\lambda\|d\|^2,
+\]
+which, together with $\eta\le1/64$ and
+\eqref{eq:trial-gradient}, gives
+\eqref{eq:acceptance-boundary-function}--
+\eqref{eq:acceptance-boundary-gradient}.
+Thus every subproblem actually solved with
+$\rho^2\ge M/6$ satisfies the appropriate branch of the acceptance
+test, which proves the stated alternative.
+\end{proof}
+
+\begin{corollary}[Uniform parameter bound]\label{cor:rho-bound}
+Every trial parameter generated by \Cref{alg:adaptive-utr} satisfies
+\begin{equation}\label{eq:rho-bar}
+    \rho\le\bar\rho
+    :=\max\left\{\rho_0,\gamma_+\sqrt{\frac{M}{6}}\right\}.
+\end{equation}
+Every inner loop terminates after finitely many trials.
+\end{corollary}
+
+\begin{proof}
+Set $\rho_*:=\sqrt{M/6}$.  By \Cref{lem:large-rho}, a trial with
+$\rho\ge\rho_*$ cannot be rejected.  Since $\gamma_+>1$, repeated
+increases from any positive initial parameter reach $\rho_*$ after
+finitely many rejected trials.  Thus every inner loop is finite.
+Moreover, a rejected parameter
+satisfies $\rho<\rho_*$, so its successor is smaller than
+$\gamma_+\rho_*$.  After an accepted trial with parameter $\rho$, the
+next initial value is
+$\max\{\rho_{\min},\rho/\gamma_-\}
+ \le\max\{\rho_{\min},\rho\}$.  Since $\rho_{\min}\le\rho_0$,
+induction from $\rho_0$ proves \eqref{eq:rho-bar}.
+\end{proof}
+
+\section{Accepted-step complexity}
+By \Cref{cor:rho-bound}, each inner loop either returns or accepts a
+step after finitely many trials.  With $\inf\varnothing=\infty$, define
+the accepted-step stopping index
+\begin{equation}\label{eq:adaptive-stopping-time}
+    K_\epsilon
+    :=\inf\{k\in\N_0:\text{Algorithm~\ref{alg:adaptive-utr}
+       returns }x_k\}
+    \in\N_0\cup\{\infty\}.
+\end{equation}
+Thus, if $K_\epsilon=\infty$, the algorithm generates infinitely many
+accepted steps.  For every $k<K_\epsilon$, let $\rho_k$, $d_k$, and
+$\lambda_k$ denote the parameter, step, and multiplier of the accepted
+trial producing $x_{k+1}$.
+
+For any $N\in\N_0$ with $N\le K_\epsilon$, define the prefix sets
+\begin{equation}\label{eq:adaptive-prefix-sets}
+    \mathcal B_N:=\{0\le k<N:\lambda_k>0\},
+    \qquad
+    \mathcal I_N:=\{0\le k<N:\lambda_k=0\},
+\end{equation}
+and, for $k\in\mathcal B_N$,
+\begin{equation}\label{eq:z-def}
+    z_k:=\frac{\lambda_k\|d_k\|}{h_k}.
+\end{equation}
+
+\begin{lemma}[Boundary steps]\label{lem:boundary-count}
+For every $N\in\N_0$ with $N\le K_\epsilon$,
+\begin{equation}\label{eq:boundary-bounds}
+    |\mathcal B_N|
+    \le\frac{\bar\rho\Delta_f}{\eta\epsilon^{3/2}},
+    \qquad
+    \sum_{k\in\mathcal B_N}z_k
+    \le\frac{4\bar\rho\Delta_f}{\eta\epsilon^{3/2}}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+All accepted steps are monotone.  For $k\in\mathcal B_N$,
+\eqref{eq:acceptance-boundary-function}, $h_k\ge\epsilon$, and
+$\rho_k\le\bar\rho$ yield
+\[
+    f(x_k)-f(x_{k+1})
+    \ge\frac{\eta\epsilon^{3/2}}{\bar\rho}.
+\]
+Summation proves the first bound.  By complementarity,
+\[
+    \lambda_k\|d_k\|^2
+    =z_k h_k\|d_k\|
+    =\frac{z_k h_k^{3/2}}{4\rho_k}
+    \ge\frac{z_k\epsilon^{3/2}}{4\bar\rho}.
+\]
+Summing the multiplier term in
+\eqref{eq:acceptance-boundary-function} proves the second bound.
+\end{proof}
+
+\begin{lemma}[Gradient-contraction steps]\label{lem:interior-count}
+For every $N\in\N_0$ with $N\le K_\epsilon$,
+\begin{equation}\label{eq:interior-count}
+    |\mathcal I_N|
+    \le |\mathcal B_N|+1+
+       \frac{
+          \logp{\|\nabla f(x_0)\|/\epsilon}
+          +\sum_{k\in\mathcal B_N}z_k
+       }{\log 2}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+For a boundary step $k\in\mathcal B_N$,
+\eqref{eq:acceptance-boundary-gradient} gives
+\[
+    \frac{h_{k+1}}{h_k}
+    \le\max\left\{1,\frac12+z_k\right\},
+\]
+and therefore
+\[
+    \left[\log\frac{h_{k+1}}{h_k}\right]_+
+    \le z_k.
+\]
+
+For an interior step $k\in\mathcal I_N$,
+\eqref{eq:acceptance-interior} gives the clipped contraction
+\[
+    h_{k+1}
+    =\max\{\|\nabla f(x_{k+1})\|,\epsilon\}
+    \le\max\left\{\frac12h_k,\epsilon\right\}.
+\]
+Thus an interior step with $h_{k+1}>\epsilon$ satisfies
+$\log(h_{k+1}/h_k)\le-\log2$.  The complementary case
+$h_{k+1}=\epsilon$ means precisely that the clipping floor is active,
+or equivalently that $\|\nabla f(x_{k+1})\|\le\epsilon$; the threshold
+is $\epsilon$, rather than $\epsilon/2$, because $h_{k+1}$ is clipped
+below at $\epsilon$.
+
+Suppose now that an interior step has $h_{k+1}=\epsilon$ and
+$k+1<N$.  Then the algorithm does not return at $x_{k+1}$ and the next
+outer iteration accepts a step.  In particular, the stopping test fails
+at its accepted parameter $\rho_{k+1}$.  Since
+$\|\nabla f(x_{k+1})\|\le\epsilon$, this failure gives
+\[
+    \lambda_{\min}
+       (H_{k+1}+\rho_{k+1}\sqrt\epsilon I)<0.
+\]
+Because $h_{k+1}=\epsilon$, the positive-semidefiniteness condition
+\eqref{eq:kkt-psd} excludes $\lambda_{k+1}=0$.  Hence
+$k+1\in\mathcal B_N$.  Pairing each such floor-hitting step with its
+successor is injective, and only $k=N-1$ can remain unpaired.  Therefore
+\[
+    \bigl|\{k\in\mathcal I_N:h_{k+1}=\epsilon\}\bigr|
+    \le|\mathcal B_N|+1.
+\]
+
+For the same floor-hitting steps,
+$\log(h_{k+1}/h_k)\le0$.  Telescoping $\log h_k$ from $0$ to $N$ and
+using $h_N\ge\epsilon$ now gives
+\[
+    \bigl|\{k\in\mathcal I_N:h_{k+1}>\epsilon\}\bigr|\log2
+    \le
+    \log\frac{h_0}{\epsilon}
+       +\sum_{k\in\mathcal B_N}z_k
+    =\logp{\|\nabla f(x_0)\|/\epsilon}
+       +\sum_{k\in\mathcal B_N}z_k.
+\]
+Adding the two disjoint interior-step counts proves
+\eqref{eq:interior-count}.
+\end{proof}
+
+The two preceding lemmas imply that the stopping index
+\eqref{eq:adaptive-stopping-time} is finite and satisfies
+\begin{equation}\label{eq:accepted-complexity}
+    K_\epsilon
+    \le
+    \frac{1}{\eta}
+    \left(2+\frac{4}{\log2}\right)
+       \frac{\bar\rho\Delta_f}{\epsilon^{3/2}}
+    +\frac{\logp{\|\nabla f(x_0)\|/\epsilon}}{\log2}
+    +1
+\end{equation}
+Indeed, for every finite $N\le K_\epsilon$,
+\Cref{lem:boundary-count,lem:interior-count} give the same inequality
+with $N$ in place of $K_\epsilon$.  If $K_\epsilon$ were infinite, this
+fixed finite upper bound would hold for arbitrarily large $N$, a
+contradiction.  Hence $K_\epsilon<\infty$, and taking
+$N=K_\epsilon$ proves \eqref{eq:accepted-complexity}.
+
+\section{Total complexity and second-order guarantee}
+
+\begin{lemma}[Rejected trials]\label{lem:rejected-trials}
+Let $U_\epsilon$ be the total number of rejected trial steps before
+termination.  Then
+\begin{equation}\label{eq:rejected-count}
+    U_\epsilon
+    \le
+    \frac{\log\gamma_-}{\log\gamma_+}K_\epsilon
+    +\frac{\log(\bar\rho/\rho_0)}{\log\gamma_+}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+For $0\le k\le K_\epsilon$, let $s_k$ be the initial parameter of outer
+iteration $k$, and let $u_k$ be its number of rejected trials.  For
+$0\le k<K_\epsilon$, the accepted parameter is
+$\rho_k=s_k\gamma_+^{u_k}$, so the update rule gives
+\[
+    s_{k+1}\ge\frac{s_k\gamma_+^{u_k}}{\gamma_-},
+\]
+and hence
+\[
+    u_k\log\gamma_+
+    \le\log s_{k+1}-\log s_k+\log\gamma_-.
+\]
+Summing over $0\le k<K_\epsilon$ and using $s_0=\rho_0$ yields
+\begin{equation}\label{eq:accepted-rejection-telescope}
+    \sum_{k=0}^{K_\epsilon-1}u_k\log\gamma_+
+    \le\log\frac{s_{K_\epsilon}}{\rho_0}
+       +K_\epsilon\log\gamma_-.
+\end{equation}
+In the terminal inner loop, the stopping test returns at parameter
+$s_{K_\epsilon}\gamma_+^{u_{K_\epsilon}}\le\bar\rho$ by
+\Cref{cor:rho-bound}.  Thus
+\[
+    u_{K_\epsilon}\log\gamma_+
+    \le\log\frac{\bar\rho}{s_{K_\epsilon}}.
+\]
+Since
+$U_\epsilon=\sum_{k=0}^{K_\epsilon-1}u_k+u_{K_\epsilon}$, adding this
+inequality to
+\eqref{eq:accepted-rejection-telescope} proves
+\eqref{eq:rejected-count}.
+\end{proof}
+
+\begin{theorem}[Total complexity]\label{thm:total-complexity}
+Let $Q_\epsilon$ denote the total number of solved trial subproblems.
+Then
+\begin{equation}\label{eq:total-complexity-exact}
+    Q_\epsilon
+    \le
+    \left(1+\frac{\log\gamma_-}{\log\gamma_+}\right)K_\epsilon
+    +\frac{\log(\bar\rho/\rho_0)}{\log\gamma_+},
+\end{equation}
+where $K_\epsilon$ is bounded in
+\eqref{eq:accepted-complexity}.  The returned point $\widehat x$
+satisfies
+\begin{equation}\label{eq:return-guarantee}
+    \|\nabla f(\widehat x)\|\le\epsilon,
+    \qquad
+    \lambda_{\min}(\nabla^2 f(\widehat x))
+    \ge-\bar\rho\sqrt\epsilon.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The trial bound follows from
+$Q_\epsilon=K_\epsilon+U_\epsilon$---the final stopping test solves no
+subproblem---and
+\Cref{lem:rejected-trials}.  At termination, the current parameter is
+at most $\bar\rho$ by \Cref{cor:rho-bound}; the stopping test therefore
+implies \eqref{eq:return-guarantee}.
+\end{proof}
+
+\begin{corollary}[Additive overhead]\label{cor:additive-overhead}
+If $\rho_0\le c\sqrt M$ for a constant $c>0$, then
+\begin{equation}\label{eq:big-O-complexity}
+    Q_\epsilon
+    =O\!\left(
+       \sqrt M\,\Delta_f\epsilon^{-3/2}
+       +\logp{\|\nabla f(x_0)\|/\epsilon}
+       +\logp{\sqrt M/\rho_0}
+       +1
+    \right).
+\end{equation}
+In particular, neither the gradient-contraction cost nor the adaptive
+search cost multiplies the leading
+$\sqrt M\,\Delta_f\epsilon^{-3/2}$ term.
+\end{corollary}
+
+The Hessian is evaluated once per outer iteration.  Thus its evaluation
+count is at most $K_\epsilon+1$; reusing accepted trial values, the
+function and gradient evaluation counts are at most $Q_\epsilon+1$.
+The persistent
+parameter update in \Cref{alg:adaptive-utr} is the same amortization
+mechanism used in adaptive regularization methods
+\citep{cartis2011adaptive2}; the multiplier-aware acceptance test is
+what couples gradient growth to objective decrease.
+
+\bibliographystyle{unsrtnat}
+\bibliography{ref}
+
+\end{document}

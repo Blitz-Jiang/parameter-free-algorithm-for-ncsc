@@ -1,0 +1,22 @@
+\begin{thebibliography}{2}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Jiang et~al.(2026)Jiang, He, Zhang, Ge, Jiang, and Ye]{jiang2026utr}
+Yuntian Jiang, Chang He, Chuwen Zhang, Dongdong Ge, Bo~Jiang, and Yinyu Ye.
+\newblock Beyond nonconvexity: A universal trust-region method with new
+  analyses.
+\newblock \emph{Journal of Scientific Computing}, 2026.
+\newblock arXiv:2311.11489.
+
+\bibitem[Cartis et~al.(2011)Cartis, Gould, and Toint]{cartis2011adaptive2}
+Coralia Cartis, Nicholas I.~M. Gould, and Philippe~L. Toint.
+\newblock Adaptive cubic regularisation methods for unconstrained optimization.
+  part ii: Worst-case function- and derivative-evaluation complexity.
+\newblock \emph{Mathematical Programming}, 130\penalty0 (2):\penalty0 295--319,
+  2011.
+
+\end{thebibliography}
