@@ -58,9 +58,14 @@ outer and inner complexities
  \qquad
  O(\Delta_P\kappa^2\sqrt\rho\,\epsilon^{-3/2}),
 \]
-respectively, with only additive pointwise lower-order terms.  The two
-parameter-free guarantees are pointwise asymptotic: for each fixed
-problem and initialization they hold below an unknown threshold.
+respectively, with only additive instance-dependent lower-order terms.
+Both parameter-free guarantees are asymptotic but class-uniform: after
+fixing common regularity constants $(\ell,\mu,\rho)$, one unknown
+threshold works for every payoff in the class and every initialization.
+For the over-accurate construction, the displayed sufficient threshold
+is $\Theta(\mu)$ as $\mu\downarrow0$ with $\ell$ and $\rho$ fixed.  The
+algorithms neither use these constants nor certify that the requested
+tolerance lies below the relevant threshold.
 \end{abstract}
 
 \section{Introduction}
@@ -160,9 +165,13 @@ follows.
  \qquad
  O(\Delta_P\kappa^2\sqrt\rho\,\epsilon^{-3/2}).
  \]
- These parameter-free results are pointwise asymptotic rather than
- uniform finite-accuracy certificates; the precise quantifier and its
- limitation are stated explicitly in the corresponding theorems.
+ These parameter-free results are asymptotic but class-uniform: for
+ fixed common regularity constants, one small-tolerance threshold works
+ over the entire problem class and all initializations.  For the
+ over-accurate construction, the displayed sufficient threshold scales
+ as $\Theta(\mu)$ for fixed $\ell$ and $\rho$.  The thresholds are not
+ observable, so the results are not a posteriori finite-accuracy
+ certificates.
 \end{enumerate}
 
 \paragraph{Organization.}
@@ -174,6 +183,9 @@ its complete trial complexity.  \Cref{sec:ncsc} then introduces the
 minimax setting, the residual-based inner module, and the corrected
 oracle reduction.  \Cref{sec:pf-scar-utr,sec:pf-fixed-radius} give the
 two parameter-free SCAR implementations.
+\Cref{app:proofs} collects the deferred proofs, and
+\Cref{app:parameter-free-scope} explains the class-uniform quantifiers
+and the limitation of residual-only certificates.
 
 \section{Unconstrained problem and preliminaries}
 \label{sec:preliminaries}
@@ -1191,15 +1203,18 @@ $\ell$ and $\mu$ internally.  Replacing AGD by SCAR instantiates the
 same residual interface without inner curvature parameters, but does
 not remove the parameters from the outer wrapper.  This section also
 changes the outer tolerances and scale update, thereby removing both
-uses.  The resulting algorithm takes no problem parameter as input
-other than the requested tolerance $\epsilon$.
-There is, however, an important quantifier in the theorem: for every
-fixed problem and initialization there is an unknown threshold
-$\epsilon_0>0$ such that the guarantees hold for
-$0<\epsilon\le\epsilon_0$.  We therefore call the method
-asymptotically parameter-free.  The absence of a uniform, finitely
-verifiable threshold is explained in red in
-\Cref{subsec:scar-limitation}.
+uses.  The resulting outer wrapper takes no problem parameter as input
+other than the requested tolerance $\epsilon$; with a parameter-free
+residual module, the same is true of the complete method.
+There is, however, an important quantifier in the theorem.  After
+fixing common constants $(\ell,\mu,\rho)$, one unknown threshold
+$\epsilon_0(\ell,\mu,\rho)>0$ works simultaneously for every payoff
+in the corresponding class and every initialization.  The method is
+therefore class-uniform asymptotically parameter-free, but the
+algorithm cannot verify that $\epsilon\le\epsilon_0$.  The distinction
+between this result and a uniform residual-only certificate without a
+positive common lower bound on $\mu$ is detailed in
+\Cref{app:scar-limitation}.
 
 \subsection{SCAR as a residual-module realization}
 
@@ -1210,7 +1225,7 @@ $q_x(y):=-f(x,y)$.
 \begin{theorem}[SCAR; \citet{lan2026optimal}]
 \label{thm:scar-blackbox}
 Let $\phi:\R^m\to\R$ be differentiable, $\mu$-strongly convex, and
-have an $L$-Lipschitz gradient, where $0<\mu<L$.  Let $\tau>0$ and
+have an $L$-Lipschitz gradient, where $0<\mu\le L$.  Let $\tau>0$ and
 $u_0\in\R^m$.  If $\|\nabla\phi(u_0)\|\le\tau$, return $u_0$.
 Otherwise, initialize Algorithm~5.1 of \citet{lan2026optimal} with
 $\mu_0\ge\mu$ and $0<M_0\le4L$.  SCAR returns $\widehat u$ such that
@@ -1230,8 +1245,10 @@ The number of evaluations of $\nabla\phi$ is at most
 where $C_1$ is the universal constant in Theorem~4.1 of
 \citet{lan2026optimal}.  The line-search estimate returned by SCAR is
 at most $2L$.
-When $L=\mu$, the step $u_0-L^{-1}\nabla\phi(u_0)$ reaches the
-minimizer; we use this direct endpoint argument whenever $\kappa=1$.
+The cited theorem states the strict case $\mu<L$.  Its proof uses an
+AR estimate that remains valid when $L=\mu$, so the same SCAR call and
+the displayed conclusions extend to this endpoint without a
+parameter-dependent branch.
 \end{theorem}
 
 
@@ -1296,37 +1313,34 @@ The parameter-free construction uses the corrected value
 \eqref{eq:corrected-value-pf} and its error bound from
 \Cref{lem:corrected-errors}.
 
-We use a uniform inner tolerance below the outer stationarity scale.
-Throughout this section, assume
-$0<\epsilon<1$ and set
-\begin{equation}\label{eq:pf-tolerances}
- \tau_\epsilon:=\epsilon^2,
- \qquad
- \omega_\epsilon:=\epsilon^2.
-\end{equation}
+Throughout this section, assume $0<\epsilon<1$.  Every inner call uses
+the residual tolerance $\epsilon^2$, and every nonmonotone value
+allowance is $\epsilon^3$.
 
-\begin{lemma}[Pointwise asymptotic oracle accuracy]
+\begin{lemma}[Class-uniform asymptotic oracle accuracy]
 \label{lem:pf-asymptotic-oracle}
-For every fixed payoff satisfying \Cref{ass:ncsc}, there exists
-$\epsilon_0>0$ such that the following holds for every
-$0<\epsilon\le\epsilon_0$.  If
-$\|\nabla_y f(x,y)\|\le\tau_\epsilon$, then, for every
-$\sigma\ge\epsilon$,
+Fix $\ell\ge\mu>0$ and $\rho>0$, and set
+$\kappa:=\ell/\mu$ and $M_P:=4\sqrt2\,\kappa^3\rho$.  There exists
+$\epsilon_{\rm or}=\epsilon_{\rm or}(\ell,\mu,\rho)>0$ such that the
+following holds simultaneously for every payoff satisfying
+\Cref{ass:ncsc} with these common constants and every
+$0<\epsilon\le\epsilon_{\rm or}$.  For every $x$ and $y$ satisfying
+$\|\nabla_y f(x,y)\|\le\epsilon^2$,
 \begin{subequations}\label{eq:pf-oracle-bounds}
 \begin{align}
  \|\widehat g(x,y)-\nabla P(x)\|
  &\le\frac\epsilon{256},
        \label{eq:pf-gradient-error}\\
  \|\widehat H(x,y)-\nabla^2P(x)\|
- &\le\frac{\sigma\sqrt\epsilon}{64},
+ &\le\frac1{64}\sqrt{\frac{M_P\epsilon}{6}},
        \label{eq:pf-hessian-error}\\
  |\widehat P(x,y)-P(x)|
- &\le\frac{\omega_\epsilon}{8}.
+ &\le\frac{\epsilon^3}{8}.
        \label{eq:pf-value-error}
 \end{align}
 \end{subequations}
-The same $\epsilon_0$ works uniformly over all $x$, $y$, and
-$\sigma\ge\epsilon$.
+The same $\epsilon_{\rm or}$ works uniformly over the stated parameter
+class.
 \end{lemma}
 
 
@@ -1335,7 +1349,7 @@ $\sigma\ge\epsilon$.
 \subsection{A fully observable adaptive UTR scheme}
 
 At a current point, let $(\widehat P,g,H)$ denote the corrected tuple
-computed after an inner-module call with tolerance $\tau_\epsilon$,
+computed after an inner-module call with tolerance $\epsilon^2$,
 and set
 $h=\max\{\|g\|,\epsilon\}$.  For a trial scale $\sigma\ge\epsilon$,
 consider the padded quadratic subproblem
@@ -1348,11 +1362,13 @@ consider the padded quadratic subproblem
  \right)d.
 \end{aligned}
 \end{equation}
-The Hessian padding makes the quadratic term an upper model once
-\eqref{eq:pf-hessian-error} holds.  The much smaller actual gradient
-error is $O(\epsilon^4)$; at a safe scale, its worst-case effect on an
-interior trial is only $O(\epsilon^{15/2})$ and is absorbed by the
-$O(\epsilon^2)$ nonmonotonicity.  Thus the inner solve need not be
+At every scale $\sigma^2\ge M_P/6$, the Hessian padding dominates
+\eqref{eq:pf-hessian-error} and makes the quadratic term an upper
+model.  For each fixed parameter class, the actual gradient error is of
+the much smaller order $O(\epsilon^4)$;
+at a safe scale, its worst-case effect on an interior trial is only
+$O(\epsilon^{15/2})$ and is absorbed by the $O(\epsilon^3)$
+nonmonotonicity.  Thus the inner solve need not be
 refined to an accuracy depending on the possibly arbitrarily small
 trial step.
 
@@ -1364,15 +1380,14 @@ $R=\sqrt h/(4\sigma)$.
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
-\caption{Asymptotically parameter-free residual-module UTR}
+\caption{Asymptotically parameter-free outer residual-module UTR}
 \label{alg:pf-residual-utr}
 \KwIn{$x_0,y_{-1}$, $0<\epsilon<1$, and an inner module $\mathcal S$
-      satisfying \eqref{eq:maxres-interface} without problem
-      parameters}
+      satisfying \eqref{eq:maxres-interface}}
 $x\leftarrow x_0$, $\sigma\leftarrow\epsilon$, and
 $\eta\leftarrow1/256$\;
 $y\leftarrow
- \operatorname{MaxRes}_{\mathcal S}(x_0,y_{-1},\tau_\epsilon)$\;
+ \operatorname{MaxRes}_{\mathcal S}(x_0,y_{-1},\epsilon^2)$\;
 compute $(\widehat P,g,H)$ from
 \eqref{eq:corrected-value-pf} and \eqref{eq:corrected-derivatives}\;
 \While{true}{
@@ -1386,11 +1401,11 @@ compute $(\widehat P,g,H)$ from
  \If{$r=0$}{\Return{$x$}\;}
  $x^+\leftarrow x+d$\;
  $y^+\leftarrow
-  \operatorname{MaxRes}_{\mathcal S}(x^+,y,\tau_\epsilon)$\; compute
+  \operatorname{MaxRes}_{\mathcal S}(x^+,y,\epsilon^2)$\; compute
  $(\widehat P^+,g^+,H^+)$\;
  \eIf{
   $r<\sqrt h/(4\sigma)$,
-  $\widehat P^+\le\widehat P+\omega_\epsilon$, and
+  $\widehat P^+\le\widehat P+\epsilon^3$, and
   $\|g^+\|\le h/2$
  }{
   accept the trial\;
@@ -1398,7 +1413,7 @@ compute $(\widehat P,g,H)$ from
   \eIf{
    $r=\sqrt h/(4\sigma)$,
    $\widehat P-\widehat P^+
-    \ge\eta(h^{3/2}/\sigma+\lambda r^2)+\omega_\epsilon$, and
+    \ge\eta(h^{3/2}/\sigma+\lambda r^2)+\epsilon^3$, and
    $\|g^+\|\le h/2+\lambda r$
   }{
    accept the trial\;
@@ -1419,9 +1434,9 @@ compute $(\widehat P,g,H)$ from
 Every quantity tested in \Cref{alg:pf-residual-utr} is observable.  In
 particular, if $\mathcal S$ itself is parameter-free, the algorithm
 never uses $\ell$, $\mu$, $\rho$, $\kappa$, $M_P$, or $\Delta_P$.
-The target $\tau_\epsilon$ is independent of $\sigma$, so a rejection
-changes only the robust trust-region model; the corrected tuple at the
-current point remains frozen.  Secant-initialized SCAR from
+The residual target $\epsilon^2$ is independent of $\sigma$, so a
+rejection changes only the robust trust-region model; the corrected
+tuple at the current point remains frozen.  Secant-initialized SCAR from
 \Cref{cor:scar-inner} is the implementation used for the explicit
 inner-oracle count below.
 
@@ -1462,8 +1477,7 @@ If $r=\sqrt h/(4\sigma)$, then also
  \ge\frac{h^{3/2}}{128\sigma}
  +\frac14\lambda r^2
 \end{equation}
-for all sufficiently small $\epsilon$, with the threshold depending
-only on the fixed problem.
+without any additional smallness condition.
 \end{lemma}
 
 
@@ -1477,8 +1491,7 @@ prefix of $N$ accepted nonterminal steps generated by
 at every tuple in the prefix and all its trial scales are bounded by
 some $\bar\sigma>0$.  If
 \begin{equation}\label{eq:pf-absorption-condition}
- \frac{5\bar\sigma\omega_\epsilon}
- {4\eta\epsilon^{3/2}}
+ \frac{5\bar\sigma\epsilon^{3/2}}{4\eta}
  \left(1+\frac4{\log2}\right)\le\frac12,
 \end{equation}
 then
@@ -1496,23 +1509,22 @@ right-hand side is independent of the prefix length $N$.
 
 
 
-\begin{theorem}[Asymptotically parameter-free NC--SC complexity]
+\begin{theorem}[Class-uniform parameter-free outer NC--SC complexity]
 \label{thm:pf-scar-utr}
-Suppose $f$ satisfies \Cref{ass:ncsc}, define
-$P(x)=\max_y f(x,y)$, fix
-$(x_0,y_{-1})$, and set
+Fix $\ell\ge\mu>0$ and $\rho>0$.  There exists
+$\epsilon_0=\epsilon_0(\ell,\mu,\rho)\in(0,1)$ with the following
+property.  Let $f$ be any payoff satisfying \Cref{ass:ncsc} with
+these common constants and define $P(x)=\max_yf(x,y)$.  For every
+initialization $(x_0,y_{-1})$, set
 \[
  \kappa=\ell/\mu,
  \qquad M_P=4\sqrt2\,\kappa^3\rho,
  \qquad \Delta_P=P(x_0)-\inf_xP(x).
 \]
-Let $\mathcal S$ be any residual module satisfying
-\eqref{eq:maxres-interface} whose calls use none of
-$\ell,\mu,\rho,\kappa,M_P$, or $\Delta_P$.  There exists a payoff- and
-initialization-dependent $\epsilon_0\in(0,1)$ such that, for every
-$0<\epsilon\le\epsilon_0$, \Cref{alg:pf-residual-utr} terminates.  The
-algorithm itself uses only $\epsilon$ and universal numerical
-constants, and its output $\widehat x$ satisfies
+For every $0<\epsilon\le\epsilon_0$ and every residual module $\mathcal S$
+satisfying \eqref{eq:maxres-interface},
+\Cref{alg:pf-residual-utr} terminates and its output $\widehat x$
+satisfies
 \begin{equation}\label{eq:pf-return}
  \|\nabla P(\widehat x)\|\le\frac{257}{256}\epsilon,
  \qquad
@@ -1532,18 +1544,23 @@ The total number $Q$ of solved robust trust-region subproblems obeys
 \end{equation}
 Its leading problem-parameter dependence is therefore
 $O(\Delta_P\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2})$.
+If the module calls use none of
+$\ell,\mu,\rho,\kappa,M_P$, or $\Delta_P$, then the complete
+executable method uses only $\epsilon$ and universal numerical
+constants.
 \end{theorem}
 
 \begin{corollary}[SCAR inner-oracle complexity]
 \label{cor:pf-scar-inner-complexity}
 Under the hypotheses of \Cref{thm:pf-scar-utr}, choose $\mathcal S$ to
-be the secant-initialized SCAR module in \Cref{cor:scar-inner}.  After
-decreasing the pointwise threshold $\epsilon_0$ if necessary, set
+be the secant-initialized SCAR module in \Cref{cor:scar-inner}.  If
+$Q$ denotes the number of robust trust-region subproblems in
+\eqref{eq:pf-outer-complexity}, set
 \begin{equation}\label{eq:pf-gradient-level}
- G_0:=1+\sqrt{2(1+\kappa)\ell(\Delta_P+1)}.
+ G_Q:=1+\sqrt{2(1+\kappa)\ell
+       \left(\Delta_P+\frac54Q\epsilon^3\right)}.
 \end{equation}
-If $Q$ denotes the number of robust trust-region subproblems in
-\eqref{eq:pf-outer-complexity}, then the total number $N_y$ of
+Then the total number $N_y$ of
 evaluations of $\nabla_yf$ is
 \begin{align}
  N_y
@@ -1551,7 +1568,7 @@ evaluations of $\nabla_yf$ is
   \sqrt\kappa\,(Q+1)
   \left[1+\log\kappa+
    \log\!\left(1+
-    \frac{\ell\sqrt{G_0}}{4\epsilon^3}
+    \frac{\ell\sqrt{G_Q}}{4\epsilon^3}
    \right)
   \right]\right)\notag\\
  &\quad+O\!\left(
@@ -1569,117 +1586,32 @@ in \eqref{eq:pf-outer-complexity} has no such leading factor.
 
 
 \begin{remark}[Interpretation of the theorem]
-The quantifier in \Cref{thm:pf-scar-utr} is pointwise in the problem
-and initialization:
-the same executable algorithm is used without knowing the parameters,
-but the proof supplies an unknown payoff- and initialization-dependent
-$\epsilon_0$.
-This is weaker than a uniform finite-accuracy theorem with an
-a posteriori certificate.  It is nevertheless a conventional
-asymptotic complexity result: for every fixed admissible problem, the
-outer rate and second-order scale are the same as in the parameter-tuned
-analysis once $\epsilon$ enters the stated regime.
+The onset in \Cref{thm:pf-scar-utr} is uniform over every class with
+common constants $(\ell,\mu,\rho)$ and over all initializations.  The
+same executable algorithm is used without knowing these constants,
+but it cannot observe whether $\epsilon\le
+\epsilon_0(\ell,\mu,\rho)$.  Thus class-uniform asymptotic correctness
+does not by itself provide an a posteriori finite-accuracy
+certificate.
+The scalar construction in
+\Cref{app:scar-limitation} explains why the threshold cannot be chosen
+independently of a positive common lower bound on $\mu$.
+
+The proof gives the explicit sufficient threshold in
+\eqref{eq:pf-uniform-oracle-onset} and
+\eqref{eq:pf-class-uniform-onset}.  If $\ell$ and $\rho$ are fixed
+while $\mu\downarrow0$, the displayed sufficient threshold is
+$\Theta(\mu)$.  In
+particular, a sixth-order restriction $O(\mu^6)$ is not intrinsic: it
+would result from requiring the Hessian-oracle error to be smaller
+than $\sigma\sqrt\epsilon$ even at the smallest trial scale
+$\sigma=\epsilon$.  The proof instead needs this comparison only once
+the scale is safe.  The $\epsilon^3$ value allowance is also needed
+to keep the accepted-step absorption condition linear in $\mu$;
+retaining an $\epsilon^2$ allowance would give a sufficient
+$O(\mu^3)$ onset, which is still sharper than $O(\mu^6)$ but not
+linear.
 \end{remark}
-
-\subsection{A limitation of residual-only parameter-free inner solves}
-\label{subsec:scar-limitation}
-
-\begingroup
-\color{red}
-A parameter-free inner method such as SCAR can return a point satisfying
-the prescribed and directly verifiable condition
-$\|\nabla_yf(x,y)\|\le\tau$.  This fact alone does not provide a
-uniform certificate for the value or gradient of
-$P(x)=\max_y f(x,y)$ when the strong-concavity modulus is unknown.  The
-issue is not merely a loss in the complexity bound: an outer stopping
-test based on a residual-only corrected oracle can be false.
-
-The following scalar family shows that this difficulty persists even
-for the corrected value \eqref{eq:corrected-value-pf}.  Let
-\[
- c:=\frac12,
- \qquad
- \psi(t):=\frac{t^2}{2}+c(1-\cos t),
- \qquad
- A:=\frac{1-c}{2\pi^2},
-\]
-and, for $0<r\le1$, define
-\begin{equation}\label{eq:scar-counterexample}
- f_r(x,y):=A\tanh(x/A)\bigl(1-\cos(\pi r y)\bigr)
-             -\psi(ry-1).
-\end{equation}
-Because $1-c\le\psi''(t)\le1+c$,
-\[
- \partial_{yy}^2 f_r(x,y)
- =A\pi^2r^2\tanh(x/A)\cos(\pi r y)
-   -r^2\psi''(ry-1)
- \le-\frac{1-c}{2}r^2.
-\]
-Thus $f_r(x,\cdot)$ is globally $(1-c)r^2/2$-strongly concave.  Its
-second derivatives are uniformly bounded for $0<r\le1$.  Its third
-derivatives are also uniformly bounded: the four distinct block types
-have bounds $12/A^2$, $2\pi/A$, $\pi^2$, and $A\pi^3+c$,
-respectively.  Hence the joint gradient-smoothness and
-Hessian-Lipschitz constants admit finite upper bounds independent of
-$r$.  Moreover,
-\[
- P_r(x)\ge f_r(x,1/r)=2A\tanh(x/A)\ge-2A,
-\]
-so the value function is bounded below.
-
-At $x=0$, the exact maximizer is $y_r^*(0)=1/r$.  At the point $y=0$,
-however,
-\[
- |\partial_yf_r(0,0)|=r|\psi'(-1)|\longrightarrow0,
- \qquad
- \widehat g_r(0,0)=0,
- \qquad
- \widehat H_r(0,0)=0.
-\]
-In contrast, Danskin's theorem gives
-\[
- P_r'(0)=\partial_xf_r(0,1/r)=1-\cos\pi=2.
-\]
-The corrected value is wrong by a fixed amount as well.  Namely,
-$P_r(0)=0$, whereas
-\begin{equation}\label{eq:scar-counterexample-value}
- \widehat P_r(0,0)
- =-\psi(-1)+\frac{\psi'(-1)^2}{2\psi''(-1)}
- \approx0.0647,
-\end{equation}
-independently of $r$.  Therefore a residual tending to zero does not
-uniformly control either the corrected value or the corrected gradient
-over the present class.  The smoothness constants remain
-bounded; only the unknown strong-concavity modulus tends to zero.
-
-Consequently, choosing SCAR as the residual module in
-\Cref{alg:ncsc-utr} removes the inner solver's dependence on
-$\ell,\mu$, but does not turn its parameter-dependent residual target
-and outer scale into a valid uniform fully parameter-free theorem.
-Nor does a prescribed finite sequence of positive tolerances repair
-the issue: for any finite list $\tau_0,\ldots,\tau_J>0$, choose
-$r<\min_j\tau_j/|\psi'(-1)|$ above and initialize every inner call at
-$y=0$.  Every
-residual test is then already satisfied and can return the same false
-outer derivatives.  This observation covers any predetermined finite
-number of tolerance-halving phases.  It does not claim that indefinite
-refinement cannot eventually move the inner iterate; it shows that a
-finite prescribed refinement depth is not a certificate.
-
-SCAR also does not return a certified lower bound on $\mu$, a certified
-inner optimality gap, or an interval containing $P(x)$.  Its returned
-smoothness quantity is a line-search estimate satisfying the tested
-local inequalities, not a certified global upper bound on $\ell$.
-Likewise, a successful residual reduction does not certify that the
-current strong-convexity guess is below the true $\mu$.  A uniform
-finite-accuracy adaptive minimax theorem therefore needs additional
-information, such as a certified lower bound on $\mu$, a certified
-inner-gap bound, genuine intervals containing $P$, $\nabla P$, and
-$\nabla^2P$, compactness plus a dual-gap certificate, or additional
-problem structure.  The asymptotic result in
-\Cref{thm:pf-scar-utr} avoids a false uniform claim by explicitly
-placing the unknown threshold $\epsilon_0$ in its quantifiers.
-\endgroup
 
 \section{Adaptive fixed-radius SCAR trust region}
 \label{sec:pf-fixed-radius}
@@ -1699,12 +1631,12 @@ bound.  A high-accuracy SCAR call is used only when the trust-region
 solution is interior, and such validation calls occur only during the
 additive scale search.
 
-As in \Cref{thm:pf-scar-utr}, the result is pointwise asymptotic.  More
-precisely, for every fixed payoff and initialization there is an
-unknown threshold $\epsilon_0>0$ below which the theorem holds.  The
-algorithm itself uses only $\epsilon$ and universal numerical
-constants; the precise quantifier and parameter list are stated in
-\Cref{thm:adaptive-fixed-radius-scar}.
+As in \Cref{thm:pf-scar-utr}, the result is class-uniform asymptotic.
+For each fixed triple $(\ell,\mu,\rho)$, one unknown threshold
+$\epsilon_0(\ell,\mu,\rho)>0$ works for every payoff in the class and
+every initialization.  The algorithm itself uses only $\epsilon$ and
+universal numerical constants; the precise quantifier and parameter
+list are stated in \Cref{thm:adaptive-fixed-radius-scar}.
 
 \subsection{Persistent SCAR and the working oracle}
 
@@ -1734,6 +1666,11 @@ from $u$ on the same function.
 If $R=0$, the call returns $u$ immediately and is counted as a trivial
 successful halving.
 
+The same AR call is used at the endpoint $L=\mu$.  The estimate from
+Theorem~4.1 of \citet{lan2026optimal} used below remains valid there,
+so this endpoint introduces no branch depending on unknown curvature
+parameters.
+
 Across any $N$ successful halving calls, the total number of failed
 curvature guesses is at most
 \begin{equation}\label{eq:persistent-scar-failures}
@@ -1749,8 +1686,9 @@ The total number of gradient evaluations is at most
 \end{equation}
 where $C_1$ is the constant in Theorem~4.1 of
 \citet{lan2026optimal}, also used in
-\eqref{eq:scar-original-complexity}.  Every retained line-search
-estimate is at most $2L$.
+\eqref{eq:scar-original-complexity}.  After any nontrivial AR call, the
+retained line-search estimate is at most $2L$; before the first such
+call, it remains at its admissible initial value at most $4L$.
 \end{lemma}
 
 
@@ -1814,13 +1752,16 @@ majorant
        \frac{\epsilon^{3/2}}{\sigma^3}.
 \end{equation}
 
-\begin{lemma}[Working and validation accuracy]
+\begin{lemma}[Class-uniform working and validation accuracy]
 \label{lem:fixed-radius-oracle-accuracy}
-Fix a payoff satisfying \Cref{ass:ncsc}, and let
-$M_P=4\sqrt2\kappa^3\rho$.  The following statements hold.
+Fix $\ell\ge\mu>0$ and $\rho>0$, let
+$\kappa=\ell/\mu$ and $M_P=4\sqrt2\kappa^3\rho$, and consider any
+payoff satisfying \Cref{ass:ncsc} with these common constants.  There
+exist $\epsilon_1=\epsilon_1(\ell,\mu,\rho)>0$ and
+$\epsilon_2=\epsilon_2(\ell,\mu,\rho)>0$ such that the following
+statements hold uniformly over this parameter class.
 \begin{enumerate}[label=(\roman*)]
- \item There exists a problem-dependent $\epsilon_1>0$ such that,
- for every $0<\epsilon\le\epsilon_1$, every
+ \item For every $0<\epsilon\le\epsilon_1$, every
  $\sigma\ge\mathcal A_\epsilon^{-1}$, and every working-accurate tuple,
  \begin{equation}\label{eq:working-proxy-bound}
   |\widehat P(x,y)-P(x)|
@@ -1843,8 +1784,7 @@ $M_P=4\sqrt2\kappa^3\rho$.  The following statements hold.
   \|\nabla_yf(x,y_{\rm v})\|
   \le c_0a_x\epsilon^{3/2},
  \end{equation}
- then there is a problem-dependent $\epsilon_2>0$ such that, for all
- $0<\epsilon\le\epsilon_2$ and all
+ then, for all $0<\epsilon\le\epsilon_2$ and all
  $\sigma\ge\mathcal A_\epsilon^{-1}$,
  \begin{equation}\label{eq:validator-errors}
  \begin{aligned}
@@ -1855,7 +1795,8 @@ $M_P=4\sqrt2\kappa^3\rho$.  The following statements hold.
  \end{aligned}
  \end{equation}
 \end{enumerate}
-All thresholds are independent of $x$.
+The same $\epsilon_1$ and $\epsilon_2$ work independently of the
+payoff, $x$, the tuple, and the chosen secant within the stated class.
 \end{lemma}
 
 
@@ -1958,11 +1899,13 @@ inductively that every tuple used in
 The following lemma is the fixed-radius analogue of the large-scale
 acceptance result for adaptive UTR.
 
-\begin{lemma}[Safe fixed-radius trial]
+\begin{lemma}[Class-uniform safe fixed-radius trial]
 \label{lem:adaptive-fixed-radius-safe}
-Fix a payoff satisfying \Cref{ass:ncsc} and set
-$M_P:=4\sqrt2\,\kappa^3\rho$.  There exists
-$\epsilon_3>0$ such that the following holds for every
+Fix $\ell\ge\mu>0$ and $\rho>0$, set
+$\kappa=\ell/\mu$ and $M_P:=4\sqrt2\,\kappa^3\rho$.  There exists
+$\epsilon_3=\epsilon_3(\ell,\mu,\rho)>0$ such that the following
+holds simultaneously for every payoff satisfying \Cref{ass:ncsc}
+with these common constants and every
 $0<\epsilon\le\epsilon_3$.  Consider any trial generated by
 \Cref{alg:adaptive-fixed-radius-scar}, and suppose its current and
 candidate tuples are working-accurate and its validator, when invoked,
@@ -2008,19 +1951,19 @@ $\sigma\ge\mathcal A_\epsilon^{-1}$.
 
 
 
-\begin{theorem}[Parameter-free fixed-radius complexity]
+\begin{theorem}[Class-uniform parameter-free fixed-radius complexity]
 \label{thm:adaptive-fixed-radius-scar}
-Suppose $f$ satisfies \Cref{ass:ncsc}, define
-$P(x)=\max_y f(x,y)$, fix
-$(x_0,y_{-1})$, and set
+Fix $\ell\ge\mu>0$ and $\rho>0$.  There exists
+$\epsilon_0=\epsilon_0(\ell,\mu,\rho)\in(0,1)$ with the following
+property.  Let $f$ be any payoff satisfying \Cref{ass:ncsc} with
+these common constants, define $P(x)=\max_y f(x,y)$, and fix any
+initialization $(x_0,y_{-1})$.  Set
 \[
  \kappa=\ell/\mu,
  \qquad M_P=4\sqrt2\,\kappa^3\rho,
  \qquad \Delta_P=P(x_0)-\inf_xP(x).
 \]
-There exists a payoff- and initialization-dependent
-$\epsilon_0\in(0,1)$ such that, for every
-$0<\epsilon\le\epsilon_0$,
+Then, for every $0<\epsilon\le\epsilon_0$,
 \Cref{alg:adaptive-fixed-radius-scar} terminates.  The algorithm uses
 only $\epsilon$ and universal numerical constants; in particular, it
 does not use $\ell,\mu,\rho,\kappa,M_P$, or $\Delta_P$.  Its returned
@@ -2062,8 +2005,18 @@ Thus neither $\log(1/\epsilon)$ nor $\log\kappa$ multiplies the leading
 inner-gradient term.  Running the method with internal tolerance
 $(1536/7225)\epsilon$ gives the standard
 $(\epsilon,\sqrt{M_P\epsilon})$ guarantee, provided that internal
-tolerance lies in the pointwise regime above.
+tolerance lies in the class-uniform regime above.
 \end{theorem}
+
+\begin{remark}[Scope of the fixed-radius guarantee]
+The onset in \Cref{thm:adaptive-fixed-radius-scar} is uniform over the
+class with common constants $(\ell,\mu,\rho)$ and over all
+initializations, but it is not observable to the parameter-free
+algorithm.  The residual-only obstruction for prescribed absolute
+tolerances, its precise relation to the secant-scaled targets used here,
+and the roles of the corrected-value telescope and the interior
+validator are explained in \Cref{app:fixed-radius-scope}.
+\end{remark}
 
 
 
@@ -2096,47 +2049,6 @@ as in the earlier minimax analysis; iterative linear solves require a
 separate accuracy count.
 \end{remark}
 
-{\color{red}
-\subsection{What the theorem does and does not certify}
-\label{subsec:fixed-radius-red-caveats}
-
-The pointwise quantifier in
-\Cref{thm:adaptive-fixed-radius-scar} is essential.  The algorithm
-uses no unknown problem parameter, but it also cannot observe whether
-$\epsilon\le\epsilon_0$.  SCAR certifies a residual only; without a
-known lower bound on $\mu$, that residual is not a uniform certificate
-for the distance to $y^*(x)$, the inner optimality gap, the corrected
-gradient and Hessian estimators, or the corrected value.  The counterexample in
-\Cref{subsec:scar-limitation} therefore continues to rule out a
-uniform finite-accuracy claim.
-
-The fixed-radius construction handles the function-value difficulty
-in a specific, nonstandard way.  It never asserts that
-$\widehat P$ is a lower or an upper bound on $P$.  Unsafe accepted
-boundary steps need not decrease the true value function.  Instead,
-the proof telescopes the stored corrected proxy and explicitly pays
-for every proxy jump caused by a scale refresh; see
-\eqref{eq:proxy-refresh-jump}--\eqref{eq:fixed-radius-proxy-telescope}.
-This argument relies on three implementation details: the scale is
-nondecreasing, an accepted candidate inner point and corrected value
-are retained without further inner refinement, and a rejected candidate
-is discarded before the current tuple is refreshed.  Dropping any of
-these rules invalidates the displayed telescope.
-
-The high-accuracy validator is invoked only after an interior
-fixed-radius solution.  Its auxiliary residual
-$c_0a_x\epsilon^{3/2}$ controls inner accuracy only; it is not used as
-the trust-region scale or as the Hessian stopping threshold.  The
-validator eliminates false termination for each fixed problem once
-$\epsilon$ is sufficiently small, but it is not a uniformly
-verifiable certificate.  A doubling trick in $\epsilon$ does not by
-itself reveal the unknown onset of this asymptotic regime.  A uniform
-all-$\epsilon$ theorem would still require additional information such
-as a certified lower bound on $\mu$, a certified inner-gap or
-value-function interval, compactness with a computable dual gap, or
-other problem-specific structure.
-}
-
 \section{Conclusion}
 
 For unconstrained optimization, the certified-inexact adaptive UTR
@@ -2164,18 +2076,22 @@ $\kappa$ for the restarted accelerated implementations.
 
 The first parameter-free residual-module UTR removes all problem
 parameters from the executable outer and inner algorithms and retains
-the sharp outer leading order for each fixed problem and initialization
-once $\epsilon$ is sufficiently small, but its uniformly accurate inner solves
-restore a leading $\log(1/\epsilon)$.  The adaptive fixed-radius
+the sharp outer leading order uniformly over each class with common
+constants $(\ell,\mu,\rho)$ once $\epsilon$ is sufficiently small,
+but its uniformly accurate inner solves restore a leading
+$\log(1/\epsilon)$.  The adaptive fixed-radius
 variant replaces those ordinary solves by persistent residual-halving
 calls.  It preserves the same leading outer order and attains leading
 inner-gradient complexity
 $O(\Delta_P\kappa^2\sqrt\rho\,\epsilon^{-3/2})$, with all
 $\log(1/\epsilon)$ and $\log\kappa$ terms confined to additive
 initialization, validation, and scale-search costs.  Both
-parameter-free conclusions remain pointwise asymptotic: the unknown
-onset of their small-$\epsilon$ regime is not a uniform
-finite-accuracy certificate.
+parameter-free conclusions are asymptotic but class-uniform: their
+onset depends only on the common regularity constants and not on the
+payoff or initialization.  For the first construction, the displayed
+sufficient onset is $\Theta(\mu)$ for fixed $\ell$ and $\rho$.  Because
+the executable algorithms neither know nor certify the relevant onset,
+this is still weaker than an a posteriori finite-accuracy guarantee.
 
 \appendix
 \section{Deferred technical proofs}
@@ -3161,11 +3077,22 @@ $\kappa=1$, then $a_x=\mu=\ell$ and the endpoint argument following
 \end{proof}
 
 \begin{proof}[Proof of \Cref{lem:pf-asymptotic-oracle}]
+Set $\kappa:=\ell/\mu$ and $s:=\sqrt{M_P/6}$.  Choose
+$\epsilon_{\rm or}$ to be
+\begin{equation}\label{eq:pf-uniform-oracle-onset}
+ \min\left\{
+  1,\frac{\mu}{\sqrt\rho},
+  \left(\frac{\mu^2}{128(1+\kappa)\rho}\right)^{1/3},
+  \left(\frac{s\mu}{64(1+\kappa)^2\rho}\right)^{2/3},
+  \left(\frac{3\mu^3}{7\rho}\right)^{1/3}
+ \right\}.
+\end{equation}
 The residual--distance inequality in
 \eqref{eq:inner-residual-certificate} gives
 $\|y-y^*(x)\|\le\epsilon^2/\mu$.  Hence
-after decreasing $\epsilon_0$ so that
-$\epsilon^2/\mu\le\mu/\rho$, \Cref{lem:corrected-errors} gives
+\eqref{eq:pf-uniform-oracle-onset} ensures
+$\epsilon^2/\mu\le\mu/\rho$, and
+\Cref{lem:corrected-errors} gives
 \begin{align*}
  \|\widehat g-\nabla P\|
  &\le\frac{(1+\kappa)\rho}{2\mu^2}\epsilon^4,\\
@@ -3174,10 +3101,12 @@ $\epsilon^2/\mu\le\mu/\rho$, \Cref{lem:corrected-errors} gives
  |\widehat P-P|
  &\le\frac{7\rho}{24\mu^3}\epsilon^6.
 \end{align*}
-All coefficients are finite for the fixed problem.  The first line is
-$o(\epsilon)$, the second is $o(\epsilon^{3/2})$, and the third is
-$o(\epsilon^2)$.  Since $\sigma\ge\epsilon$, decreasing
-$\epsilon_0$ if necessary proves all three inequalities uniformly.
+The remaining three conditions in
+\eqref{eq:pf-uniform-oracle-onset} bound these quantities by
+$\epsilon/256$, $s\sqrt\epsilon/64$, and $\epsilon^3/8$,
+respectively.  Every coefficient depends only on
+$(\ell,\mu,\rho)$, so the choice is uniform over the entire parameter
+class and over all $x$ and $y$.
 \end{proof}
 
 \begin{proof}[Proof of \Cref{lem:pf-safe-trial}]
@@ -3185,20 +3114,24 @@ Apply \Cref{lem:common-inexact-tr-step} with $F=P$, $M=M_P$,
 \[
  a=\sigma\sqrt h+\frac{\sigma\sqrt\epsilon}{64},\qquad
  R=\frac{\sqrt h}{4\sigma},\qquad
- \xi=\frac{\sigma\sqrt\epsilon}{64},\qquad
+ \xi=\frac1{64}\sqrt{\frac{M_P\epsilon}{6}},\qquad
  \delta_0=\delta_+=\frac{(1+\kappa)\rho}{2\mu^2}\epsilon^4.
 \]
 \Cref{lem:value-geometry} supplies the required Hessian regularity.
+At a safe scale, $\xi\le\sigma\sqrt\epsilon/64$, so
+$a-\xi\ge\sigma\sqrt h$ and
+$a+\xi\le\sigma\sqrt h+2\sigma\sqrt\epsilon/64$.
 The radius and \eqref{eq:pf-safe-scale} imply
 $(M_P/6)r^3\le\sigma\sqrt h\,r^2/4$.
 Thus \eqref{eq:common-function-bound} proves
 \eqref{eq:pf-safe-decrease}.
 
 If the radius is active, then
-$\sigma\sqrt h\,r^2=h^{3/2}/(16\sigma)$.  Since $h\ge\epsilon$,
-the last term of \eqref{eq:pf-safe-decrease} is smaller than
-$h^{3/2}/(128\sigma)$ for all sufficiently small $\epsilon$.  This
-proves \eqref{eq:pf-safe-boundary-decrease}.
+$\sigma\sqrt h\,r^2=h^{3/2}/(16\sigma)$.  By
+\eqref{eq:pf-gradient-error}, the last term of
+\eqref{eq:pf-safe-decrease} is at most
+$h^{3/2}/(1024\sigma)$.  This proves
+\eqref{eq:pf-safe-boundary-decrease}.
 
 The common candidate-gradient estimate gives
 \[
@@ -3208,10 +3141,11 @@ The common candidate-gradient estimate gives
  +\frac{(1+\kappa)\rho}{\mu^2}\epsilon^4
  +\frac{M_P}{2}r^2.
 \]
-The radius and safe-scale condition bound the four terms other than
+The radius, safe-scale condition, and
+\eqref{eq:pf-gradient-error} bound the four terms other than
 $\lambda r$ by, respectively,
-$h/4$, $h/128$, $h/256$, and $3h/16$ for every sufficiently small
-$\epsilon$.  Their sum is less than $117h/256$, proving
+$h/4$, $h/128$, $h/128$, and $3h/16$.  Their sum is
+$116h/256<117h/256$, proving
 \eqref{eq:pf-safe-gradient}.
 \end{proof}
 
@@ -3234,22 +3168,20 @@ Every $k\in\mathcal B_N$ gives a true decrease of at least
        +\lambda_kr_k^2\right),
 \]
 because the two corrected-value errors sum to at most
-$\omega_\epsilon/4$.  Every $k\in\mathcal I_N$ can increase the true
-value by at most $5\omega_\epsilon/4$.  Telescoping and using
+$\epsilon^3/4$.  Every $k\in\mathcal I_N$ can increase the true
+value by at most $5\epsilon^3/4$.  Telescoping and using
 $h_k\ge\epsilon$, $\sigma_k\le\bar\sigma$ give
 \begin{subequations}\label{eq:pf-boundary-budgets}
 \begin{align}
  |\mathcal B_N|
  &\le\frac{\bar\sigma\Delta_P}
           {\eta\epsilon^{3/2}}
- +\frac{5\bar\sigma\omega_\epsilon}
-       {4\eta\epsilon^{3/2}}|\mathcal I_N|,
+ +\frac{5\bar\sigma\epsilon^{3/2}}{4\eta}|\mathcal I_N|,
        \label{eq:pf-boundary-count}\\
  \sum_{k\in\mathcal B_N}\frac{\lambda_kr_k}{h_k}
  &\le\frac{4\bar\sigma\Delta_P}
           {\eta\epsilon^{3/2}}
- +\frac{5\bar\sigma\omega_\epsilon}
-       {\eta\epsilon^{3/2}}|\mathcal I_N|.
+ +\frac{5\bar\sigma\epsilon^{3/2}}{\eta}|\mathcal I_N|.
        \label{eq:pf-multiplier-budget}
 \end{align}
 \end{subequations}
@@ -3304,26 +3236,51 @@ $N=|\mathcal B_N|+|\mathcal I_N|$ by the right-hand side of
 \end{proof}
 
 \begin{proof}[Proof of \Cref{thm:pf-scar-utr}]
-Set $\bar\sigma:=2\sqrt{M_P/6}$.  Decrease the threshold in
-\Cref{lem:pf-asymptotic-oracle}, if
-necessary, so that
+Set
+\[
+ s:=\sqrt{M_P/6},
+ \qquad
+ \bar\sigma:=2s.
+\]
+Choose the class-uniform threshold no larger than
+$\epsilon_{\rm or}$ in \Cref{lem:pf-asymptotic-oracle} and so that
 \begin{equation}\label{eq:pf-small-epsilon-conditions}
 \begin{gathered}
- \epsilon\le\sqrt{M_P/6},\qquad
- \frac{5\bar\sigma\epsilon^2}
+ \epsilon\le s,\qquad
+ \frac{5\bar\sigma\epsilon^3}
  {4\eta\epsilon^{3/2}}
  \left(1+\frac4{\log2}\right)\le\frac12,\\
- \frac1{\sqrt{M_P/6}\sqrt\epsilon}
+ \frac1{s\sqrt\epsilon}
  \left(\frac{(1+\kappa)\rho}{2\mu^2}\epsilon^4\right)^2
- \le\frac34\epsilon^2,\\
+ \le\frac34\epsilon^3,\\
  \left(\frac1{128}-\eta\right)
  \frac{\epsilon^{3/2}}{\bar\sigma}
- \ge\frac54\epsilon^2.
+ \ge\frac54\epsilon^3.
 \end{gathered}
 \end{equation}
-Each condition holds for all sufficiently small $\epsilon$.  Starting from
-$\sigma=\epsilon$, a rejected trial doubles $\sigma$.  The first trial
-with $\sigma^2\ge M_P/6$ has $\sigma\le\bar\sigma$.
+For example, take
+\begin{equation}\label{eq:pf-class-uniform-onset}
+ \epsilon_0:=\frac12\min\left\{
+  \epsilon_{\rm or},s,
+  \left(
+   \frac{\eta}{5s(1+4/\log2)}
+  \right)^{2/3},
+  \left(
+   \frac{3s\mu^4}{(1+\kappa)^2\rho^2}
+  \right)^{2/9}
+ \right\}.
+\end{equation}
+For every $0<\epsilon\le\epsilon_0$, the term containing
+$\eta/[5s(1+4/\log2)]$ implies both the absorption and boundary-acceptance
+conditions in \eqref{eq:pf-small-epsilon-conditions}; the last term
+implies its interior-increase condition.  Thus this single choice,
+which depends only on $(\ell,\mu,\rho)$, ensures all the displayed
+requirements.
+
+Starting from
+$\sigma=\epsilon$, a rejected trial doubles $\sigma$.  Unless the
+algorithm has already returned at its stopping or zero-step test, the
+first nonzero trial with $\sigma\ge s$ has $\sigma\le\bar\sigma$.
 By \Cref{lem:pf-safe-trial}, its corrected-gradient test passes.  An
 interior trial can have a small true increase because of the remaining
 gradient error.  Minimizing the right-hand side of
@@ -3334,20 +3291,21 @@ most
  \left(\frac{(1+\kappa)\rho}{2\mu^2}\epsilon^4\right)^2
  =O(\epsilon^{15/2}).
 \]
-Here we used $h\ge\epsilon$ and the fixed positive safe scale.  This is
-at most $3\omega_\epsilon/4$ for sufficiently small $\epsilon$; after
+Here we used $h\ge\epsilon$ and $\sigma\ge s$.  This is
+at most $3\epsilon^3/4$ by
+\eqref{eq:pf-small-epsilon-conditions}; after
 adding the two value errors, the interior value test passes.  On a
 boundary trial,
 \eqref{eq:pf-safe-boundary-decrease} and the two value errors imply
 \[
  \widehat P-\widehat P^+
  \ge\frac{h^{3/2}}{128\sigma}
-     +\frac14\lambda r^2-\frac{\omega_\epsilon}{4}.
+     +\frac14\lambda r^2-\frac{\epsilon^3}{4}.
 \]
-Because $h\ge\epsilon$, $\sigma\le\bar\sigma$, and
-$\omega_\epsilon=\epsilon^2$, the right-hand side is at least
-$\eta(h^{3/2}/\sigma+\lambda r^2)+\omega_\epsilon$ for all sufficiently
-small $\epsilon$.  Hence a safe-scale trial either stops or is
+Because $h\ge\epsilon$ and $\sigma\le\bar\sigma$, the right-hand side
+is at least $\eta(h^{3/2}/\sigma+\lambda r^2)+\epsilon^3$ by
+\eqref{eq:pf-small-epsilon-conditions}.  Hence a safe-scale trial
+either stops or is
 accepted, and no generated scale exceeds $\bar\sigma$.
 
 The absorption condition in \Cref{lem:pf-accepted-accounting} follows
@@ -3372,12 +3330,22 @@ $\log_+(\|g_0\|/\epsilon)$ in place of the first logarithm in
 \eqref{eq:pf-outer-complexity}, because $Q\le K+U+1$; the extra unit
 accounts for a terminal solved subproblem with $d=0$.  At the initial
 tuple, \eqref{eq:pf-gradient-error} gives
-$\|g_0\|\le\|\nabla P(x_0)\|+\epsilon/256$.  After decreasing
-$\epsilon_0$ below a numerical constant, this proves
-\eqref{eq:pf-outer-complexity} as stated.
+$\|g_0\|\le\|\nabla P(x_0)\|+\epsilon/256$.  Hence replacing
+$\log_+(\|g_0\|/\epsilon)$ by
+$\log_+(\|\nabla P(x_0)\|/\epsilon)$ costs at most a universal
+additive constant, which proves \eqref{eq:pf-outer-complexity}.
 
-If the explicit stopping test returns, the oracle errors and
-$\sigma\le\bar\sigma$ give \eqref{eq:pf-return}.  If the robust
+If the explicit stopping test returns, then
+\eqref{eq:pf-gradient-error}, $\sigma\le2s$, and
+\eqref{eq:pf-hessian-error} give
+\[
+ \|\nabla P(x)\|\le\frac{257}{256}\epsilon,
+ \qquad
+ \lambda_{\min}(\nabla^2P(x))
+ \ge-\frac{145}{64}s\sqrt\epsilon
+ \ge-\sqrt{M_P\epsilon},
+\]
+where $145<64\sqrt6$.  If the robust
 subproblem returns $d=0$, global optimality of the differentiable
 quadratic model gives $g=0$, $h=\epsilon$, and
 \[
@@ -3385,8 +3353,15 @@ quadratic model gives $g=0$, $h=\epsilon$, and
    +\sigma\sqrt\epsilon I
  \succeq0.
 \]
-Together with \eqref{eq:pf-oracle-bounds}, this gives an even stronger
-version of \eqref{eq:pf-return}.  A constant rescaling of the internal
+Together with \eqref{eq:pf-oracle-bounds} and $\sigma\le2s$, this gives
+\[
+ \|\nabla P(x)\|\le\frac\epsilon{256},
+ \qquad
+ \lambda_{\min}(\nabla^2P(x))
+ \ge-\frac{131}{64}s\sqrt\epsilon
+ \ge-\sqrt{M_P\epsilon},
+\]
+where $131<64\sqrt6$.  A constant rescaling of the internal
 tolerance converts the first inequality in \eqref{eq:pf-return} to
 $\|\nabla P(\widehat x)\|\le\epsilon$.
 
@@ -3396,35 +3371,36 @@ leading outer dependence.
 \end{proof}
 
 \begin{proof}[Proof of \Cref{cor:pf-scar-inner-complexity}]
-The accepted-step proof gives a total interior increase of at most
-$5K\epsilon^2/4$.  By \eqref{eq:pf-accepted-bound}, the initial oracle
-bound $\|g_0\|\le\|\nabla P(x_0)\|+\epsilon/256$, and
-$\epsilon^2\log(1/\epsilon)\to0$, this quantity is at most one after
-decreasing $\epsilon_0$ again.  Hence every accepted outer point
-satisfies $P(x)-P^*\le\Delta_P+1$.  Since $\nabla P$ is
-$(1+\kappa)\ell$-Lipschitz, the standard descent inequality gives
-$\|\nabla P(x)\|^2\le2(1+\kappa)\ell(\Delta_P+1)$, and therefore
-$h\le G_0$.
+Every accepted boundary step decreases the true value, while every
+accepted interior step can increase it by at most $5\epsilon^3/4$.
+There are at most $Q$ accepted steps, so every accepted outer point
+satisfies
+\[
+ P(x)-P^*\le\Delta_P+\frac54Q\epsilon^3.
+\]
+Since $\nabla P$ is $(1+\kappa)\ell$-Lipschitz, the standard descent
+inequality and \eqref{eq:pf-gradient-error} give $h\le G_Q$.
 
 At a candidate point, the SCAR module is warm-started from an inner point with
 residual at most $\epsilon^2$.  The joint $\ell$-smoothness and the
 trust-region radius give the initial candidate residual bound
 \[
  \epsilon^2+\ell\|d\|
- \le\epsilon^2+\frac{\ell\sqrt{G_0}}{4\epsilon}.
+ \le\epsilon^2+\frac{\ell\sqrt{G_Q}}{4\epsilon}.
 \]
 Apply \Cref{cor:scar-inner} with target $\epsilon^2$ to every candidate
 call and separately to the initial call at $(x_0,y_{-1})$.  There is
-one candidate call per solved subproblem, so summation gives
+at most one candidate call per solved subproblem, so summation gives
 \eqref{eq:pf-inner-complexity}.
 \end{proof}
 
 \subsection{Adaptive fixed-radius SCAR trust region}
 
 \begin{proof}[Proof of \Cref{lem:scar-persistent-half}]
-The AR call used in the proof of
-\citet[Theorems~4.1 and~5.1]{lan2026optimal}, when called with the
-current guess $\nu$ and an admissible line-search estimate, uses at
+The AR estimate used in the proof of
+\citet[Theorem~5.1]{lan2026optimal}, which follows from their
+Theorem~4.1 and remains valid when $L=\mu$, states that a call with the
+current guess $\nu$ and an admissible line-search estimate uses at
 most
 \[
  4+C_1\sqrt{10L/\nu}
@@ -3470,7 +3446,8 @@ $c_0\ell R(\sigma)/2=c_0\ell R(2\sigma)$.
 \begin{proof}[Proof of \Cref{lem:fixed-radius-oracle-accuracy}]
 Because
 $c_0\kappa\sqrt\epsilon\,\mathcal A_\epsilon\to0$ as
-$\epsilon\downarrow0$, there is a problem-dependent threshold below
+$\epsilon\downarrow0$, there is a threshold depending only on
+$(\ell,\mu,\rho)$ below
 which \eqref{eq:working-distance-bound} and
 $\sigma\ge\mathcal A_\epsilon^{-1}$ imply
 $\|y-y^*(x)\|\le\mu/\rho$.  Substituting
@@ -3520,7 +3497,9 @@ $\epsilon\mathcal A_\epsilon\to0$ and
 $\sigma\ge\mathcal A_\epsilon^{-1}$, so
 the displayed Hessian error is at most
 $\sigma\sqrt\epsilon/32$ for all sufficiently small $\epsilon$.
-This proves \eqref{eq:validator-errors}.
+This proves \eqref{eq:validator-errors}.  All estimates used only the
+common constants $(\ell,\mu,\rho)$, so the thresholds are uniform over
+the stated class.
 \end{proof}
 
 \begin{proof}[Proof of \Cref{lem:adaptive-fixed-radius-safe}]
@@ -3631,15 +3610,18 @@ Set
 \end{equation}
 These quantities are positive because \Cref{ass:ncsc} assumes
 $\rho>0$.
-Decrease $\epsilon_0$ so that
+Choose $\epsilon_0\in(0,1)$ small enough that
 \Cref{lem:fixed-radius-oracle-accuracy,lem:adaptive-fixed-radius-safe}
 apply and
 \begin{equation}\label{eq:initial-scale-below-safe}
  \sigma_0=\mathcal A_\epsilon^{-1}<\sigma_*.
 \end{equation}
 The last condition is possible because
-$\mathcal A_\epsilon\to\infty$ as $\epsilon\downarrow0$ and the fixed
-problem has $M_P>0$.
+$\mathcal A_\epsilon\to\infty$ as $\epsilon\downarrow0$ and the
+common constants give $M_P>0$.  Every restriction imposed here and in
+the two cited lemmas depends only on $(\ell,\mu,\rho)$; hence the same
+$\epsilon_0$ works for every payoff in the class and every
+initialization.
 
 The scale is doubled only after a rejected boundary trial or a failed
 interior validation.  By \Cref{lem:adaptive-fixed-radius-safe}, once a
@@ -3826,6 +3808,188 @@ $R(\sigma_0)=\sqrt\epsilon\,\mathcal A_\epsilon/4$.  Substituting
 $\sqrt{\kappa M_P}=\Theta(\kappa^2\sqrt\rho)$ gives the equivalent
 leading dependence stated in the theorem.
 \end{proof}
+
+\section{Scope of the parameter-free guarantees}
+\label{app:parameter-free-scope}
+This section distinguishes the class-uniform asymptotic guarantees
+from a residual-only certificate that would be uniform without a
+positive common strong-concavity lower bound.  It also clarifies the
+additional bookkeeping used by the fixed-radius construction.
+
+\subsection{The residual-only obstruction}
+\label{app:scar-limitation}
+
+A parameter-free inner method such as SCAR can return a point satisfying
+the prescribed and directly verifiable condition
+$\|\nabla_yf(x,y)\|\le\tau$.  This fact alone does not provide a
+certificate for the value or gradient of
+$P(x)=\max_y f(x,y)$ that is uniform over problem classes having no
+positive common lower bound on the strong-concavity modulus.  The issue
+is not merely a loss in the complexity bound: an outer stopping test
+based only on a residual-corrected oracle can be false.
+
+The following scalar family shows that this difficulty persists even
+for the corrected value \eqref{eq:corrected-value-pf}.  Let
+\[
+ c:=\frac12,
+ \qquad
+ \psi(t):=\frac{t^2}{2}+c(1-\cos t),
+ \qquad
+ A:=\frac{1-c}{2\pi^2},
+\]
+and, for $0<\mu\le1/4$, define
+\begin{equation}\label{eq:scar-counterexample}
+ f_\mu(x,y):=A\tanh(x/A)
+       \bigl(1-\cos(2\pi\sqrt\mu\,y)\bigr)
+       -\psi(2\sqrt\mu\,y-1).
+\end{equation}
+Because $1-c\le\psi''(t)\le1+c$,
+\[
+ \partial_{yy}^2 f_\mu(x,y)
+ =4A\pi^2\mu\tanh(x/A)\cos(2\pi\sqrt\mu\,y)
+   -4\mu\psi''(2\sqrt\mu\,y-1)
+ \le-2(1-c)\mu=-\mu.
+\]
+Thus $f_\mu(x,\cdot)$ is globally $\mu$-strongly concave.  Its
+second derivatives are uniformly bounded for $0<\mu\le1/4$.  Its third
+derivatives are also uniformly bounded: the four distinct block types
+have bounds $12/A^2$, $2\pi/A$, $\pi^2$, and $A\pi^3+c$,
+respectively.  Hence the joint gradient-smoothness and
+Hessian-Lipschitz constants admit finite upper bounds independent of
+$\mu$.  Moreover,
+\[
+ P_\mu(x)\ge f_\mu\left(x,\frac1{2\sqrt\mu}\right)
+ =2A\tanh(x/A)\ge-2A,
+\]
+so the value function is bounded below.
+At $x=0$ and $y=1/(2\sqrt\mu)$,
+$-\partial_{yy}^2f_\mu(x,y)=4\mu\psi''(0)=6\mu$.
+Consequently, the largest valid global strong-concavity modulus lies
+between $\mu$ and $6\mu$ and genuinely tends to zero along the family.
+
+At $x=0$, the exact maximizer is
+$y_\mu^*(0)=1/(2\sqrt\mu)$.  At the point $y=0$, however,
+\[
+ |\partial_yf_\mu(0,0)|
+ =2\sqrt\mu\,|\psi'(-1)|
+ =(2+\sin 1)\sqrt\mu\longrightarrow0,
+ \qquad
+ \widehat g_\mu(0,0)=0,
+ \qquad
+ \widehat H_\mu(0,0)=0.
+\]
+In contrast, Danskin's theorem gives
+\[
+ P_\mu'(0)
+ =\partial_xf_\mu\left(0,\frac1{2\sqrt\mu}\right)
+ =1-\cos\pi=2.
+\]
+The corrected value is wrong by a fixed amount as well.  Namely,
+$P_\mu(0)=0$, whereas
+\begin{equation}\label{eq:scar-counterexample-value}
+ \widehat P_\mu(0,0)
+ =-\psi(-1)+\frac{\psi'(-1)^2}{2\psi''(-1)}
+ \approx0.0647,
+\end{equation}
+independently of $\mu$.  Therefore a residual tending to zero does not
+uniformly control either the corrected value or the corrected gradient
+over the union of these parameter classes.  The smoothness constants
+remain bounded while the best strong-concavity modulus tends to zero.
+
+Consequently, choosing SCAR as a residual module removes the inner
+solver's dependence on $\ell$ and $\mu$, but the residual alone does
+not yield a single certificate valid across all positive
+strong-concavity moduli.  Nor does a prescribed finite sequence of
+positive tolerances repair the issue.  For any finite list
+$\tau_0,\ldots,\tau_J>0$, choose
+\[
+ 0<\mu<\min\left\{\frac14,
+  \left(\frac{\min_j\tau_j}{2+\sin 1}\right)^2\right\}
+\]
+and repeat each inner call at the outer point $x=0$, initialized at
+$y=0$.  Every residual test is then already satisfied and may return
+the same false outer derivatives.
+This observation covers any predetermined finite number of
+tolerance-halving phases.  It does not claim that indefinite
+refinement cannot eventually move the inner iterate; it shows that a
+finite prescribed refinement depth is not a certificate.
+
+There is no contradiction with the class-uniform result in
+\Cref{thm:pf-scar-utr}.  Once a positive common value of $\mu$ is
+fixed, the condition
+\[
+ \epsilon^2<(2+\sin 1)\sqrt\mu
+\]
+excludes $y=0$ as a legal return of an inner call with residual
+tolerance $\epsilon^2$.  More generally, every legal return satisfies
+\[
+ \|y-y_\mu^*(x)\|\le\frac{\epsilon^2}{\mu}.
+\]
+Thus one threshold may be chosen uniformly after the common constants
+$(\ell,\mu,\rho)$ have been fixed.  What fails is a threshold uniform
+over their union as the common lower bound $\mu$ tends to zero.
+
+SCAR also does not return a certified lower bound on $\mu$, a certified
+inner optimality gap, or an interval containing $P(x)$.  Its returned
+smoothness quantity is a line-search estimate satisfying the tested
+local inequalities, not a certified global upper bound on $\ell$.
+Likewise, a successful residual reduction does not certify that the
+current strong-convexity guess is below the true $\mu$.  A fully
+observable finite-accuracy adaptive minimax certificate therefore
+needs additional
+information, such as a certified lower bound on $\mu$, a certified
+inner-gap bound, genuine intervals containing $P$, $\nabla P$, and
+$\nabla^2P$, compactness plus a dual-gap certificate, or additional
+problem structure.  \Cref{thm:pf-scar-utr} instead gives an unknown
+class-uniform threshold $\epsilon_0(\ell,\mu,\rho)$; it makes neither
+a claim uniform as $\mu\downarrow0$ nor an a posteriori claim that the
+algorithm can recognize entry into this regime.
+
+\subsection{Additional qualifications for the fixed-radius method}
+\label{app:fixed-radius-scope}
+
+The class-uniform quantifier in
+\Cref{thm:adaptive-fixed-radius-scar} has the same nonobservability
+caveat: the algorithm uses no unknown problem parameter, but it cannot
+observe whether $\epsilon\le\epsilon_0(\ell,\mu,\rho)$.  The proof uses
+the positive common lower bound on $\mu$ to convert working and
+validation residuals into distances and corrected-oracle errors.
+
+The counterexample in \Cref{app:scar-limitation} concerns prescribed
+absolute residual tolerances.  It does not, by itself, rule out a
+threshold uniform over $\mu\downarrow0$ for the present fixed-radius
+construction, whose working and validation targets are scaled by
+observable secants.  Accordingly, \Cref{thm:adaptive-fixed-radius-scar}
+asserts uniformity only after $(\ell,\mu,\rho)$ have been fixed and
+makes no claim either way about a stronger union-uniform theorem.
+
+The fixed-radius construction handles the function-value difficulty
+in a specific, nonstandard way.  It never asserts that
+$\widehat P$ is a lower or an upper bound on $P$.  Unsafe accepted
+boundary steps need not decrease the true value function.  Instead,
+the proof telescopes the stored corrected proxy and explicitly pays
+for every proxy jump caused by a scale refresh; see
+\eqref{eq:proxy-refresh-jump}--\eqref{eq:fixed-radius-proxy-telescope}.
+This argument relies on three implementation details: the scale is
+nondecreasing, an accepted candidate inner point and corrected value
+are retained without further inner refinement, and a rejected candidate
+is discarded before the current tuple is refreshed.  Without these
+bookkeeping rules, the displayed telescoping argument no longer
+applies without additional error accounting.
+
+The high-accuracy validator is invoked only after an interior
+fixed-radius solution.  Its auxiliary residual
+$c_0a_x\epsilon^{3/2}$ controls inner accuracy only; it is not used as
+the trust-region scale or as the Hessian stopping threshold.  Under
+the theorem's class-uniform small-$\epsilon$ hypotheses, the validator
+rules out false termination, but it does not reveal whether those
+hypotheses hold.  A doubling trick in $\epsilon$ does not by itself
+identify the unknown onset of this asymptotic regime.  The present
+analysis therefore does not furnish an observable all-$\epsilon$
+certificate.  Establishing one would require a new certificate or
+argument, for example a certified lower bound on $\mu$, a certified
+inner-gap or value-function interval, compactness with a computable dual
+gap, or other problem-specific structure.
 
 \bibliographystyle{unsrtnat}
 \bibliography{ref}
