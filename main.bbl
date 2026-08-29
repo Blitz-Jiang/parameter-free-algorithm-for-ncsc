@@ -1,4 +1,4 @@
-\begin{thebibliography}{2}
+\begin{thebibliography}{10}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -7,16 +7,57 @@
 
 \bibitem[Jiang et~al.(2026)Jiang, He, Zhang, Ge, Jiang, and Ye]{jiang2026utr}
 Yuntian Jiang, Chang He, Chuwen Zhang, Dongdong Ge, Bo~Jiang, and Yinyu Ye.
-\newblock Beyond nonconvexity: A universal trust-region method with new
-  analyses.
+\newblock Beyond nonconvexity: A universal trust-region method with new analyses.
 \newblock \emph{Journal of Scientific Computing}, 2026.
 \newblock arXiv:2311.11489.
 
+\bibitem[Hamad and Hinder(2022)]{hamad2022consistently}
+Fadi Hamad and Oliver Hinder.
+\newblock A consistently adaptive trust-region method.
+\newblock \emph{Advances in Neural Information Processing Systems}, 35:\penalty0 6640--6653, 2022.
+
+\bibitem[Fang et~al.(2026)Fang, Marumo, and Takeda]{fang2026parameter}
+Shaoying Fang, Naoki Marumo, and Akiko Takeda.
+\newblock Parameter-free cubic-regularized newton method: Sharp complexity and generalized smoothness.
+\newblock \emph{arXiv preprint arXiv:2607.10741}, 2026.
+
+\bibitem[Luo et~al.(2022)Luo, Li, and Chen]{luo2022finding}
+Luo Luo, Yujun Li, and Cheng Chen.
+\newblock Finding second-order stationary points in nonconvex-strongly-concave minimax optimization.
+\newblock In \emph{Advances in Neural Information Processing Systems}, volume~35, pages 36667--36679, 2022.
+
+\bibitem[Wang and Xu(2025)]{wang2025gradient}
+Junlin Wang and Zi~Xu.
+\newblock Gradient norm regularization second-order algorithms for solving nonconvex-strongly concave minimax problems.
+\newblock \emph{Journal of Scientific Computing}, 105\penalty0 (2):\penalty0 41, 2025.
+\newblock \doi{10.1007/s10915-025-03069-8}.
+
+\bibitem[Nesterov(2004)]{nesterov2004introductory}
+Yurii Nesterov.
+\newblock \emph{Introductory Lectures on Convex Optimization: A Basic Course}, volume~87 of \emph{Applied Optimization}.
+\newblock Kluwer Academic Publishers, Boston, 2004.
+\newblock \doi{10.1007/978-1-4419-8853-9}.
+
+\bibitem[Luenberger and Ye(2021)]{luenberger2021linear}
+David~G. Luenberger and Yinyu Ye.
+\newblock \emph{Linear and Nonlinear Programming}.
+\newblock Springer, Cham, 5 edition, 2021.
+\newblock \doi{10.1007/978-3-030-85450-8}.
+
 \bibitem[Cartis et~al.(2011)Cartis, Gould, and Toint]{cartis2011adaptive2}
 Coralia Cartis, Nicholas I.~M. Gould, and Philippe~L. Toint.
-\newblock Adaptive cubic regularisation methods for unconstrained optimization.
-  part ii: Worst-case function- and derivative-evaluation complexity.
-\newblock \emph{Mathematical Programming}, 130\penalty0 (2):\penalty0 295--319,
-  2011.
+\newblock Adaptive cubic regularisation methods for unconstrained optimization. part ii: Worst-case function- and derivative-evaluation complexity.
+\newblock \emph{Mathematical Programming}, 130\penalty0 (2):\penalty0 295--319, 2011.
+
+\bibitem[Lan et~al.(2026)Lan, Ouyang, and Zhang]{lan2026optimal}
+Guanghui Lan, Yuyuan Ouyang, and Zhe Zhang.
+\newblock Optimal and parameter-free gradient minimization methods for convex and nonconvex optimization.
+\newblock \emph{Mathematical Programming}, 2026.
+\newblock \doi{10.1007/s10107-026-02352-2}.
+
+\bibitem[Wang and Li(2020)]{wang2020improved}
+Yuanhao Wang and Jian Li.
+\newblock Improved algorithms for convex-concave minimax optimization.
+\newblock In \emph{Advances in Neural Information Processing Systems}, volume~33, pages 4800--4810, 2020.
 
 \end{thebibliography}

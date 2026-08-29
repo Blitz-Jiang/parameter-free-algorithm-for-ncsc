@@ -1,7 +1,8 @@
 \documentclass{article}
 \input{header}
 
-\title{An Adaptive Universal Trust-Region Method\\with Additive Search Overhead}
+\title{Additive Universal Trust-Region Methods\\
+for Unconstrained and NC--SC Minimax Optimization}
 \author{}
 \date{}
 
@@ -9,487 +10,2675 @@
 \maketitle
 
 \begin{abstract}
-We first give a refined analysis of the simple universal trust-region method that removes its multiplicative logarithmic factor.  We then present an adaptive variant for finding approximate second-order stationary points without knowing the Lipschitz constant of the Hessian.  The method uses a gradient-clipped regularization scale and a multiplier-aware acceptance test.  A logarithmic potential controls gradient-contraction steps, while a persistent regularization parameter amortizes rejected trials.  If the Hessian is $M$-Lipschitz continuous and $\rho_0\le c\sqrt M$ for a constant $c>0$, the adaptive method returns a point $\widehat x$ satisfying
+We give three analyses of additive universal trust-region (UTR)
+methods.  First, for unconstrained nonconvex optimization, we develop
+a certified-inexact adaptive clipped UTR whose outer scale update does
+not use a Hessian-Lipschitz constant.  The inexact theorem is stated
+under explicit certificate conditions, whereas its exact-oracle
+specialization is fully parameter free and has trial scale
+$\bar\sigma=\max\{\sigma_0,\gamma_+\sqrt{M/6}\}$; when
+$\sigma_0=O(\sqrt M)$, the total number of trust-region subproblems is
 \[
-    \|\nabla f(\widehat x)\|\le \epsilon,
-    \qquad
-    \lambda_{\min}(\nabla^2 f(\widehat x))
-    \ge -O(\sqrt{M\epsilon})
+ O\!\left(\Delta_F\sqrt M\,\epsilon^{-3/2}
+ +\log_+\!\frac{\|\nabla F(x_0)\|}{\epsilon}
+ +\log_+\!\frac{\sqrt M}{\sigma_0}+1\right).
 \]
-using
+Thus all nonconstant search overhead is additive, and the leading term
+has the optimal dependence on the initial gap, Hessian smoothness, and
+tolerance.  A fixed-scale inexact UTR estimate is developed only as a
+technical outer interface and supplies, in addition, the cubic-path
+budget needed below.
+
+Second, for nonconvex--strongly-concave minimax optimization, we
+separate the outer method from a residual-based inner maximization
+module.  Any module returning the prescribed inner residual yields
 \[
-    O\!\left(
-        \sqrt M\,(f(x_0)-f^*)\epsilon^{-3/2}
-        +\logp{\|\nabla f(x_0)\|/\epsilon}
-        +\logp{\sqrt M/\rho_0}
-    \right)
+ O\!\left(\Delta_P\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2}
+ +\log_+\!\frac{\|\nabla P(x_0)\|}{\epsilon}+1\right)
 \]
-trial steps.  Both logarithmic terms are additive.
+outer iterations and corrected second-order oracle constructions.  If
+the module has an accelerated $\sqrt\kappa$ residual-reduction bound,
+the leading inner-gradient complexity is
+\[
+ O\!\left((1+\log\kappa)\Delta_P\kappa^2\sqrt\rho\,
+ \epsilon^{-3/2}\right).
+\]
+A Newton-corrected value-function gradient makes the inner error
+quadratic; relative to the explicit raw-gradient analysis of Luo et
+al., this removes the leading multiplicative $\log(1/\epsilon)$.
+
+Third, we instantiate the same residual interface with the
+parameter-free SCAR solver and give two fully observable outer
+constructions.  An over-accurate adaptive SCAR--UTR retains the sharp
+outer rate but restores a leading inner $\log(1/\epsilon)$.  An
+adaptive fixed-radius variant with persistent SCAR instead has leading
+outer and inner complexities
+\[
+ O(\Delta_P\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2}),
+ \qquad
+ O(\Delta_P\kappa^2\sqrt\rho\,\epsilon^{-3/2}),
+\]
+respectively, with only additive pointwise lower-order terms.  The two
+parameter-free guarantees are pointwise asymptotic: for each fixed
+problem and initialization they hold below an unknown threshold.
 \end{abstract}
 
-\section{Problem and assumptions}
+\section{Introduction}
 
-We consider
-\begin{equation}\label{eq:problem}
-    \min_{x\in\R^n} f(x),
+We first consider smooth unconstrained optimization
+$\min_x F(x)$.  Approximate first-order stationarity does not exclude
+strict saddle points, so the target also controls the smallest Hessian
+eigenvalue.  Additive universal trust-region (UTR) models obtain the
+standard $\epsilon^{-3/2}$ second-order scale using a quadratic
+subproblem whose regularization and radius depend on the gradient
+\citep{jiang2026utr}.
+
+Our first contribution is a certified-inexact adaptive UTR that
+replaces the unknown scale $\sqrt{M/6}$ in the outer update by a
+persistent trial value.
+A multiplier-aware acceptance test controls both a certified objective
+proxy and gradient growth, while the persistent update amortizes
+rejected trials.  Its exact-oracle specialization has sharp leading
+dependence on the initial objective gap, Hessian-Lipschitz constant,
+and target tolerance, with only additive search overhead.
+This is the consistently adaptive behavior emphasized in
+\citet{hamad2022consistently} and, for cubic regularization,
+\citet{fang2026parameter}.  We also prove a fixed-scale inexact UTR
+estimate used only as an outer estimate: uniform
+gradient error can make a small interior step increase the objective,
+and the proof charges that increase to boundary decrease.
+
+After completing both unconstrained analyses, we consider the
+nonconvex--strongly-concave value function
+$P(x)=\max_y f(x,y)$.  Luo, Li, and Chen apply an inexact
+cubic-regularized Newton method to this problem
+\citep{luo2022finding}.  Write $\kappa=\ell/\mu$, let $\rho$ be the
+Hessian-Lipschitz constant of $f$, and set
+$\Delta_P=P(x_0)-\inf_xP(x)$.  Their outer complexity is
+\[
+ O\!\left(
+  \Delta_P\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2}
+ \right),
+\]
+and their stated gradient complexity is
+$\widetilde O(\Delta_P\kappa^2\sqrt\rho\,\epsilon^{-3/2})$.
+In the small-$\epsilon$ branch of their explicit worst-case bound, the
+raw estimator $\nabla_x f(x,y)$ enforces an $O(\epsilon/\ell)$ inner
+distance and produces a leading $\log(1/\epsilon)$.
+
+The minimax specialization here instead uses a Newton-corrected
+value-function gradient.  Its inner error is quadratic, so an
+accelerated inner module only needs a distance of order
+$\sqrt\epsilon$.  Our three contributions can be summarized as
+follows.
+
+\begin{enumerate}[label=(\roman*)]
+ \item For unconstrained optimization, the certified-inexact adaptive
+ UTR admits value, gradient, and Hessian certificates and can therefore
+ be instantiated for the minimax value function whenever such
+ certificates are supplied.  As an exact-oracle by-product, the method
+ does not use $M$ and, whenever
+ $\sigma_0=O(\sqrt M)$, solves at most
+ \[
+ O\!\left(\Delta_F\sqrt M\,\epsilon^{-3/2}
+ +\log_+\!\frac{\|\nabla F(x_0)\|}{\epsilon}
+ +\log_+\!\frac{\sqrt M}{\sigma_0}+1\right)
+ \]
+ trial subproblems.  Its returned point is an
+ $O(\epsilon,\sqrt{M\epsilon})$-SOSP, and no logarithm multiplies the
+ leading term, in the consistently adaptive sense emphasized by
+ \citet{hamad2022consistently,fang2026parameter}.
+
+ \item Gradient-norm regularized trust-region models have already
+ been considered for NC--SC minimax problems by
+ \citet{wang2025gradient}, while \citet{luo2022finding} analyzes a
+ cubic-regularized method.  Our contribution is an inexact-oracle
+ reduction based on a Newton-corrected envelope gradient and a modular
+ inner residual interface.  It gives
+ \[
+ O\!\left(\Delta_P\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2}
+ +\log_+\!\frac{\|\nabla P(x_0)\|}{\epsilon}+1\right)
+ \]
+ corrected second-order oracle constructions and, for an accelerated
+ inner module, leading inner-gradient complexity
+ \[
+ O\!\left((1+\log\kappa)\Delta_P\kappa^2\sqrt\rho\,
+ \epsilon^{-3/2}\right).
+ \]
+ At the level of the proved worst-case bounds, this improves the raw
+ plug-in-gradient analysis of \citet{luo2022finding} by one leading
+ factor $\log(1/\epsilon)$.
+
+ \item We combine the same residual interface with SCAR to remove all
+ problem parameters from the executable minimax algorithms.  The
+ over-accurate adaptive SCAR--UTR has sharp leading second-order
+ complexity but pays a leading inner $\log(1/\epsilon)$.  The
+ fixed-radius persistent-SCAR variant removes that logarithm and has
+ leading outer and inner bounds
+ \[
+ O(\Delta_P\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2}),
+ \qquad
+ O(\Delta_P\kappa^2\sqrt\rho\,\epsilon^{-3/2}).
+ \]
+ These parameter-free results are pointwise asymptotic rather than
+ uniform finite-accuracy certificates; the precise quantifier and its
+ limitation are stated explicitly in the corresponding theorems.
+\end{enumerate}
+
+\paragraph{Organization.}
+\Cref{sec:preliminaries} introduces the unconstrained problem.
+\Cref{sec:generic-utr} records the fixed-scale inexact estimates used
+later in the minimax proof, and
+\Cref{sec:adaptive-utr} gives a certified-inexact adaptive method and
+its complete trial complexity.  \Cref{sec:ncsc} then introduces the
+minimax setting, the residual-based inner module, and the corrected
+oracle reduction.  \Cref{sec:pf-scar-utr,sec:pf-fixed-radius} give the
+two parameter-free SCAR implementations.
+
+\section{Unconstrained problem and preliminaries}
+\label{sec:preliminaries}
+
+We first consider
+\begin{equation}\label{eq:generic-problem}
+ \min_{x\in\R^n}F(x),
 \end{equation}
-where $f$ is twice continuously differentiable and bounded below by
-$f^*>-\infty$.  The construction follows the gradient-scaled
-trust-region framework of \citet{jiang2026utr}.
+where $F^*:=\inf_xF(x)>-\infty$ and
+$\Delta_F:=F(x_0)-F^*$.
 
-\begin{assumption}\label{ass:hessian-lipschitz}
-There exists $M>0$ such that
+\begin{assumption}[Hessian regularity]\label{ass:generic}
+The function $F$ is twice continuously differentiable and, for some
+$M>0$,
 \begin{equation}\label{eq:hessian-lipschitz}
-    \|\nabla^2 f(x)-\nabla^2 f(y)\|
-    \le M\|x-y\|
-    \qquad \forall x,y\in\R^n.
+ \|\nabla^2F(x)-\nabla^2F(z)\|
+ \le M\|x-z\|
+ \qquad\forall x,z\in\R^n.
 \end{equation}
 \end{assumption}
 
-Under \Cref{ass:hessian-lipschitz}, for all $x,d\in\R^n$,
-\begin{subequations}\label{eq:taylor}
-\begin{align}
-    \|\nabla f(x+d)-\nabla f(x)-\nabla^2 f(x)d\|
-    &\le \frac{M}{2}\|d\|^2, \label{eq:taylor-gradient}\\
-    f(x+d)-f(x)-\nabla f(x)^Td-
-    \frac12 d^T\nabla^2 f(x)d
-    &\le \frac{M}{6}\|d\|^3. \label{eq:taylor-function}
-\end{align}
-\end{subequations}
+\subsection{Notation and approximate stationarity}
 
-For a prescribed $\epsilon>0$, the target conditions are
-\begin{equation}\label{eq:sosp-target}
-    \|\nabla f(x)\|\le\epsilon,
-    \qquad
-    \lambda_{\min}(\nabla^2 f(x))
-    \ge -O(\sqrt{M\epsilon}).
+The norm $\|\cdot\|$ is Euclidean for vectors and spectral for matrices.
+For a symmetric matrix $H$, $\lambda_{\min}(H)$ denotes its smallest
+eigenvalue.  We write
+$\log_+(t)=\max\{\log t,0\}$ for $t>0$ and set $\log_+(0)=0$.
+We also write $\mathbb N_0:=\{0,1,2,\ldots\}$.
+The notation $\widetilde O(\cdot)$ suppresses logarithmic factors.
+
+\begin{definition}[Approximate stationary points]\label{def:stationarity}
+For a twice differentiable function $F$ and tolerances
+$\epsilon,\epsilon_g,\epsilon_H>0$, a point $x$ is an
+$\epsilon$-first-order stationary point if
+$\|\nabla F(x)\|\le\epsilon$.  It is an
+$(\epsilon_g,\epsilon_H)$-second-order stationary point if
+\[
+ \|\nabla F(x)\|\le\epsilon_g,
+ \qquad
+ \lambda_{\min}(\nabla^2F(x))\ge-\epsilon_H.
+\]
+Our generic target is an
+$(\epsilon,\sqrt{M\epsilon})$-second-order stationary point when
+$\nabla^2F$ is $M$-Lipschitz.
+\end{definition}
+
+We repeatedly use the following standard consequences of Hessian
+Lipschitz continuity.
+
+\begin{lemma}[Second-order Taylor bounds]\label{lem:taylor-bounds}
+If $\nabla^2F$ is $M$-Lipschitz, then, for all $x,d$,
+\begin{subequations}\label{eq:taylor-bounds}
+\begin{equation}\label{eq:gradient-taylor}
+ \bigl\|\nabla F(x+d)-\nabla F(x)-\nabla^2F(x)d\bigr\|
+ \le \frac M2\|d\|^2.
 \end{equation}
-For $t>0$, we use $\log_+(t):=\max\{\log t,0\}$.
-Let $\N_0:=\{0,1,2,\ldots\}$ and
-$\Delta_f:=f(x_0)-f^*$.
+\begin{equation}\label{eq:function-taylor}
+ F(x+d)\le{}F(x)+\nabla F(x)^Td
+ +\frac12d^T\nabla^2F(x)d+\frac M6\|d\|^3.
+\end{equation}
+\end{subequations}
+These estimates are standard; see
+\citet[Lemma~1.2.4]{nesterov2004introductory}.
+\end{lemma}
 
-\section{A refined count for the simple UTR method}
+\begin{lemma}[Global optimality for a quadratic trust-region problem]
+\label{lem:tr-global-optimality}
+Let $g\in\R^n$, let $B\in\R^{n\times n}$ be symmetric, and let
+$R>0$.  A vector $d$ is a global solution of
+\[
+ \min_{\|u\|\le R}\;g^Tu+\frac12u^TBu
+\]
+if and only if there is a multiplier $\lambda\ge0$ such that
+\begin{equation}\label{eq:tr-global-optimality}
+ (B+\lambda I)d=-g,\qquad
+ B+\lambda I\succeq0,\qquad
+ \|d\|\le R,\qquad
+ \lambda(\|d\|-R)=0.
+\end{equation}
+In particular, $\lambda>0$ implies $\|d\|=R$.
+\end{lemma}
 
-Assume in this section that $M$ is known.  Let
-$a_k:=\|\nabla f(x_k)\|$.  The simple strategy of
-\citet{jiang2026utr} computes a global solution of
-\begin{equation}\label{eq:simple-subproblem}
+This characterization is classical; see, for example,
+\citet[Section~8.7]{luenberger2021linear}.  All trust-region
+subproblems below are solved globally, so
+\Cref{lem:tr-global-optimality} applies throughout.
+
+
+\section{Fixed-scale inexact UTR estimates}
+\label{sec:generic-utr}
+This section isolates the fixed-scale estimates used later in the
+minimax reduction.  These estimates analyze repeated, globally solved
+additive UTR subproblems; they are not presented as a separate
+algorithmic contribution.  All technical proofs are deferred to
+\Cref{app:fixed-scale-proofs}.
+
+\begin{assumption}[Uniform derivative accuracy]
+\label{ass:inexact-oracle}
+Fix a target tolerance $\epsilon>0$.  At every iterate, the inexact
+oracle returns
+$g_k\in\R^n$ and a symmetric $H_k\in\R^{n\times n}$ satisfying
+\begin{equation}\label{eq:generic-oracle-errors}
+  \|g_k-\nabla F(x_k)\|\le\frac{\epsilon}{256},
+  \qquad
+  \|H_k-\nabla^2F(x_k)\|
+  \le\frac1{64}\sqrt{\frac M6}\sqrt\epsilon.
+\end{equation}
+\end{assumption}
+Set
+\begin{equation}\label{eq:generic-scale}
+  h_k:=\max\{\|g_k\|,\epsilon\}.
+\end{equation}
+At iterate $x_k$, terminate if
+\begin{equation}\label{eq:generic-stopping-test}
+ \|g_k\|\le\epsilon,
+ \qquad
+ \lambda_{\min}(H_k)\ge-\sqrt{\frac M6}\sqrt\epsilon.
+\end{equation}
+Otherwise, compute a global solution $d_k$ of
+\begin{equation}\label{eq:generic-subproblem}
 \begin{aligned}
-    \min_{d\in\R^n}\quad
-    &\nabla f(x_k)^Td+
-      \frac12d^T\left(
-          \nabla^2f(x_k)+\frac{\sqrt M}{3}\sqrt{a_k}I
-      \right)d,\\
-    \operatorname{s.t.}\quad
-    &\|d\|\le\frac{\sqrt{a_k}}{3\sqrt M}.
+  \min_{d\in\R^n}\quad
+  &g_k^Td+\frac12d^T\left(H_k+\sqrt{\frac M6}\sqrt{h_k}I\right)d,\\
+  \operatorname{s.t.}\quad
+  &\|d\|\le\frac{\sqrt{h_k}}{4\sqrt{M/6}},
 \end{aligned}
 \end{equation}
-Let $\lambda_k$ be the trust-region multiplier.  With the convention
-$\inf\varnothing=\infty$, define
-\begin{equation}\label{eq:simple-stopping-time}
-    T_\epsilon
-    :=\inf\{t\in\N_0:a_t\le\epsilon\}
-    \in\N_0\cup\{\infty\}.
-\end{equation}
+and set $x_{k+1}=x_k+d_k$.  This is the additive UTR subproblem of
+\citet{jiang2026utr}, evaluated with the derivative estimates
+$(g_k,H_k)$; the trust-region subproblem itself is solved exactly.
 
-\begin{theorem}[Refined simple-UTR complexity]\label{thm:simple-refined}
-Under \Cref{ass:hessian-lipschitz}, the method
-\eqref{eq:simple-subproblem} has $T_\epsilon<\infty$ and satisfies
-\begin{equation}\label{eq:simple-refined-bound}
-    T_\epsilon
-    \le
-    \left(81+\frac{6}{\log6}\right)
-       \sqrt M\,(f(x_0)-f^*)\epsilon^{-3/2}
-    +\frac{\logp{a_0/\epsilon}}{\log6}+1.
+\subsection{Complexity estimates}
+
+The one-step descent, clipped-gradient recurrence, and finite-prefix
+counting estimates are stated and proved in
+\Cref{app:fixed-scale-proofs}.  Their two consequences needed in the
+minimax analysis are recorded next.
+
+\begin{theorem}[Fixed-scale inexact UTR estimate]
+\label{thm:generic-complexity}
+Fix $\epsilon>0$.  Suppose $F^*>-\infty$ and
+\Cref{ass:generic,ass:inexact-oracle} hold.  Starting from $x_0$,
+repeatedly apply the stopping rule
+\eqref{eq:generic-stopping-test} and the globally solved subproblem
+\eqref{eq:generic-subproblem}.  This procedure terminates after
+\begin{equation}\label{eq:generic-complexity}
+  O\!\left(
+    \Delta_F\sqrt M\,\epsilon^{-3/2}
+    +\log_+\!\frac{h_0}{\epsilon}+1
+  \right)
 \end{equation}
+iterations and trust-region subproblem solves.  Its output $\widehat x$
+satisfies
+\begin{equation}\label{eq:generic-return}
+  \|\nabla F(\widehat x)\|\le\frac{257}{256}\epsilon,
+  \qquad
+  \lambda_{\min}(\nabla^2F(\widehat x))
+  \ge-\sqrt{M\epsilon}.
+\end{equation}
+Replacing the internal tolerance by $256\epsilon/257$ gives the
+standard $(\epsilon,\sqrt{M\epsilon})$ guarantee without changing any
+complexity order.
 \end{theorem}
 
-\begin{proof}
-Write $g_k=\nabla f(x_k)$ and $H_k=\nabla^2f(x_k)$.  We first derive the
-two estimates used below.
-This is the specialization of the function-decrease and gradient-norm
-estimates in \citet{jiang2026utr}; the details are included here to make
-the argument self-contained.  Set
-\[
-    \sigma:=\frac{\sqrt M}{3},
-    \qquad
-    R_k:=\frac{\sqrt{a_k}}{3\sqrt M}.
-\]
-If $a_k=0$, the trust-region constraint forces $d_k=0$, and all the
-estimates below are immediate.  Hence consider an iteration with
-$a_k>0$.
-For a global solution $d_k$ of \eqref{eq:simple-subproblem}, the
-trust-region optimality conditions give a multiplier $\lambda_k\ge0$
-such that
-\begin{gather*}
-    \|d_k\|\le R_k,
-    \qquad
-    \lambda_k(\|d_k\|-R_k)=0,\\
-    (H_k+\sigma\sqrt{a_k}I+\lambda_k I)d_k=-g_k,
-    \qquad
-    H_k+\sigma\sqrt{a_k}I+\lambda_k I\succeq0.
-\end{gather*}
-Consequently, \eqref{eq:taylor-function}, stationarity, and positive
-semidefiniteness imply
-\begin{align}
-    f(x_{k+1})-f(x_k)
-    &\le g_k^Td_k+\frac12d_k^TH_kd_k
-       +\frac{M}{6}\|d_k\|^3 \notag\\
-    &=-\frac12d_k^T
-       (H_k+\sigma\sqrt{a_k}I+\lambda_k I)d_k
-       -\frac12(\sigma\sqrt{a_k}+\lambda_k)\|d_k\|^2
-       +\frac{M}{6}\|d_k\|^3 \notag\\
-    &\le-\left(
-       \frac{\sqrt{Ma_k}}{6}-\frac{M}{6}\|d_k\|
-       \right)\|d_k\|^2
-       -\frac{\lambda_k}{2}\|d_k\|^2.       \label{eq:simple-decrease-master}
-\end{align}
-Using $\|d_k\|\le R_k$ in the last line yields
-\begin{equation}\label{eq:simple-monotonicity}
-    f(x_k)-f(x_{k+1})
-    \ge
-    \frac{\sqrt{Ma_k}}{9}\|d_k\|^2
-    +\frac{\lambda_k}{2}\|d_k\|^2
-    \ge0.                                                   
+
+
+
+\begin{lemma}[Cubic path budget]\label{lem:cubic-path}
+Fix $\epsilon>0$ and suppose that \Cref{ass:generic,ass:inexact-oracle}
+hold.  Let $K$ and $r_k=\|d_k\|$ be generated by
+\eqref{eq:generic-stopping-test}--\eqref{eq:generic-subproblem}, where
+$K<\infty$ is the return index guaranteed by
+\Cref{thm:generic-complexity}.  Then
+\begin{equation}\label{eq:cubic-path}
+  M\sum_{k=0}^{K-1}r_k^3
+  \le\frac{384}{31}\Delta_F
+    +\frac{K}{31\sqrt{62}}\frac{\epsilon^{3/2}}{\sqrt M}.
 \end{equation}
-Likewise, \eqref{eq:taylor-gradient}, stationarity, and
-$\|d_k\|\le R_k$ give
+\end{lemma}
+
+
+
+
+\section{Certified-inexact adaptive clipped UTR}
+\label{sec:adaptive-utr}
+The following adaptive method does not require the value of $M$ as an
+algorithmic input.  It accepts certified approximations of the
+objective, gradient, and Hessian; exact oracles are the zero-error
+special case.  This formulation is essential for the NC--SC
+specialization in \Cref{sec:ncsc}, where the value function is not
+evaluated exactly.  The oracle cost required to produce a requested
+certificate is kept separate from the number of certified trials.
+
+\begin{remark}[Why the fixed-scale estimate remains separate]
+\label{rem:fixed-not-adaptive-special-case}
+The fixed-scale result in \Cref{sec:generic-utr} and the adaptive result
+below share the trust-region geometry, but the former is not a formal
+special case of the latter.  The fixed-scale procedure accepts every
+step without querying function values, permits a controlled increase
+on an inexact interior step, and supplies the cubic-path budget
+\eqref{eq:cubic-path}.  The adaptive method instead filters every step
+through certified value and gradient tests and uses a padded Hessian
+model.  Consequently, specializing the adaptive theorem would neither
+justify the unconditional fixed-scale update nor recover its
+cubic-path estimate.  We keep the two counting arguments separate,
+but derive both one-step bounds from the common estimate in
+\Cref{lem:common-inexact-tr-step}; that estimate, in turn, uses the
+single trust-region characterization in
+\Cref{lem:tr-global-optimality}.
+\end{remark}
+
+\begin{assumption}[Certified adaptive oracle and parameter regime]
+\label{ass:adaptive-inexact-oracle}
+Suppose \Cref{ass:generic} holds and $F^*>-\infty$.  Fix
+\[
+ \epsilon>0,\qquad
+ 0<\sigma_{\min}\le\sigma_0,\qquad
+ \gamma_+>1,\qquad \gamma_->1,\qquad
+ 0<\eta\le\frac1{256},
+\]
+together with a value radius $\omega\ge0$ and a gradient radius
+$0\le\delta_g\le\epsilon/256$.  Define
+\begin{equation}\label{eq:adaptive-scale-bar}
+ \sigma_*:=\sqrt{\frac M6},
+ \qquad
+ \bar\sigma:=\max\{\sigma_0,\gamma_+\sigma_*\},
+\end{equation}
+and assume
+\begin{subequations}\label{eq:adaptive-safe-compatibility}
 \begin{align}
-    a_{k+1}
-    &\le \|\nabla f(x_{k+1})-g_k-H_kd_k\|
-       +\|g_k+H_kd_k\| \notag\\
-    &\le \frac{M}{2}\|d_k\|^2
-       +(\sigma\sqrt{a_k}+\lambda_k)\|d_k\| \notag\\
-    &\le \frac{a_k}{18}+\frac{a_k}{9}
-       +\frac{\lambda_k\sqrt{a_k}}{3\sqrt M}
-     =\frac16a_k+\frac{\lambda_k\sqrt{a_k}}{3\sqrt M}.
-       \label{eq:simple-gradient-master}
-\end{align}
-If $\lambda_k>0$, complementarity gives $\|d_k\|=R_k$.
-Substitution into \eqref{eq:simple-monotonicity}, together with
-\eqref{eq:simple-gradient-master}, proves
-\begin{subequations}\label{eq:simple-coupled-bounds}
-\begin{align}
-    f(x_k)-f(x_{k+1})
-    &\ge
-      \frac{a_k^{3/2}}{81\sqrt M}
-      +\frac{\lambda_k a_k}{18M},
-      \label{eq:simple-coupled-decrease}\\
-    a_{k+1}
-    &\le
-      \frac16a_k+
-      \frac{\lambda_k\sqrt{a_k}}{3\sqrt M}.
-      \label{eq:simple-coupled-gradient}
+ \frac{\delta_g^2}{\sigma_*\sqrt\epsilon}+\frac\omega4
+ &\le\omega,
+ \label{eq:adaptive-interior-compatibility}\\
+ \left(\frac{15}{1024}-\eta\right)
+ \frac{\epsilon^{3/2}}{\bar\sigma}
+ &\ge\frac{5\omega}{4}.
+ \label{eq:adaptive-boundary-compatibility}
 \end{align}
 \end{subequations}
-If $\lambda_k=0$, \eqref{eq:simple-gradient-master} gives
-\begin{equation}\label{eq:simple-interior-contraction}
-    a_{k+1}\le\frac16a_k.
+The associated dimensionless inexactness load satisfies
+\begin{equation}\label{eq:adaptive-absorption-load}
+ \chi:=\left(1+\frac4{\log2}\right)
+       \frac{\bar\sigma\omega}{\eta\epsilon^{3/2}}<1.
 \end{equation}
-Equation \eqref{eq:simple-monotonicity} also shows directly that every
-step is monotone in function value.
 
-If $a_0\le\epsilon$, then $T_\epsilon=0$.  Hence assume
-$a_0>\epsilon$.  Fix any $N\in\N_0$ with $N<T_\epsilon$ and define
-\[
-\begin{aligned}
-    \mathcal B_N&:=\{0\le k<N:\lambda_k>0\},
-    &\mathcal I_N&:=\{0\le k<N:\lambda_k=0\},\\
-    q_k&:=\frac{\lambda_k}{\sqrt{Ma_k}}
-    \quad(k\in\mathcal B_N).&&
-\end{aligned}
-\]
-Since $a_k>\epsilon$ for $0\le k\le N$ and all steps are monotone,
-summing \eqref{eq:simple-coupled-decrease} over $\mathcal B_N$ gives
-\begin{equation}\label{eq:simple-boundary-sums}
-    |\mathcal B_N|
-    \le81\sqrt M\,\Delta_f\epsilon^{-3/2},
-    \qquad
-    \sum_{k\in\mathcal B_N}q_k
-    \le18\sqrt M\,\Delta_f\epsilon^{-3/2}.
+At a current iterate $x_k$, a value--gradient query returns a stored
+pair $(\widetilde F_k,g_k)$ satisfying
+\begin{equation}\label{eq:adaptive-vg-errors}
+ |\widetilde F_k-F(x_k)|\le\frac\omega8,
+ \qquad
+ \|g_k-\nabla F(x_k)\|\le\delta_g.
 \end{equation}
-Moreover, for $k\in\mathcal B_N$,
-\eqref{eq:simple-coupled-gradient} implies
-\begin{equation}\label{eq:simple-log-jump}
-    \left[\log\frac{a_{k+1}}{a_k}\right]_+
-    \le
-    \left[\log\left(\frac16+\frac{q_k}{3}\right)\right]_+
-    \le\frac{q_k}{3}.
+At a candidate $x_k^+=x_k+d$, the notation
+$(\widetilde F_k^+,g_k^+)$ denotes a pair satisfying the same bounds
+with $x_k$ replaced by $x_k^+$.  For every trial scale $\sigma>0$, a
+Hessian query at $x_k$ returns a symmetric $H_{k,\sigma}$ satisfying
+\begin{equation}\label{eq:adaptive-hessian-error}
+ \|H_{k,\sigma}-\nabla^2F(x_k)\|
+ \le\frac{\sigma\sqrt\epsilon}{64}.
 \end{equation}
-Telescoping $\log a_k$ from $0$ to $N$ and using $a_N>\epsilon$
-gives
-\[
-    \log\frac{a_N}{a_0}
-    \le-|\mathcal I_N|\log6
-       +\frac13\sum_{k\in\mathcal B_N}q_k,
-\]
-and hence
-\begin{equation}\label{eq:simple-prefix-interior}
-    |\mathcal I_N|
-    \le\frac{
-       \log(a_0/\epsilon)
-       +\frac13\sum_{k\in\mathcal B_N}q_k
-    }{\log6}.
-\end{equation}
-Consequently, every $N\in\N_0$ with $N<T_\epsilon$ satisfies
-\begin{equation}\label{eq:simple-prefix-count}
-    N=|\mathcal B_N|+|\mathcal I_N|
-    \le
-    \left(81+\frac{6}{\log6}\right)
-       \sqrt M\,\Delta_f\epsilon^{-3/2}
-    +\frac{\log(a_0/\epsilon)}{\log6}.
-\end{equation}
-The right-hand side is finite.  Hence $T_\epsilon$ cannot be infinite,
-since otherwise \eqref{eq:simple-prefix-count} would hold for arbitrarily
-large finite $N$.  Thus $T_\epsilon<\infty$.  For $T_\epsilon\ge1$, apply
-\eqref{eq:simple-prefix-count} with $N=T_\epsilon-1$ and add the final
-step.  This proves
-\eqref{eq:simple-refined-bound}; the case $T_\epsilon=0$ is immediate.
-\end{proof}
+An accepted candidate value--gradient pair is stored without
+recomputation.  A new Hessian may be requested at the next trial
+scale.
+\end{assumption}
 
-\section{Adaptive clipped universal trust-region method}
-
-Let $\rho_{\min}\le\rho_0$, $\gamma_+>1$, $\gamma_->1$, and
-$0<\eta\le 1/64$.  At an outer iterate $x_k$, define
+At an outer iterate $x_k$, write
 \begin{equation}\label{eq:clipped-scale}
-    g_k:=\nabla f(x_k),
-    \qquad
-    H_k:=\nabla^2 f(x_k),
-    \qquad
-    h_k:=\max\{\|g_k\|,\epsilon\}.
+ h_k:=\max\{\|g_k\|,\epsilon\}.
 \end{equation}
-For a trial value $\rho>0$, consider
-\begin{equation}\label{eq:subproblem}
+For a trial value $\sigma>0$, consider
+\begin{equation}\label{eq:adaptive-subproblem}
 \begin{aligned}
     \min_{d\in\R^n}\quad
-        &g_k^Td+\frac12d^T(H_k+\rho\sqrt{h_k}I)d,\\
+        &g_k^Td+\frac12d^T\left(
+          H_{k,\sigma}+\frac{\sigma\sqrt\epsilon}{64}I
+          +\sigma\sqrt{h_k}I\right)d,\\
     \operatorname{s.t.}\quad
-        &\|d\|\le\frac{\sqrt{h_k}}{4\rho}.
+        &\|d\|\le\frac{\sqrt{h_k}}{4\sigma}.
 \end{aligned}
 \end{equation}
 The subproblem is solved globally.  Its trust-region multiplier is denoted
-by $\lambda\ge0$.
-
-\begin{lemma}[Trust-region optimality conditions]\label{lem:kkt}
-Let $(d,\lambda)$ be a global primal-dual solution of
-\eqref{eq:subproblem}.  Then
-\begin{subequations}\label{eq:kkt}
-\begin{gather}
-    \|d\|\le\frac{\sqrt{h_k}}{4\rho},
-        \label{eq:kkt-radius}\\
-    \lambda\left(\|d\|-\frac{\sqrt{h_k}}{4\rho}\right)=0,
-        \label{eq:kkt-complementarity}\\
-    (H_k+\rho\sqrt{h_k}I+\lambda I)d=-g_k,
-        \label{eq:kkt-stationarity}\\
-    H_k+\rho\sqrt{h_k}I+\lambda I\succeq0.
-        \label{eq:kkt-psd}
-\end{gather}
-\end{subequations}
-In particular, $\lambda>0$ implies
-$\|d\|=\sqrt{h_k}/(4\rho)$.
-\end{lemma}
+by $\lambda\ge0$, as supplied by
+\Cref{lem:tr-global-optimality} with
+$B=H_{k,\sigma}+(\sigma\sqrt\epsilon/64+\sigma\sqrt{h_k})I$ and
+$R=\sqrt{h_k}/(4\sigma)$.  In particular, $\lambda>0$ implies that the
+radius is active.
 
 The trial is accepted if one of the following mutually exclusive tests
 holds:
 \begin{subequations}\label{eq:acceptance}
 \begin{align}
-    \lambda=0:\quad
-    &f(x_k+d)\le f(x_k),
+    \|d\|<\frac{\sqrt{h_k}}{4\sigma}:\quad
+    &\widetilde F_k^+\le \widetilde F_k+\omega,
     \qquad
-    \|\nabla f(x_k+d)\|\le\frac12h_k;
+    \|g_k^+\|\le\frac12h_k;
        \label{eq:acceptance-interior}\\
-    \lambda>0:\quad
-    &f(x_k)-f(x_k+d)
+    \|d\|=\frac{\sqrt{h_k}}{4\sigma}:\quad
+    &\widetilde F_k-\widetilde F_k^+
        \ge\eta\left(
-           \frac{h_k^{3/2}}{\rho}+\lambda\|d\|^2
-       \right), \label{eq:acceptance-boundary-function}\\
-    &\|\nabla f(x_k+d)\|\le\frac12h_k+\lambda\|d\|.
+           \frac{h_k^{3/2}}{\sigma}+\lambda\|d\|^2
+       \right)+\omega, \label{eq:acceptance-boundary-function}\\
+    &\|g_k^+\|\le\frac12h_k+\lambda\|d\|.
        \label{eq:acceptance-boundary-gradient}
 \end{align}
 \end{subequations}
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
-\caption{Adaptive clipped universal trust-region method}
+\caption{Certified-inexact adaptive clipped UTR}
 \label{alg:adaptive-utr}
-\KwIn{$x_0$, $\epsilon>0$, $\rho_0\ge\rho_{\min}>0$,
-      $\gamma_+>1$, $\gamma_->1$, $0<\eta\le1/64$}
-$k\leftarrow0$, $\rho\leftarrow\rho_0$\;
+\KwIn{$x_0$ and parameters and certified oracle responses satisfying
+      \Cref{ass:adaptive-inexact-oracle}}
+$k\leftarrow0$, $\sigma\leftarrow\sigma_0$\;
+obtain and store $(\widetilde F_k,g_k)$ at $x_0$\;
 \While{true}{
-    Compute $g_k,H_k,h_k$ from \eqref{eq:clipped-scale}\;
+    $h_k\leftarrow\max\{\|g_k\|,\epsilon\}$\;
     \Repeat{a step is accepted}{
+        obtain $H_{k,\sigma}$ at $(x_k,\sigma)$ satisfying
+        \eqref{eq:adaptive-hessian-error}\;
         \If{$\|g_k\|\le\epsilon$ and
-             $\lambda_{\min}(H_k)\ge-\rho\sqrt\epsilon$}{
+             $\lambda_{\min}(H_{k,\sigma})
+              \ge-(9/8)\sigma\sqrt\epsilon$}{
             \Return{$x_k$}\;
         }
-        Solve \eqref{eq:subproblem} and obtain $(d,\lambda)$\;
-        Evaluate $f(x_k+d)$ and $\nabla f(x_k+d)$\;
+        Solve \eqref{eq:adaptive-subproblem} and obtain $(d,\lambda)$\;
+        obtain $(\widetilde F_k^+,g_k^+)$ at $x_k+d$\;
         \eIf{\eqref{eq:acceptance} holds}{
             $x_{k+1}\leftarrow x_k+d$\;
-            $\rho\leftarrow\max\{\rho_{\min},\rho/\gamma_-\}$\;
+            $(\widetilde F_{k+1},g_{k+1})
+             \leftarrow(\widetilde F_k^+,g_k^+)$\;
+            $\sigma\leftarrow\max\{\sigma_{\min},\sigma/\gamma_-\}$\;
             $k\leftarrow k+1$\;
             accept the step\;
         }{
-            $\rho\leftarrow\gamma_+\rho$\;
+            discard $(\widetilde F_k^+,g_k^+)$\;
+            $\sigma\leftarrow\gamma_+\sigma$\;
         }
     }
 }
 \end{algorithm}
 
 The stopping test in Algorithm~\ref{alg:adaptive-utr} is evaluated for
-every trial value of $\rho$, including immediately after each rejected
-trial increases $\rho$.
+every trial value of $\sigma$, including immediately after each rejected
+trial increases $\sigma$.
 
-\section{Trial-step estimates}
+\subsection{Trial-step estimates}
+The safe-scale, parameter-bound, and finite-prefix counting lemmas used
+to prove the main theorem are stated and proved in
+\Cref{app:proofs}.
+The supporting estimates in \Cref{app:proofs} establish finite
+termination and the following main complexity guarantee.
 
-\begin{lemma}[Guaranteed trial outcome]\label{lem:large-rho}
-Suppose \Cref{ass:hessian-lipschitz} holds.  If
-\begin{equation}\label{eq:rho-threshold}
-    \rho^2\ge\frac{M}{6},
+\begin{remark}[Parameter freedom versus certified inexactness]
+\label{rem:adaptive-certificate-parameters}
+The compatibility conditions in
+\Cref{ass:adaptive-inexact-oracle} are analytical sufficient
+conditions, not tests performed by the algorithm.  For a nonzero
+certificate radius, their verification may use $M$ through
+$\sigma_*$ and $\bar\sigma$.  Thus the certified-inexact theorem is
+conditional on an oracle provider that can supply the stated radii; it
+does not claim that producing such certificates is parameter free.
+This does not affect the first contribution: with exact oracle
+responses, $\omega=\delta_g=0$, all compatibility conditions hold
+automatically and the executable scale update never uses $M$.
+\end{remark}
+
+\begin{theorem}[Certified-inexact adaptive UTR complexity]
+\label{thm:total-complexity}
+Suppose \Cref{ass:adaptive-inexact-oracle} holds and define
+$\Delta_F:=F(x_0)-F^*$.  Then
+\Cref{alg:adaptive-utr} terminates after finitely many trials.  If
+$Q_\epsilon$ denotes the total number of solved trial subproblems, then
+\begin{equation}\label{eq:adaptive-total-big-o}
+ Q_\epsilon=O\!\left(
+ \frac{\bar\sigma(\Delta_F+\omega)\epsilon^{-3/2}
+       +\log_+(h_0/\epsilon)+1}{1-\chi}
+ +\log_+\!\frac{\bar\sigma}{\sigma_0}
+ \right),
+\end{equation}
+where the hidden constant depends only on $\eta$ and
+$\gamma_\pm$.  The returned point $\widehat x$ satisfies
+\begin{equation}\label{eq:return-guarantee}
+    \|\nabla F(\widehat x)\|\le\epsilon+\delta_g,
+    \qquad
+    \lambda_{\min}(\nabla^2 F(\widehat x))
+    \ge-\frac{73}{64}\bar\sigma\sqrt\epsilon.
+\end{equation}
+\end{theorem}
+
+
+
+
+\begin{remark}[Exact-oracle specialization and the initial scale]
+\label{rem:exact-oracle-overhead}
+Suppose $F^*>-\infty$ and \Cref{ass:generic} holds, and run
+\Cref{alg:adaptive-utr} with exact function values, gradients, and
+Hessians.  Then $\omega=\delta_g=0$, so the compatibility conditions in
+\Cref{ass:adaptive-inexact-oracle} hold automatically.  No restriction
+on $\sigma_0$ is needed for the general bound
+\begin{equation}\label{eq:big-O-complexity}
+ Q_\epsilon=O\!\left(
+  \bar\sigma\Delta_F\epsilon^{-3/2}
+  +\log_+(h_0/\epsilon)
+  +\log_+(\bar\sigma/\sigma_0)+1
+ \right),
+ \qquad
+ \bar\sigma=\max\{\sigma_0,\gamma_+\sqrt{M/6}\},
+\end{equation}
+and the return guarantee is
+$\lambda_{\min}(\nabla^2F(\widehat x))
+\ge-(73/64)\bar\sigma\sqrt\epsilon$.
+The additional condition $\sigma_0=O(\sqrt M)$ is needed only when
+one wants to simplify $\bar\sigma=O(\sqrt M)$ and obtain the sharp
+leading term $O(\sqrt M\,\Delta_F\epsilon^{-3/2})$ together with an
+$O(\sqrt{M\epsilon})$ second-order guarantee.  Without this
+initial-scale condition, the general bound and the
+$O(\bar\sigma\sqrt\epsilon)$ curvature guarantee above remain valid.
+\end{remark}
+
+The theorem counts certified trials and globally solved trust-region
+subproblems.  In the exact-oracle specialization, the Hessian is evaluated
+once per trial and the candidate function and gradient once per solved
+subproblem.  For an inexact implementation, the work needed to produce
+the certificates in \Cref{ass:adaptive-inexact-oracle} must be counted
+separately.
+The persistent
+parameter update in \Cref{alg:adaptive-utr} is the same amortization
+mechanism used in adaptive regularization methods
+\citep{cartis2011adaptive2}; the multiplier-aware acceptance test is
+what couples gradient growth to objective decrease.
+
+\section{NC--SC minimax optimization}\label{sec:ncsc}
+
+\subsection{Problem setting and value-function geometry}
+
+We first use the fixed-scale estimates of \Cref{sec:generic-utr} for
+\begin{equation}\label{eq:ncsc-problem}
+ \min_{x\in\R^{d_x}}P(x),
+ \qquad
+ P(x):=\max_{y\in\R^{d_y}}f(x,y).
+\end{equation}
+The certified-inexact adaptive result in
+\Cref{thm:total-complexity} is also directly applicable once the
+corrected value and derivative certificates below are supplied.  We
+retain the fixed-scale wrapper for the explicit total inner-work bound,
+because its cubic-path estimate is the mechanism that removes the
+leading $\log(1/\epsilon)$.
+
+The minimax development has three layers.  This section first derives
+the value-function geometry and a corrected oracle, and then analyzes a
+known-parameter outer method whose maximization routine is supplied as
+an abstract residual module.  \Cref{sec:pf-scar-utr} removes the
+parameters by using uniformly over-accurate SCAR calls, while
+\Cref{sec:pf-fixed-radius} combines a fixed-radius outer method with
+persistent SCAR to remove the resulting leading logarithms from the
+inner-oracle bound.  Keeping the residual interface common to all three
+layers makes clear which conclusions use only correctness of the inner
+solve and which additionally use a particular work guarantee.
+
+We impose the assumptions used by \citet{luo2022finding}.
+
+\begin{assumption}[NC--SC regularity]\label{ass:ncsc}
+The payoff $f$ is twice continuously differentiable and satisfies:
+\begin{enumerate}[label=(\roman*)]
+  \item $\nabla f$ is $\ell$-Lipschitz on
+  $\R^{d_x}\times\R^{d_y}$;
+  \item $\nabla^2f$ is $\rho$-Lipschitz on
+  $\R^{d_x}\times\R^{d_y}$ for some $\rho>0$;
+  \item $f(x,\cdot)$ is $\mu$-strongly concave for every $x$, where
+  $0<\mu\le\ell$;
+  \item $P^*:=\inf_xP(x)>-\infty$.
+\end{enumerate}
+We write $\kappa:=\ell/\mu$.
+\end{assumption}
+
+Strong concavity makes
+$y^*(x):=\arg\max_y f(x,y)$ unique and guarantees that
+$\nabla^2_{yy}f(x,y)$ is nonsingular.  Define the Schur complement
+\begin{equation}\label{eq:schur-definition}
+ \mathcal H(x,y):=\nabla^2_{xx}f(x,y)
+ -\nabla^2_{xy}f(x,y)
+  \bigl(\nabla^2_{yy}f(x,y)\bigr)^{-1}
+  \nabla^2_{yx}f(x,y).
+\end{equation}
+
+The main departure from \citet{luo2022finding} is the value-function
+gradient estimator.  Their MCN method uses the raw plug-in gradient
+$\nabla_xf(x,y)$, whose error is linear in $\|y-y^*(x)\|$, together
+with the same Schur-complement Hessian \eqref{eq:schur-definition}.
+We instead use the Newton-corrected gradient introduced below, whose
+inner error is quadratic.  This relaxation permits an inner accuracy
+of order $\sqrt\epsilon$ and an observable residual stopping rule;
+at the level of the proved upper bounds, it preserves the leading outer
+rate and removes the multiplicative $\log(1/\epsilon)$ from the leading
+inner-gradient complexity.
+
+\begin{lemma}[Value-function geometry]\label{lem:value-geometry}
+Under \Cref{ass:ncsc}, $y^*(\cdot)$ is $\kappa$-Lipschitz, $P$ is twice
+continuously differentiable, and
+\begin{subequations}\label{eq:value-derivatives}
+\begin{align}
+ \nabla P(x)&=\nabla_xf(x,y^*(x)),\label{eq:value-gradient}\\
+ \nabla^2P(x)&=\mathcal H(x,y^*(x)).\label{eq:value-hessian}
+\end{align}
+\end{subequations}
+Moreover, $\nabla P$ is $(1+\kappa)\ell$-Lipschitz and
+\begin{equation}\label{eq:value-hessian-lipschitz}
+ \|\nabla^2P(x)-\nabla^2P(x')\|
+ \le M_P\|x-x'\|,
+ \qquad
+ M_P:=4\sqrt2\,\kappa^3\rho.
+\end{equation}
+These properties follow from
+\citet[Lemmas~1--3]{luo2022finding}.
+\end{lemma}
+
+In view of \eqref{eq:value-hessian-lipschitz}, the target in this
+section is an
+$(\epsilon,\sqrt{M_P\epsilon})$-second-order stationary point of $P$.
+
+\subsection{A residual-based inner maximization module}
+
+The outer method uses the inner maximization only through an observable
+residual interface.  This separates outer correctness from the choice
+between AGD, SCAR, or another accelerated inner solver.
+
+\begin{lemma}[Residual--distance certificate]
+\label{lem:inner-residual-certificate}
+Under \Cref{ass:ncsc}, for every $x$ and $y$,
+\begin{equation}\label{eq:inner-residual-certificate}
+ \|y-y^*(x)\|
+ \le\frac{\|\nabla_yf(x,y)\|}{\mu}
+ \le\kappa\|y-y^*(x)\|.
+\end{equation}
+\end{lemma}
+
+
+
+
+\begin{definition}[Inner residual module]
+\label{def:inner-residual-module}
+Given an outer point $x$, a warm start $y^{\rm in}$, and a target
+$\tau>0$, an inner residual module $\mathcal S$ returns
+\begin{equation}\label{eq:maxres-interface}
+ y^{\rm out}
+ =\operatorname{MaxRes}_{\mathcal S}(x,y^{\rm in},\tau)
+ \quad\text{such that}\quad
+ \|\nabla_yf(x,y^{\rm out})\|\le\tau.
+\end{equation}
+The module may retain implementation-specific state between calls, but
+this state is hidden from the outer method.  We call the module
+\emph{accelerated} if there are implementation factors
+$C_{\mathcal S}>0$ and $b_{\mathcal S}\ge1$, which may depend on the
+implementation and on $\kappa$ but not on $x$, $\tau$, $R_{\rm in}$,
+$\epsilon$, or the call index, such that a call whose
+initial residual is
+$R_{\rm in}:=\|\nabla_yf(x,y^{\rm in})\|$ uses at most
+\begin{equation}\label{eq:inner-module-work}
+ C_{\mathcal S}\sqrt\kappa\left[
+ b_{\mathcal S}
+ +\left\lceil\log_2\max\left\{1,
+       \frac{R_{\rm in}}{\tau}\right\}\right\rceil
+ \right]
+\end{equation}
+evaluations of $\nabla_yf$.  The terminal residual evaluation may be
+reused when constructing the corrected gradient.
+\end{definition}
+
+The interface \eqref{eq:maxres-interface}, rather than the work bound
+\eqref{eq:inner-module-work}, is the only inner-solver property used by
+the outer convergence theorem.  We next record AGD as one
+implementation.  For a fixed $x$, starting from $y^{(0)}$, set
+$v^{(0)}=y^{(0)}$ and
+\begin{equation}\label{eq:agd-recursion}
+\begin{aligned}
+ y^{(j+1)}&=v^{(j)}+\frac1\ell\nabla_yf(x,v^{(j)}),\\
+ v^{(j+1)}&=y^{(j+1)}
+ +\frac{\sqrt\kappa-1}{\sqrt\kappa+1}
+   \bigl(y^{(j+1)}-y^{(j)}\bigr).
+\end{aligned}
+\end{equation}
+
+\begin{proposition}[AGD implementation]
+\label{prop:agd-implementation}
+Under \Cref{ass:ncsc}, fix $x$, $y^{(0)}$, and $\tau>0$.  For
+$\kappa>1$, the iterate in \eqref{eq:agd-recursion} satisfies
+\begin{equation}\label{eq:agd-contraction}
+ \|y^{(N)}-y^*(x)\|
+ \le\sqrt{\kappa+1}
+ \left(1-\frac1{\sqrt\kappa}\right)^{N/2}
+ \|y^{(0)}-y^*(x)\|.
+\end{equation}
+Consequently, after evaluating
+$R_{\rm in}=\|\nabla_yf(x,y^{(0)})\|$, return immediately if
+$R_{\rm in}\le\tau$; otherwise run
+\[
+ N:=\left\lceil2\sqrt\kappa\log_+\!\left(
+  \frac{\sqrt{\kappa+1}\,\kappa R_{\rm in}}{\tau}
+ \right)\right\rceil
+\]
+AGD steps and verify the residual once at the terminal iterate.  The
+initial gradient is reused in the first AGD step.  This implements
+\Cref{def:inner-residual-module} using at most
+\begin{equation}\label{eq:agd-module-work}
+ 1+\left\lceil2\sqrt\kappa\log_+\!\left(
+  \frac{\sqrt{\kappa+1}\,\kappa R_{\rm in}}{\tau}
+ \right)\right\rceil
+\end{equation}
+inner-gradient evaluations.  Hence it satisfies
+\eqref{eq:inner-module-work} with universal $C_{\mathcal S}$ and
+$b_{\mathcal S}=O(1+\log\kappa)$.  When $\kappa=1$, one gradient step
+is sufficient.
+\end{proposition}
+
+
+
+
+We count one evaluation of $\nabla_yf(x,y)$ as one inner-gradient
+oracle call.  Corrected-gradient and Schur-complement constructions,
+trust-region subproblem solves, and any linear algebra used to apply
+$(\nabla^2_{yy}f)^{-1}$ are reported separately.
+
+\subsection{Corrected oracle and minimax algorithm}
+
+We now construct certified value and derivative oracles for the value
+function from derivatives of $f$.  At an approximate maximizer $y$,
+define the Newton-corrected value
+\begin{equation}\label{eq:corrected-value-pf}
+ \widehat P(x,y):=f(x,y)
+ -\frac12\nabla_y f(x,y)^T
+  \bigl(\nabla^2_{yy}f(x,y)\bigr)^{-1}
+  \nabla_y f(x,y).
+\end{equation}
+Since $\nabla^2_{yy}f\prec0$, the correction raises the raw payoff
+and is exact for a concave quadratic inner problem.  The corrected
+gradient and Hessian estimators are
+\begin{subequations}\label{eq:corrected-derivatives}
+\begin{align}
+  \widehat g(x,y)
+  &:=\nabla_xf(x,y)-\nabla^2_{xy}f(x,y)
+       \bigl(\nabla^2_{yy}f(x,y)\bigr)^{-1}\nabla_yf(x,y),
+       \label{eq:corrected-gradient}\\
+  \widehat H(x,y)
+  &:=\mathcal H(x,y).
+       \label{eq:corrected-hessian}
+\end{align}
+\end{subequations}
+The gradient estimator is the oracle-level distinction from
+\citet[Algorithm~2]{luo2022finding}: their method uses
+$\nabla_xf(x,y)$, whereas \eqref{eq:corrected-gradient} adds a Newton
+correction.  Both methods use the Schur-complement Hessian
+$\mathcal H(x,y)$.
+
+\begin{lemma}[Corrected value and derivative errors]
+\label{lem:corrected-errors}
+Under \Cref{ass:ncsc}, for every $x$ and $y$,
+\begin{subequations}\label{eq:corrected-error-bounds}
+\begin{align}
+ |\widehat P(x,y)-P(x)|
+ &\le\frac{(3\kappa-1)\rho}{12}\|y-y^*(x)\|^3
+ \le\frac{\kappa\rho}{4}\|y-y^*(x)\|^3,
+       \label{eq:corrected-value-error-pf}\\
+ \|\widehat g(x,y)-\nabla P(x)\|
+ &\le\frac{(1+\kappa)\rho}{2}\|y-y^*(x)\|^2,
+       \label{eq:corrected-gradient-error}\\
+ \|\widehat H(x,y)-\nabla^2P(x)\|
+ &\le(1+\kappa)^2\rho\|y-y^*(x)\|.
+       \label{eq:corrected-hessian-error}
+\end{align}
+\end{subequations}
+Moreover, whenever
+$\|y-y^*(x)\|\le\mu/\rho$, the Newton-corrected value satisfies the
+following $\kappa$-independent local bound:
+\begin{equation}\label{eq:corrected-value-local-error}
+ |\widehat P(x,y)-P(x)|
+ \le\frac{7\rho}{24}\|y-y^*(x)\|^3.
+\end{equation}
+\end{lemma}
+
+
+
+
+Set the outer residual target
+\begin{equation}\label{eq:outer-residual-target}
+ \tau_{\rm out}:=
+ \frac{\mu\sqrt{M_P\epsilon/6}}
+      {64(1+\kappa)^2\rho}.
+\end{equation}
+A further practical distinction from
+\citet[Algorithm~2 and Theorem~2]{luo2022finding} is the inner
+termination rule.  Their analysis prescribes an iteration count for
+each AGD solve, whereas our outer method asks the input module
+$\mathcal S$ to satisfy the directly evaluable condition
+$\|\nabla_yf(x,y)\|\le\tau_{\rm out}$.  By
+\eqref{eq:inner-residual-certificate}, this guarantees
+$\|y-y^*(x)\|\le\tau_{\rm out}/\mu$.  The resulting oracle
+certificates are recorded explicitly next.
+
+\begin{corollary}[Residual-to-oracle certificate]
+\label{cor:ncsc-fixed-oracle}
+Under \Cref{ass:ncsc}, let
+$M_P=4\sqrt2\,\kappa^3\rho$ and let $\tau_{\rm out}$ be given by
+\eqref{eq:outer-residual-target}.  Every point $y$ satisfying
+$\|\nabla_yf(x,y)\|\le\tau_{\rm out}$ also satisfies
+\begin{equation}\label{eq:ncsc-fixed-oracle-errors}
+ \|\widehat g(x,y)-\nabla P(x)\|<\frac{\epsilon}{8192},
+ \qquad
+ \|\widehat H(x,y)-\nabla^2P(x)\|
+ \le\frac1{64}\sqrt{\frac{M_P}{6}}\sqrt\epsilon.
+\end{equation}
+In particular, the fixed-scale inexact oracle conditions
+\eqref{eq:generic-oracle-errors} hold with $F=P$ and $M=M_P$.
+\end{corollary}
+
+Thus the stopping decision requires neither $y^*(x)$ nor an a priori
+bound on its distance from the inner initializer.
+The target has the useful scale and lower bound
+\begin{subequations}\label{eq:outer-residual-scale}
+\begin{align}
+ \frac{\tau_{\rm out}}\mu
+ &=\Theta\!\left(\sqrt{\frac{\epsilon}{\kappa\rho}}\right)
+ =\Theta\!\left(\kappa\sqrt{\frac{\epsilon}{M_P}}\right),
+ \label{eq:outer-residual-distance-scale}\\
+ \tau_{\rm out}
+ &\ge\frac{\ell}{64\sqrt3}
+       \sqrt{\frac\epsilon{M_P}}.
+ \label{eq:outer-residual-lower}
+\end{align}
+\end{subequations}
+The second inequality follows by substitution: the ratio of its
+left-hand side to its right-hand side is
+$4\kappa^2/(1+\kappa)^2\ge1$.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\caption{Fixed-scale NC--SC UTR with an inner residual module}
+\label{alg:ncsc-utr}
+\KwIn{$x_0,y_{-1}$, $\epsilon>0$, $\ell,\mu,\rho$, and an inner
+      module $\mathcal S$ satisfying \eqref{eq:maxres-interface}}
+$\kappa\leftarrow\ell/\mu$,
+$M_P\leftarrow4\sqrt2\,\kappa^3\rho$,
+and compute $\tau_{\rm out}$ from
+\eqref{eq:outer-residual-target}\;
+$y_0\leftarrow
+ \operatorname{MaxRes}_{\mathcal S}(x_0,y_{-1},\tau_{\rm out})$\;
+\For{$k=0,1,\ldots$}{
+  Form $g_k=\widehat g(x_k,y_k)$ and
+  $H_k=\widehat H(x_k,y_k)$\;
+  $h_k\leftarrow\max\{\|g_k\|,\epsilon\}$\;
+  \If{$\|g_k\|\le\epsilon$ and
+      $\lambda_{\min}(H_k)\ge-\sqrt{M_P/6}\sqrt\epsilon$}{
+    \Return{$x_k$}\;
+  }
+  Solve \eqref{eq:generic-subproblem} globally with $F=P$ and
+  $M=M_P$, and obtain $d_k$\;
+  $x_{k+1}\leftarrow x_k+d_k$\;
+  $y_{k+1}\leftarrow
+   \operatorname{MaxRes}_{\mathcal S}
+   (x_{k+1},y_k,\tau_{\rm out})$\;
+}
+\end{algorithm}
+
+Thus the minimax algorithm never evaluates $P(x)$ and never solves the
+inner maximization to $O(\epsilon)$ distance.  It uses only the residual
+contract \eqref{eq:maxres-interface}, with a target whose associated
+distance is proportional to $\sqrt\epsilon$.  The outer algorithm and
+its correctness proof are independent of how $\mathcal S$ attains that
+residual.  The parameters in \eqref{eq:outer-residual-target} and the
+outer scale $M_P$ are still known in this baseline; using a
+parameter-free inner implementation alone does not make the full
+wrapper parameter-free.
+
+\subsection{Outer and inner complexity}
+
+\begin{theorem}[NC--SC complexity under an inner residual module]
+\label{thm:ncsc-complexity}
+Suppose $f$ satisfies \Cref{ass:ncsc} and define
+$P(x)=\max_y f(x,y)$.  Fix
+$(x_0,y_{-1})$ and $\epsilon>0$, and set
+\[
+ \kappa=\ell/\mu,
+ \qquad M_P=4\sqrt2\,\kappa^3\rho,
+ \qquad \Delta_P=P(x_0)-\inf_xP(x).
+\]
+Run \Cref{alg:ncsc-utr} with the residual target
+\eqref{eq:outer-residual-target} and any inner module that returns a
+point with residual at most that target.  Then the algorithm returns
+$\widehat x$ satisfying
+\begin{equation}\label{eq:ncsc-return}
+ \|\nabla P(\widehat x)\|\le\frac{257}{256}\epsilon,
+ \qquad
+ \lambda_{\min}(\nabla^2P(\widehat x))
+ \ge-\sqrt{M_P\epsilon}.
+\end{equation}
+The numbers of outer iterations, corrected-gradient and
+Schur-complement constructions, and trust-region subproblem solves are
+bounded by
+\begin{equation}\label{eq:ncsc-outer-complexity}
+\boxed{
+ O\!\left(
+  \Delta_P\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2}
+  +\log_+\!\frac{\|\nabla P(x_0)\|}{\epsilon}+1
+ \right).
+}
+\end{equation}
+If, in addition, a module call that starts with residual $R$ uses at
+most
+$C_{\mathcal S}\sqrt\kappa\,[b_{\mathcal S}+
+\lceil\log_2\max\{1,R/\tau_{\rm out}\}\rceil]$
+inner-gradient evaluations, where $C_{\mathcal S}$ and
+$b_{\mathcal S}$ are independent of $\epsilon$ and the call index,
+then the total number of inner-gradient evaluations is
+\begin{align}
+&O\!\left(
+ C_{\mathcal S}\sqrt\kappa\,b_{\mathcal S}
+ \left[
+  \Delta_P\sqrt{M_P}\,\epsilon^{-3/2}
+  +\log_+\!\frac{\|\nabla P(x_0)\|}{\epsilon}+1
+ \right]
+ \right)\notag\\
+&\quad+O\!\left(
+ C_{\mathcal S}\sqrt\kappa
+ \log_+\!\frac{
+ \|\nabla_yf(x_0,y_{-1})\|}{\tau_{\rm out}}
+ \right).
+\label{eq:ncsc-gradient-complexity}
+\end{align}
+In particular, if
+$C_{\mathcal S}=O(1)$ and
+$b_{\mathcal S}=O(1+\log\kappa)$, its leading term is
+\begin{equation}\label{eq:ncsc-gradient-leading}
+ O\!\left(
+  (1+\log\kappa)\Delta_P\kappa^2\sqrt\rho\,
+  \epsilon^{-3/2}
+ \right),
+\end{equation}
+with no multiplicative $\log(1/\epsilon)$.
+Replacing the internal tolerance by $256\epsilon/257$ gives the
+standard $(\epsilon,\sqrt{M_P\epsilon})$ guarantee without changing
+these orders.
+\end{theorem}
+
+
+
+
+\begin{corollary}[AGD realization]
+\label{cor:ncsc-agd-realization}
+Choosing $\mathcal S$ to be the AGD module in
+\Cref{prop:agd-implementation} satisfies the hypotheses of
+\Cref{thm:ncsc-complexity} with
+$C_{\mathcal S}=O(1)$ and
+$b_{\mathcal S}=O(1+\log\kappa)$.  The resulting method returns the
+point in \eqref{eq:ncsc-return}, has the outer complexity in
+\eqref{eq:ncsc-outer-complexity}, and uses
+$O((1+\log\kappa)\Delta_P\kappa^2\sqrt\rho\,\epsilon^{-3/2})$
+inner-gradient evaluations in its leading term, where
+$\Delta_P=P(x_0)-\inf_xP(x)$.  No
+$\log(1/\epsilon)$ multiplies that term.  When $\kappa=1$, the inner
+work is bounded by a numerical constant per call.
+\end{corollary}
+
+\begin{remark}[What is counted]
+If the algorithm solves $K$ trust-region subproblems, it has $K$
+nonterminal outer iterations and $K+1$ corrected-gradient and
+Schur-complement constructions, including the terminal test.  The matrix
+inversion or
+linear algebra used to apply
+$(\nabla^2_{yy}f)^{-1}$ is not counted as an inner gradient evaluation.
+The final $\nabla_y f$ evaluation used by the residual certificate is
+reused in the corrected-gradient construction.
+If that inverse is implemented by Hessian-vector products, its complexity
+must be reported separately.  For an accelerated implementation whose
+$C_{\mathcal S}$ and $b_{\mathcal S}$ are independent of $\epsilon$,
+all $\log(1/\epsilon)$ dependence in
+\eqref{eq:ncsc-gradient-complexity} is additive: it occurs in the
+one-time initialization term and in
+$\log_+(\|\nabla P(x_0)\|/\epsilon)$.  Neither
+logarithm multiplies $\Delta_P\sqrt{M_P}\epsilon^{-3/2}$.
+\end{remark}
+
+\begin{remark}[Comparison with the raw-gradient analysis]
+For the raw plug-in gradient $\nabla_xf(x,y)$ used by
+\citet{luo2022finding}, smoothness gives
+\[
+ \|\nabla_xf(x,y)-\nabla P(x)\|
+ \le\ell\|y-y^*(x)\|.
+\]
+Thus an $O(\epsilon)$ outer-gradient error requires an
+$O(\epsilon/\ell)$ inner distance.  After the summation simplification
+in \citet[Theorem~2]{luo2022finding}, the $\epsilon$-dependent leading
+logarithm scales, up to numerical constants, as
+\[
+ \log\!\left(
+  \kappa^{3/2}
+  +\frac{\epsilon^{3/2}}
+   {\rho^{3/2}\widetilde\epsilon^3}
+ \right),
+ \qquad
+ \widetilde\epsilon
+ =\min\left\{\frac{\epsilon}{192\ell},
+  \frac{\sqrt{M_P\epsilon}}{48\rho}\right\}.
+\]
+For sufficiently small $\epsilon$, this is
+\[
+ \log\!\left(
+  \kappa^{3/2}
+  +\left(\frac{\ell}{\sqrt{\rho\epsilon}}\right)^3
+ \right).
+\]
+The quadratic error in \eqref{eq:corrected-gradient-error} changes the
+required inner distance to order $\sqrt\epsilon$.  At the level of the
+two proved upper bounds, this removes the leading multiplicative
+$\log(1/\epsilon)$ while retaining the $1+\log\kappa$ dependence.
+\end{remark}
+
+\subsection{Certified adaptive specialization}
+
+The same corrected tuple also supplies the value and derivative
+certificates required by the adaptive unconstrained theorem.  We state
+the oracle reduction separately so that it does not interrupt the
+fixed-scale complexity argument above.
+
+\begin{corollary}[Certified adaptive NC--SC oracle]
+\label{cor:ncsc-adaptive-oracle}
+Under \Cref{ass:ncsc}, let $\mathcal S$ satisfy the residual contract
+\eqref{eq:maxres-interface}.  Fix $\epsilon>0$, $\omega>0$, and
+$\delta_g>0$, and define
+\begin{subequations}\label{eq:ncsc-adaptive-distances}
+\begin{align}
+ \delta_{VG}
+ &:={\min}\left\{
+ \sqrt{\frac{2\delta_g}{(1+\kappa)\rho}},
+ \left(\frac{3\omega}{2(3\kappa-1)\rho}\right)^{1/3}
+ \right\},
+ \label{eq:ncsc-adaptive-vg-distance}\\
+ \delta_H(\sigma)
+ &:=\frac{\sigma\sqrt\epsilon}
+ {64(1+\kappa)^2\rho}.
+ \label{eq:ncsc-adaptive-h-distance}
+\end{align}
+\end{subequations}
+At a value--gradient query, call $\mathcal S$ from any warm start with
+target $\mu\delta_{VG}$ and return $(\widehat P,\widehat g)$.  At a
+Hessian query with trial scale $\sigma$, call it with target
+$\mu\delta_H(\sigma)$ and return $\widehat H$; the two queries may use
+different inner points.  The returned quantities satisfy
+\begin{equation}\label{eq:ncsc-adaptive-certificates}
+ |\widehat P-P|\le\frac\omega8,
+ \qquad
+ \|\widehat g-\nabla P\|\le\delta_g,
+ \qquad
+ \|\widehat H-\nabla^2P\|
+ \le\frac{\sigma\sqrt\epsilon}{64}.
+\end{equation}
+\end{corollary}
+
+Consequently, set $M=M_P$ in
+\Cref{ass:adaptive-inexact-oracle}, take $\eta=1/256$, and write
+\[
+ \bar\sigma:=\max\left\{\sigma_0,
+  \gamma_+\sqrt{M_P/6}\right\}.
+\]
+The explicit choices
+\begin{equation}\label{eq:ncsc-adaptive-explicit-errors}
+ \omega:=\frac{\eta\epsilon^{3/2}}{16\bar\sigma},
+ \qquad
+ \delta_g:=\min\left\{
+  \frac\epsilon{256},
+  \sqrt{\frac{\omega\sqrt{M_P/6}\sqrt\epsilon}{2}}
+ \right\}
+\end{equation}
+satisfy the compatibility conditions in that assumption.  Hence
+\Cref{thm:total-complexity}, together with
+\Cref{cor:ncsc-adaptive-oracle}, gives
+the following bound on certified outer trials, where
+$\Delta_P:=P(x_0)-P^*$:
+\begin{equation}\label{eq:ncsc-adaptive-outer-complexity}
+ O\!\left(
+  \bar\sigma\Delta_P\epsilon^{-3/2}
+  +\log_+\!\frac{\|\nabla P(x_0)\|}{\epsilon}
+  +\log_+(\bar\sigma/\sigma_0)+1
+ \right).
+\end{equation}
+The returned point satisfies
+\begin{equation}\label{eq:ncsc-adaptive-return}
+ \|\nabla P(\widehat x)\|
+ \le\frac{257}{256}\epsilon,
+ \qquad
+ \lambda_{\min}(\nabla^2P(\widehat x))
+ \ge-\frac{73}{64}\bar\sigma\sqrt\epsilon.
+\end{equation}
+This statement does not count the refinement work needed to produce
+the scale-dependent certificates.
+
+\begin{remark}[Scope of the result]
+The minimax analysis uses the valid upper bound $M_P$ to fix the
+trust-region scale.  Thus \eqref{eq:ncsc-outer-complexity} is a genuine
+bound on all solved subproblems.  The certified adaptive theorem is
+also applicable through \Cref{cor:ncsc-adaptive-oracle}; unlike the
+earlier exact-oracle formulation, it explicitly accounts for corrected
+value, gradient, and Hessian errors.  That corollary bounds certified
+outer trials.  It does not assert the same total inner-gradient bound,
+because producing its scale-dependent value certificates may require
+additional refinement.  The fixed-scale result is therefore retained
+for the sharp, fully accounted inner-work estimate in
+\eqref{eq:ncsc-gradient-complexity}.
+\end{remark}
+
+\section{Parameter-free residual-module UTR with SCAR}
+\label{sec:pf-scar-utr}
+
+The baseline wrapper in \Cref{alg:ncsc-utr} uses the problem parameters
+in both $\tau_{\rm out}$ and $M_P$; its AGD realization also uses
+$\ell$ and $\mu$ internally.  Replacing AGD by SCAR instantiates the
+same residual interface without inner curvature parameters, but does
+not remove the parameters from the outer wrapper.  This section also
+changes the outer tolerances and scale update, thereby removing both
+uses.  The resulting algorithm takes no problem parameter as input
+other than the requested tolerance $\epsilon$.
+There is, however, an important quantifier in the theorem: for every
+fixed problem and initialization there is an unknown threshold
+$\epsilon_0>0$ such that the guarantees hold for
+$0<\epsilon\le\epsilon_0$.  We therefore call the method
+asymptotically parameter-free.  The absence of a uniform, finitely
+verifiable threshold is explained in red in
+\Cref{subsec:scar-limitation}.
+
+\subsection{SCAR as a residual-module realization}
+
+We first record the precise external result needed below.  It is stated
+for minimization so that it applies to
+$q_x(y):=-f(x,y)$.
+
+\begin{theorem}[SCAR; \citet{lan2026optimal}]
+\label{thm:scar-blackbox}
+Let $\phi:\R^m\to\R$ be differentiable, $\mu$-strongly convex, and
+have an $L$-Lipschitz gradient, where $0<\mu<L$.  Let $\tau>0$ and
+$u_0\in\R^m$.  If $\|\nabla\phi(u_0)\|\le\tau$, return $u_0$.
+Otherwise, initialize Algorithm~5.1 of \citet{lan2026optimal} with
+$\mu_0\ge\mu$ and $0<M_0\le4L$.  SCAR returns $\widehat u$ such that
+\begin{equation}\label{eq:scar-residual}
+ \|\nabla\phi(\widehat u)\|\le\tau.
+\end{equation}
+The number of evaluations of $\nabla\phi$ is at most
+\begin{equation}\label{eq:scar-original-complexity}
+ (4+8\sqrt5\,C_1)\sqrt{\frac L\mu}
+ \left[
+  \left\lceil\log_4\frac{\mu_0}{\mu}\right\rceil
+  +\left\lceil
+    \log_2\frac{\|\nabla\phi(u_0)\|}{\tau}
+   \right\rceil
+ \right],
+\end{equation}
+where $C_1$ is the universal constant in Theorem~4.1 of
+\citet{lan2026optimal}.  The line-search estimate returned by SCAR is
+at most $2L$.
+When $L=\mu$, the step $u_0-L^{-1}\nabla\phi(u_0)$ reaches the
+minimizer; we use this direct endpoint argument whenever $\kappa=1$.
+\end{theorem}
+
+
+
+
+SCAR can be initialized without knowing either curvature parameter.
+
+\begin{corollary}[SCAR realization of the residual module]
+\label{cor:scar-inner}
+Under \Cref{ass:ncsc}, fix $x$, an inner initial point $y^{\rm in}$,
+and a target $\tau>0$.  Choose any
+$z\ne y^{\rm in}$ and set
+\begin{equation}\label{eq:scar-secant}
+ a_x:=\frac{
+  \|\nabla_y f(x,z)-\nabla_y f(x,y^{\rm in})\|}
+  {\|z-y^{\rm in}\|}.
+\end{equation}
+Run SCAR on $q_x=-f(x,\cdot)$ with
+$\mu_0=M_0=a_x$ and residual tolerance $\tau$.  No value of $\ell$,
+$\mu$, or $\kappa$ is supplied to the inner solver, and its output
+$\widehat y$ satisfies
+\[
+ \|\nabla_y f(x,\widehat y)\|\le\tau.
+\]
+Including the secant initialization, its inner-gradient complexity is
+\begin{equation}\label{eq:scar-inner-complexity}
+ O\!\left(\sqrt\kappa\left[
+  1+\log\kappa+
+  \log_+\frac{\|\nabla_y f(x,y^{\rm in})\|}{\tau}
+ \right]\right).
+\end{equation}
+Consequently, secant-initialized SCAR implements
+\Cref{def:inner-residual-module} with
+$C_{\mathcal S}=O(1)$ and
+$b_{\mathcal S}=O(1+\log\kappa)$.
+\end{corollary}
+
+
+
+
+Thus the known-parameter outer wrapper
+\Cref{alg:ncsc-utr} may use either the AGD realization in
+\Cref{cor:ncsc-agd-realization} or the SCAR realization in
+\Cref{cor:scar-inner}; \Cref{thm:ncsc-complexity} applies to both
+without changing the outer proof.  In that baseline wrapper the target
+$\tau_{\rm out}$ and scale $M_P$ are still parameter-dependent.  The
+role of the present section is to change those outer quantities as
+well, not merely to exchange one implementation of
+$\operatorname{MaxRes}$ for another.
+
+The published bound \eqref{eq:scar-original-complexity} counts gradient
+evaluations.  SCAR is not function-value-free: its backtracking tests
+also evaluate $\phi$.  With a standard implementation using a constant
+number of function values per line-search trial, their number is of the
+same order as \eqref{eq:scar-inner-complexity}, up to an additive
+line-search logarithm.  We keep the two oracle counts conceptually
+separate.
+
+\subsection{Uniform asymptotic accuracy}
+
+The parameter-free construction uses the corrected value
+\eqref{eq:corrected-value-pf} and its error bound from
+\Cref{lem:corrected-errors}.
+
+We use a uniform inner tolerance below the outer stationarity scale.
+Throughout this section, assume
+$0<\epsilon<1$ and set
+\begin{equation}\label{eq:pf-tolerances}
+ \tau_\epsilon:=\epsilon^2,
+ \qquad
+ \omega_\epsilon:=\epsilon^2.
+\end{equation}
+
+\begin{lemma}[Pointwise asymptotic oracle accuracy]
+\label{lem:pf-asymptotic-oracle}
+For every fixed payoff satisfying \Cref{ass:ncsc}, there exists
+$\epsilon_0>0$ such that the following holds for every
+$0<\epsilon\le\epsilon_0$.  If
+$\|\nabla_y f(x,y)\|\le\tau_\epsilon$, then, for every
+$\sigma\ge\epsilon$,
+\begin{subequations}\label{eq:pf-oracle-bounds}
+\begin{align}
+ \|\widehat g(x,y)-\nabla P(x)\|
+ &\le\frac\epsilon{256},
+       \label{eq:pf-gradient-error}\\
+ \|\widehat H(x,y)-\nabla^2P(x)\|
+ &\le\frac{\sigma\sqrt\epsilon}{64},
+       \label{eq:pf-hessian-error}\\
+ |\widehat P(x,y)-P(x)|
+ &\le\frac{\omega_\epsilon}{8}.
+       \label{eq:pf-value-error}
+\end{align}
+\end{subequations}
+The same $\epsilon_0$ works uniformly over all $x$, $y$, and
+$\sigma\ge\epsilon$.
+\end{lemma}
+
+
+
+
+\subsection{A fully observable adaptive UTR scheme}
+
+At a current point, let $(\widehat P,g,H)$ denote the corrected tuple
+computed after an inner-module call with tolerance $\tau_\epsilon$,
+and set
+$h=\max\{\|g\|,\epsilon\}$.  For a trial scale $\sigma\ge\epsilon$,
+consider the padded quadratic subproblem
+\begin{equation}\label{eq:pf-robust-subproblem}
+\begin{aligned}
+ \min_{\|d\|\le\sqrt h/(4\sigma)}\quad
+ &g^Td+\frac12d^T\left(
+ H+\frac{\sigma\sqrt\epsilon}{64}I
+   +\sigma\sqrt h\,I
+ \right)d.
+\end{aligned}
+\end{equation}
+The Hessian padding makes the quadratic term an upper model once
+\eqref{eq:pf-hessian-error} holds.  The much smaller actual gradient
+error is $O(\epsilon^4)$; at a safe scale, its worst-case effect on an
+interior trial is only $O(\epsilon^{15/2})$ and is absorbed by the
+$O(\epsilon^2)$ nonmonotonicity.  Thus the inner solve need not be
+refined to an accuracy depending on the possibly arbitrarily small
+trial step.
+
+For a global solution $d\ne0$, write $r=\|d\|$ and let $\lambda\ge0$
+be the multiplier of the Euclidean ball.  Applying
+\Cref{lem:tr-global-optimality} uses
+$B=H+(\sigma\sqrt\epsilon/64+\sigma\sqrt h)I$ and
+$R=\sqrt h/(4\sigma)$.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\caption{Asymptotically parameter-free residual-module UTR}
+\label{alg:pf-residual-utr}
+\KwIn{$x_0,y_{-1}$, $0<\epsilon<1$, and an inner module $\mathcal S$
+      satisfying \eqref{eq:maxres-interface} without problem
+      parameters}
+$x\leftarrow x_0$, $\sigma\leftarrow\epsilon$, and
+$\eta\leftarrow1/256$\;
+$y\leftarrow
+ \operatorname{MaxRes}_{\mathcal S}(x_0,y_{-1},\tau_\epsilon)$\;
+compute $(\widehat P,g,H)$ from
+\eqref{eq:corrected-value-pf} and \eqref{eq:corrected-derivatives}\;
+\While{true}{
+ $h\leftarrow\max\{\|g\|,\epsilon\}$\;
+ \If{$\|g\|\le\epsilon$ and
+ $\lambda_{\min}(H)\ge-(9/8)\sigma\sqrt\epsilon$}{
+  \Return{$x$}\;
+ }
+ Solve \eqref{eq:pf-robust-subproblem} globally and obtain
+ $(d,\lambda)$; set $r\leftarrow\|d\|$\;
+ \If{$r=0$}{\Return{$x$}\;}
+ $x^+\leftarrow x+d$\;
+ $y^+\leftarrow
+  \operatorname{MaxRes}_{\mathcal S}(x^+,y,\tau_\epsilon)$\; compute
+ $(\widehat P^+,g^+,H^+)$\;
+ \eIf{
+  $r<\sqrt h/(4\sigma)$,
+  $\widehat P^+\le\widehat P+\omega_\epsilon$, and
+  $\|g^+\|\le h/2$
+ }{
+  accept the trial\;
+ }{
+  \eIf{
+   $r=\sqrt h/(4\sigma)$,
+   $\widehat P-\widehat P^+
+    \ge\eta(h^{3/2}/\sigma+\lambda r^2)+\omega_\epsilon$, and
+   $\|g^+\|\le h/2+\lambda r$
+  }{
+   accept the trial\;
+  }{
+   reject the trial\;
+  }
+ }
+ \eIf{the trial is accepted}{
+  $(x,y,\widehat P,g,H)\leftarrow
+   (x^+,y^+,\widehat P^+,g^+,H^+)$\;
+  $\sigma\leftarrow\max\{\epsilon,\sigma/2\}$\;
+ }{
+  discard the candidate tuple and set $\sigma\leftarrow2\sigma$\;
+ }
+}
+\end{algorithm}
+
+Every quantity tested in \Cref{alg:pf-residual-utr} is observable.  In
+particular, if $\mathcal S$ itself is parameter-free, the algorithm
+never uses $\ell$, $\mu$, $\rho$, $\kappa$, $M_P$, or $\Delta_P$.
+The target $\tau_\epsilon$ is independent of $\sigma$, so a rejection
+changes only the robust trust-region model; the corrected tuple at the
+current point remains frozen.  Secant-initialized SCAR from
+\Cref{cor:scar-inner} is the implementation used for the explicit
+inner-oracle count below.
+
+\subsection{Theory of the parameter-free variant}
+
+We next prove the trial estimate that drives the complete complexity
+argument.
+
+\begin{lemma}[Safe-scale robust trial]
+\label{lem:pf-safe-trial}
+Under \Cref{ass:ncsc}, fix $0<\epsilon<1$.  Consider a nonzero trial
+generated by \Cref{alg:pf-residual-utr}; write
+$M_P:=4\sqrt2\,\kappa^3\rho$,
+$h:=\max\{\|g\|,\epsilon\}$, $r:=\|d\|$, and let $\lambda$ be its
+trust-region multiplier.  Suppose the current and candidate inner
+points both satisfy the module
+residual bound $\|\nabla_yf\|\le\epsilon^2$, and suppose $\epsilon$ is
+small enough that \eqref{eq:pf-oracle-bounds} holds.  If
+\begin{equation}\label{eq:pf-safe-scale}
+ \sigma^2\ge M_P/6,
+\end{equation}
+then a nonzero trial step satisfies
+\begin{subequations}\label{eq:pf-safe-trial-bounds}
+\begin{align}
+ P(x)-P(x+d)
+ &\ge\frac14\sigma\sqrt h\,r^2
+ +\frac12\lambda r^2
+ -\frac{(1+\kappa)\rho}{2\mu^2}\epsilon^4r,
+       \label{eq:pf-safe-decrease}\\
+ \|g^+\|
+ &\le\frac{117}{256}h+\lambda r.
+       \label{eq:pf-safe-gradient}
+\end{align}
+\end{subequations}
+If $r=\sqrt h/(4\sigma)$, then also
+\begin{equation}\label{eq:pf-safe-boundary-decrease}
+ P(x)-P(x+d)
+ \ge\frac{h^{3/2}}{128\sigma}
+ +\frac14\lambda r^2
+\end{equation}
+for all sufficiently small $\epsilon$, with the threshold depending
+only on the fixed problem.
+\end{lemma}
+
+
+
+
+\begin{lemma}[Accepted-step accounting]
+\label{lem:pf-accepted-accounting}
+Under \Cref{ass:ncsc}, fix $0<\epsilon<1$ and consider any finite
+prefix of $N$ accepted nonterminal steps generated by
+\Cref{alg:pf-residual-utr}.  Assume \eqref{eq:pf-oracle-bounds} holds
+at every tuple in the prefix and all its trial scales are bounded by
+some $\bar\sigma>0$.  If
+\begin{equation}\label{eq:pf-absorption-condition}
+ \frac{5\bar\sigma\omega_\epsilon}
+ {4\eta\epsilon^{3/2}}
+ \left(1+\frac4{\log2}\right)\le\frac12,
+\end{equation}
+then
+\begin{equation}\label{eq:pf-accepted-bound}
+ N=O\!\left(
+ \bar\sigma\Delta_P\epsilon^{-3/2}
+  +\log_+\frac{\|g_0\|}{\epsilon}+1
+ \right),
+\end{equation}
+where $\Delta_P:=P(x_0)-P^*$, $g_0$ is the first stored corrected
+gradient, and the hidden constant is numerical.  In particular, the
+right-hand side is independent of the prefix length $N$.
+\end{lemma}
+
+
+
+
+\begin{theorem}[Asymptotically parameter-free NC--SC complexity]
+\label{thm:pf-scar-utr}
+Suppose $f$ satisfies \Cref{ass:ncsc}, define
+$P(x)=\max_y f(x,y)$, fix
+$(x_0,y_{-1})$, and set
+\[
+ \kappa=\ell/\mu,
+ \qquad M_P=4\sqrt2\,\kappa^3\rho,
+ \qquad \Delta_P=P(x_0)-\inf_xP(x).
+\]
+Let $\mathcal S$ be any residual module satisfying
+\eqref{eq:maxres-interface} whose calls use none of
+$\ell,\mu,\rho,\kappa,M_P$, or $\Delta_P$.  There exists a payoff- and
+initialization-dependent $\epsilon_0\in(0,1)$ such that, for every
+$0<\epsilon\le\epsilon_0$, \Cref{alg:pf-residual-utr} terminates.  The
+algorithm itself uses only $\epsilon$ and universal numerical
+constants, and its output $\widehat x$ satisfies
+\begin{equation}\label{eq:pf-return}
+ \|\nabla P(\widehat x)\|\le\frac{257}{256}\epsilon,
+ \qquad
+ \lambda_{\min}(\nabla^2P(\widehat x))
+ \ge-\sqrt{M_P\epsilon}.
+\end{equation}
+Consequently, running the algorithm with internal tolerance
+$256\epsilon/257$ returns an
+$(\epsilon,\sqrt{M_P\epsilon})$-second-order stationary point.
+The total number $Q$ of solved robust trust-region subproblems obeys
+\begin{equation}\label{eq:pf-outer-complexity}
+ Q=O\!\left(
+  \Delta_P\sqrt{M_P}\,\epsilon^{-3/2}
+  +\log_+\frac{\|\nabla P(x_0)\|}{\epsilon}
+  +\log_+\frac{\sqrt{M_P}}{\epsilon}+1
+ \right).
+\end{equation}
+Its leading problem-parameter dependence is therefore
+$O(\Delta_P\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2})$.
+\end{theorem}
+
+\begin{corollary}[SCAR inner-oracle complexity]
+\label{cor:pf-scar-inner-complexity}
+Under the hypotheses of \Cref{thm:pf-scar-utr}, choose $\mathcal S$ to
+be the secant-initialized SCAR module in \Cref{cor:scar-inner}.  After
+decreasing the pointwise threshold $\epsilon_0$ if necessary, set
+\begin{equation}\label{eq:pf-gradient-level}
+ G_0:=1+\sqrt{2(1+\kappa)\ell(\Delta_P+1)}.
+\end{equation}
+If $Q$ denotes the number of robust trust-region subproblems in
+\eqref{eq:pf-outer-complexity}, then the total number $N_y$ of
+evaluations of $\nabla_yf$ is
+\begin{align}
+ N_y
+ &=O\!\left(
+  \sqrt\kappa\,(Q+1)
+  \left[1+\log\kappa+
+   \log\!\left(1+
+    \frac{\ell\sqrt{G_0}}{4\epsilon^3}
+   \right)
+  \right]\right)\notag\\
+ &\quad+O\!\left(
+  \sqrt\kappa\left[1+\log\kappa+
+   \log_+\frac{\|\nabla_yf(x_0,y_{-1})\|}{\epsilon^2}
+  \right]\right).
+ \label{eq:pf-inner-complexity}
+\end{align}
+Thus the uniform SCAR solves in this construction introduce a leading
+$\log(1/\epsilon)$ in the inner-oracle count, although the outer bound
+in \eqref{eq:pf-outer-complexity} has no such leading factor.
+\end{corollary}
+
+
+
+
+\begin{remark}[Interpretation of the theorem]
+The quantifier in \Cref{thm:pf-scar-utr} is pointwise in the problem
+and initialization:
+the same executable algorithm is used without knowing the parameters,
+but the proof supplies an unknown payoff- and initialization-dependent
+$\epsilon_0$.
+This is weaker than a uniform finite-accuracy theorem with an
+a posteriori certificate.  It is nevertheless a conventional
+asymptotic complexity result: for every fixed admissible problem, the
+outer rate and second-order scale are the same as in the parameter-tuned
+analysis once $\epsilon$ enters the stated regime.
+\end{remark}
+
+\subsection{A limitation of residual-only parameter-free inner solves}
+\label{subsec:scar-limitation}
+
+\begingroup
+\color{red}
+A parameter-free inner method such as SCAR can return a point satisfying
+the prescribed and directly verifiable condition
+$\|\nabla_yf(x,y)\|\le\tau$.  This fact alone does not provide a
+uniform certificate for the value or gradient of
+$P(x)=\max_y f(x,y)$ when the strong-concavity modulus is unknown.  The
+issue is not merely a loss in the complexity bound: an outer stopping
+test based on a residual-only corrected oracle can be false.
+
+The following scalar family shows that this difficulty persists even
+for the corrected value \eqref{eq:corrected-value-pf}.  Let
+\[
+ c:=\frac12,
+ \qquad
+ \psi(t):=\frac{t^2}{2}+c(1-\cos t),
+ \qquad
+ A:=\frac{1-c}{2\pi^2},
+\]
+and, for $0<r\le1$, define
+\begin{equation}\label{eq:scar-counterexample}
+ f_r(x,y):=A\tanh(x/A)\bigl(1-\cos(\pi r y)\bigr)
+             -\psi(ry-1).
+\end{equation}
+Because $1-c\le\psi''(t)\le1+c$,
+\[
+ \partial_{yy}^2 f_r(x,y)
+ =A\pi^2r^2\tanh(x/A)\cos(\pi r y)
+   -r^2\psi''(ry-1)
+ \le-\frac{1-c}{2}r^2.
+\]
+Thus $f_r(x,\cdot)$ is globally $(1-c)r^2/2$-strongly concave.  Its
+second derivatives are uniformly bounded for $0<r\le1$.  Its third
+derivatives are also uniformly bounded: the four distinct block types
+have bounds $12/A^2$, $2\pi/A$, $\pi^2$, and $A\pi^3+c$,
+respectively.  Hence the joint gradient-smoothness and
+Hessian-Lipschitz constants admit finite upper bounds independent of
+$r$.  Moreover,
+\[
+ P_r(x)\ge f_r(x,1/r)=2A\tanh(x/A)\ge-2A,
+\]
+so the value function is bounded below.
+
+At $x=0$, the exact maximizer is $y_r^*(0)=1/r$.  At the point $y=0$,
+however,
+\[
+ |\partial_yf_r(0,0)|=r|\psi'(-1)|\longrightarrow0,
+ \qquad
+ \widehat g_r(0,0)=0,
+ \qquad
+ \widehat H_r(0,0)=0.
+\]
+In contrast, Danskin's theorem gives
+\[
+ P_r'(0)=\partial_xf_r(0,1/r)=1-\cos\pi=2.
+\]
+The corrected value is wrong by a fixed amount as well.  Namely,
+$P_r(0)=0$, whereas
+\begin{equation}\label{eq:scar-counterexample-value}
+ \widehat P_r(0,0)
+ =-\psi(-1)+\frac{\psi'(-1)^2}{2\psi''(-1)}
+ \approx0.0647,
+\end{equation}
+independently of $r$.  Therefore a residual tending to zero does not
+uniformly control either the corrected value or the corrected gradient
+over the present class.  The smoothness constants remain
+bounded; only the unknown strong-concavity modulus tends to zero.
+
+Consequently, choosing SCAR as the residual module in
+\Cref{alg:ncsc-utr} removes the inner solver's dependence on
+$\ell,\mu$, but does not turn its parameter-dependent residual target
+and outer scale into a valid uniform fully parameter-free theorem.
+Nor does a prescribed finite sequence of positive tolerances repair
+the issue: for any finite list $\tau_0,\ldots,\tau_J>0$, choose
+$r<\min_j\tau_j/|\psi'(-1)|$ above and initialize every inner call at
+$y=0$.  Every
+residual test is then already satisfied and can return the same false
+outer derivatives.  This observation covers any predetermined finite
+number of tolerance-halving phases.  It does not claim that indefinite
+refinement cannot eventually move the inner iterate; it shows that a
+finite prescribed refinement depth is not a certificate.
+
+SCAR also does not return a certified lower bound on $\mu$, a certified
+inner optimality gap, or an interval containing $P(x)$.  Its returned
+smoothness quantity is a line-search estimate satisfying the tested
+local inequalities, not a certified global upper bound on $\ell$.
+Likewise, a successful residual reduction does not certify that the
+current strong-convexity guess is below the true $\mu$.  A uniform
+finite-accuracy adaptive minimax theorem therefore needs additional
+information, such as a certified lower bound on $\mu$, a certified
+inner-gap bound, genuine intervals containing $P$, $\nabla P$, and
+$\nabla^2P$, compactness plus a dual-gap certificate, or additional
+problem structure.  The asymptotic result in
+\Cref{thm:pf-scar-utr} avoids a false uniform claim by explicitly
+placing the unknown threshold $\epsilon_0$ in its quantifiers.
+\endgroup
+
+\section{Adaptive fixed-radius SCAR trust region}
+\label{sec:pf-fixed-radius}
+
+This section gives a second parameter-free construction.  It combines
+the fixed-radius trust-region mechanism of
+\citet[Section~8.7]{luenberger2021linear} with a persistent version of
+SCAR.  Persistent SCAR is a sequence-amortized realization of the same
+residual interface in \Cref{def:inner-residual-module}; its cross-call
+work guarantee is established separately in
+\Cref{lem:scar-persistent-half}.  In contrast with
+\Cref{alg:pf-residual-utr}, each ordinary inner update performs a fixed
+number of observable residual halvings instead of restarting SCAR to a
+prescribed power of $\epsilon$.  Consequently, neither
+$\log(1/\epsilon)$ nor $\log\kappa$ multiplies the leading inner-oracle
+bound.  A high-accuracy SCAR call is used only when the trust-region
+solution is interior, and such validation calls occur only during the
+additive scale search.
+
+As in \Cref{thm:pf-scar-utr}, the result is pointwise asymptotic.  More
+precisely, for every fixed payoff and initialization there is an
+unknown threshold $\epsilon_0>0$ below which the theorem holds.  The
+algorithm itself uses only $\epsilon$ and universal numerical
+constants; the precise quantifier and parameter list are stated in
+\Cref{thm:adaptive-fixed-radius-scar}.
+
+\subsection{Persistent SCAR and the working oracle}
+
+We first extract from the proof of \Cref{thm:scar-blackbox} a
+sequential form of SCAR.  Only the curvature calibration and the
+line-search estimate are retained between calls; accelerated momentum
+is restarted whenever the objective changes.
+
+\begin{lemma}[Persistent SCAR halving]
+\label{lem:scar-persistent-half}
+Let $\{\phi_j\}_{j\ge1}$ be any sequence of differentiable functions
+that are all $\mu$-strongly convex and have $L$-Lipschitz gradients.
+Set $\kappa:=L/\mu$.
+Initialize the strong-convexity guess $\nu_0$ and line-search estimate
+$\mathcal M_0$ so that
+\[
+ \mu\le\nu_0\le L,
+ \qquad 0<\mathcal M_0\le4L.
+\]
+A \emph{persistent halving call} at $(\phi_j,u)$ freezes
+$R=\|\nabla\phi_j(u)\|$ and runs one AR call used in Algorithm~5.1 of
+\citet{lan2026optimal}.  If the call returns $v$ with
+$\|\nabla\phi_j(v)\|\le R/2$, the call accepts $v$ and retains the
+current curvature estimates.  Otherwise it discards $v$, replaces
+$\nu$ by $\nu/4$, retains the updated line-search estimate, and repeats
+from $u$ on the same function.
+If $R=0$, the call returns $u$ immediately and is counted as a trivial
+successful halving.
+
+Across any $N$ successful halving calls, the total number of failed
+curvature guesses is at most
+\begin{equation}\label{eq:persistent-scar-failures}
+ \left\lceil\log_4\frac{\nu_0}{\mu}\right\rceil
+ \le\lceil\log_4\kappa\rceil.
+\end{equation}
+The total number of gradient evaluations is at most
+\begin{equation}\label{eq:persistent-scar-count}
+ (4+2\sqrt{10}\,C_1)\sqrt\kappa
+ \left(
+  N+\left\lceil\log_4\frac{\nu_0}{\mu}\right\rceil
+ \right),
+\end{equation}
+where $C_1$ is the constant in Theorem~4.1 of
+\citet{lan2026optimal}, also used in
+\eqref{eq:scar-original-complexity}.  Every retained line-search
+estimate is at most $2L$.
+\end{lemma}
+
+
+
+
+For the rest of this section, define
+\begin{equation}\label{eq:fixed-radius-parameters}
+ \mathcal A_\epsilon:=\log(e/\epsilon),
+ \qquad
+ \sigma_0:=\mathcal A_\epsilon^{-1},
+ \qquad
+ c_0:=2^{-12},
+ \qquad
+ R(\sigma):=\frac{\sqrt\epsilon}{4\sigma},
+\end{equation}
+and let
+\begin{equation}\label{eq:working-half-count}
+ N_{\rm w}:=
+ \left\lceil\log_2\frac{1+c_0}{c_0}\right\rceil.
+\end{equation}
+A corrected tuple $(\widehat P,\widehat g,\widehat H)$ at $(x,y)$ and
+scale $\sigma$ is called \emph{working-accurate} if
+\begin{equation}\label{eq:working-residual-invariant}
+ \|\nabla_yf(x,y)\|
+ \le c_0\ell R(\sigma).
+\end{equation}
+This condition is used only in the analysis; the algorithm maintains
+it by a fixed number of observable residual halvings and never uses
+$\ell$.
+
+\begin{lemma}[Working residual invariant]
+\label{lem:working-residual-invariant}
+Under \Cref{ass:ncsc}, fix $0<\epsilon<1$ and $\sigma>0$.  Suppose
+\eqref{eq:working-residual-invariant} holds at $(x,y)$.
+If $\|d\|\le R(\sigma)$, then $N_{\rm w}$ persistent halving calls on
+$q_{x+d}=-f(x+d,\cdot)$, starting from $y$, produce $y^+$ satisfying
+\[
+ \|\nabla_yf(x+d,y^+)\|
+ \le c_0\ell R(\sigma).
+\]
+If the scale is doubled at the same $x$, one persistent halving call
+produces a point satisfying
+\eqref{eq:working-residual-invariant} with scale $2\sigma$.
+\end{lemma}
+
+
+
+
+The invariant implies
+\begin{equation}\label{eq:working-distance-bound}
+ \|y-y^*(x)\|
+ \le c_0\kappa R(\sigma)
+ =\frac{c_0\kappa\sqrt\epsilon}{4\sigma}.
+\end{equation}
+For later accounting, introduce the analytical, nonobservable error
+majorant
+\begin{equation}\label{eq:fixed-radius-proxy-error}
+ \mathcal E_\epsilon(\sigma):=
+ \frac{7\rho}{24}\bigl(c_0\kappa R(\sigma)\bigr)^3
+ =\frac{7c_0^3\rho\kappa^3}{1536}
+       \frac{\epsilon^{3/2}}{\sigma^3}.
+\end{equation}
+
+\begin{lemma}[Working and validation accuracy]
+\label{lem:fixed-radius-oracle-accuracy}
+Fix a payoff satisfying \Cref{ass:ncsc}, and let
+$M_P=4\sqrt2\kappa^3\rho$.  The following statements hold.
+\begin{enumerate}[label=(\roman*)]
+ \item There exists a problem-dependent $\epsilon_1>0$ such that,
+ for every $0<\epsilon\le\epsilon_1$, every
+ $\sigma\ge\mathcal A_\epsilon^{-1}$, and every working-accurate tuple,
+ \begin{equation}\label{eq:working-proxy-bound}
+  |\widehat P(x,y)-P(x)|
+  \le\mathcal E_\epsilon(\sigma).
+ \end{equation}
+ \item After decreasing $\epsilon_1$ so that
+ $\mathcal A_\epsilon^{-1}\le\sqrt{M_P/6}$ for all
+ $0<\epsilon\le\epsilon_1$, every working-accurate tuple with
+ $\sigma^2\ge M_P/6$ satisfies
+ \begin{equation}\label{eq:working-safe-errors}
+ \begin{aligned}
+  \|\widehat g-\nabla P(x)\|&\le\epsilon/1024,\\
+  \|\widehat H-\nabla^2P(x)\|&\le\sigma\sqrt\epsilon/64,\\
+  |\widehat P-P(x)|&\le\epsilon^{3/2}/(4096\sigma).
+ \end{aligned}
+ \end{equation}
+ \item Choose any secant $a_x$ as in \eqref{eq:scar-secant}.  If a
+ SCAR validation call at $x$ returns $y_{\rm v}$ satisfying
+ \begin{equation}\label{eq:validator-residual}
+  \|\nabla_yf(x,y_{\rm v})\|
+  \le c_0a_x\epsilon^{3/2},
+ \end{equation}
+ then there is a problem-dependent $\epsilon_2>0$ such that, for all
+ $0<\epsilon\le\epsilon_2$ and all
+ $\sigma\ge\mathcal A_\epsilon^{-1}$,
+ \begin{equation}\label{eq:validator-errors}
+ \begin{aligned}
+  \|\widehat g(x,y_{\rm v})-\nabla P(x)\|
+   &\le\epsilon/1024,\\
+  \|\widehat H(x,y_{\rm v})-\nabla^2P(x)\|
+   &\le\sigma\sqrt\epsilon/32.
+ \end{aligned}
+ \end{equation}
+\end{enumerate}
+All thresholds are independent of $x$.
+\end{lemma}
+
+
+
+
+\subsection{The adaptive fixed-radius algorithm}
+
+Given a working-accurate corrected tuple, solve
+\begin{equation}\label{eq:adaptive-fixed-radius-subproblem}
+\begin{aligned}
+ \min_{\|d\|\le R(\sigma)}\quad
+ &\widehat g^Td+\frac12d^T
+ \left(\widehat H+\frac{65}{64}\sigma\sqrt\epsilon I\right)d.
+\end{aligned}
+\end{equation}
+The radius is fixed for a given $(\epsilon,\sigma)$ and does not depend
+on $\|\widehat g\|$.  If $d$ is a global solution and $\lambda\ge0$
+is its trust-region multiplier, then
+\Cref{lem:tr-global-optimality} applies with
+$B=\widehat H+(65/64)\sigma\sqrt\epsilon I$ and
+$R=R(\sigma)$.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\caption{Parameter-free adaptive fixed-radius TR with persistent SCAR}
+\label{alg:adaptive-fixed-radius-scar}
+\KwIn{$x_0,y_{-1}$ and $0<\epsilon<1$}
+$\mathcal A_\epsilon\leftarrow\log(e/\epsilon)$,
+$\sigma\leftarrow\mathcal A_\epsilon^{-1}$,
+$c_0\leftarrow2^{-12}$, and $x\leftarrow x_0$\;
+Choose $z_0\ne y_{-1}$, compute the secant $a_0$ from
+\eqref{eq:scar-secant}, and initialize the persistent SCAR state with
+$\nu_0=\mathcal M_0=a_0$\;
+At $x_0$, apply persistent SCAR halving from $y_{-1}$ until
+$\|\nabla_yf(x_0,y)\|\le c_0a_0R(\sigma)$; compute the corrected tuple
+$(\widehat P,\widehat g,\widehat H)$\;
+\While{true}{
+ Solve \eqref{eq:adaptive-fixed-radius-subproblem} globally and obtain
+ $d$; set $x^+\leftarrow x+d$\;
+ Starting from $y$, apply $N_{\rm w}$ successful persistent SCAR
+ halvings to $q_{x^+}$ and call the result $y^+$\;
+ \eIf{$\|d\|=R(\sigma)$}{
+  compute $\widehat P^+$ at $(x^+,y^+)$\;
+  \eIf{$\widehat P-\widehat P^+
+        \ge\epsilon^{3/2}/(256\sigma)$}{
+   compute $(\widehat g^+,\widehat H^+)$ at $(x^+,y^+)$\;
+   $(x,y,\widehat P,\widehat g,\widehat H)
+    \leftarrow(x^+,y^+,\widehat P^+,\widehat g^+,\widehat H^+)$\;
+  }{
+   discard the candidate tuple, set $\sigma\leftarrow2\sigma$,
+   apply one successful persistent halving call at the unchanged $x$,
+   replace $y$ by the returned inner point, and recompute the current
+   corrected tuple\;
+  }
+ }{
+  Choose $z^+\ne y^+$ and compute at $x^+$ the secant $a^+$ from
+  \eqref{eq:scar-secant}\;
+  Continue persistent SCAR halving at $x^+$ until
+  $\|\nabla_yf(x^+,y_{\rm v})\|
+    \le c_0a^+\epsilon^{3/2}$; compute
+  $(\widehat g_{\rm v},\widehat H_{\rm v})$\;
+  \eIf{$\|\widehat g_{\rm v}\|\le\epsilon/2$ and
+   $\lambda_{\min}(\widehat H_{\rm v})
+    \ge-(21/8)\sigma\sqrt\epsilon$}{
+   \Return{$x^+$}\;
+  }{
+   discard the candidate and validator tuples, set
+   $\sigma\leftarrow2\sigma$, apply one successful persistent halving
+   call at the unchanged $x$, replace $y$ by the returned inner point,
+   and recompute the current corrected tuple\;
+  }
+ }
+}
+\end{algorithm}
+
+Every operation in \Cref{alg:adaptive-fixed-radius-scar} is observable.
+The secants are used only to initialize SCAR and to specify the
+high-accuracy validation residual.  Strong monotonicity and smoothness
+give $\mu\le a_0,a^+\le\ell$, but neither endpoint is known to the
+algorithm.  After an accepted boundary step, the candidate corrected
+tuple is formed at the already computed inner point and stored without
+further refinement.  After a failed trial, the candidate is discarded,
+the current point is unchanged, and the refreshed tuple at
+the doubled scale replaces the stored tuple.  This bookkeeping is
+essential for the proxy telescope below.  The scale never decreases.
+The persistent SCAR state $(\nu,\mathcal M)$ is retained after every
+accepted trial, rejected trial, and failed validation; rejecting an
+outer candidate never rolls back this state.  The initial residual
+evaluation is counted as the first gradient evaluation of the
+corresponding AR call, and the final residual gradient is reused when
+forming the corrected tuple.
+
+The initialization satisfies the working invariant because
+$a_0\le\ell$.  Thereafter, \Cref{lem:working-residual-invariant} proves
+inductively that every tuple used in
+\eqref{eq:adaptive-fixed-radius-subproblem} is working-accurate.
+
+\subsection{Safe scale, termination, and outer complexity}
+
+The following lemma is the fixed-radius analogue of the large-scale
+acceptance result for adaptive UTR.
+
+\begin{lemma}[Safe fixed-radius trial]
+\label{lem:adaptive-fixed-radius-safe}
+Fix a payoff satisfying \Cref{ass:ncsc} and set
+$M_P:=4\sqrt2\,\kappa^3\rho$.  There exists
+$\epsilon_3>0$ such that the following holds for every
+$0<\epsilon\le\epsilon_3$.  Consider any trial generated by
+\Cref{alg:adaptive-fixed-radius-scar}, and suppose its current and
+candidate tuples are working-accurate and its validator, when invoked,
+satisfies \eqref{eq:validator-residual}.  Let $d$ be its global
+trust-region solution and let $\lambda$ be the multiplier supplied by
+\Cref{lem:tr-global-optimality} with
+$B=\widehat H+(65/64)\sigma\sqrt\epsilon I$ and $R=R(\sigma)$.
+Assertions (i)--(ii) below hold when
+the trial scale satisfies
+\begin{equation}\label{eq:adaptive-fixed-radius-safe-scale}
+ \sigma^2\ge M_P/6,
+\end{equation}
+and assertion (iii) holds at every generated scale
+$\sigma\ge\mathcal A_\epsilon^{-1}$.
+\begin{enumerate}[label=(\roman*)]
+ \item If $\|d\|=R(\sigma)$, then
+ \begin{equation}\label{eq:safe-boundary-true-decrease}
+  P(x)-P(x+d)
+  \ge\frac{63}{4096}\frac{\epsilon^{3/2}}{\sigma}
+       +\frac\lambda2R(\sigma)^2,
+ \end{equation}
+ and the observable boundary acceptance test succeeds.
+ \item If $\|d\|<R(\sigma)$, then, at $x^+=x+d$,
+ \begin{equation}\label{eq:safe-interior-true-bounds}
+ \begin{aligned}
+  \|\nabla P(x^+)\|&\le457\epsilon/1024,\\
+  \lambda_{\min}(\nabla^2P(x^+))
+   &\ge-(81/32)\sigma\sqrt\epsilon.
+ \end{aligned}
+ \end{equation}
+ The validation test succeeds.
+ \item At any scale, not necessarily a safe one, success of the
+ validation test implies
+ \begin{equation}\label{eq:validator-true-return}
+  \|\nabla P(x^+)\|<\epsilon,
+  \qquad
+  \lambda_{\min}(\nabla^2P(x^+))
+  \ge-(85/32)\sigma\sqrt\epsilon.
+ \end{equation}
+\end{enumerate}
+\end{lemma}
+
+
+
+
+\begin{theorem}[Parameter-free fixed-radius complexity]
+\label{thm:adaptive-fixed-radius-scar}
+Suppose $f$ satisfies \Cref{ass:ncsc}, define
+$P(x)=\max_y f(x,y)$, fix
+$(x_0,y_{-1})$, and set
+\[
+ \kappa=\ell/\mu,
+ \qquad M_P=4\sqrt2\,\kappa^3\rho,
+ \qquad \Delta_P=P(x_0)-\inf_xP(x).
+\]
+There exists a payoff- and initialization-dependent
+$\epsilon_0\in(0,1)$ such that, for every
+$0<\epsilon\le\epsilon_0$,
+\Cref{alg:adaptive-fixed-radius-scar} terminates.  The algorithm uses
+only $\epsilon$ and universal numerical constants; in particular, it
+does not use $\ell,\mu,\rho,\kappa,M_P$, or $\Delta_P$.  Its returned
+point $x_{\rm out}$ satisfies
+\begin{equation}\label{eq:fixed-radius-return}
+ \|\nabla P(x_{\rm out})\|<\epsilon,
+ \qquad
+ \lambda_{\min}(\nabla^2P(x_{\rm out}))
+ \ge-\frac{85}{16\sqrt6}\sqrt{M_P\epsilon}.
+\end{equation}
+If $Q$ is the total number of solved trust-region subproblems and
+$N_y$ is the total number of evaluations of $\nabla_yf$, including
+the secant evaluations, then
+\begin{subequations}\label{eq:fixed-radius-complexities}
+\begin{align}
+ Q
+ &=O\!\left(\Delta_P\sqrt{M_P}\,\epsilon^{-3/2}\right)
+   +O_{\rm fixed}\!\left(\operatorname{polylog}(1/\epsilon)\right),
+ \label{eq:fixed-radius-leading-outer}\\
+ N_y&=
+ O\!\left(
+  \Delta_P\sqrt{\kappa M_P}\,\epsilon^{-3/2}
+ \right)
+ +O_{\rm fixed}\!\left(
+  \sqrt\kappa\,\operatorname{polylog}(1/\epsilon)
+ \right).
+ \label{eq:fixed-radius-inner-leading}
+\end{align}
+\end{subequations}
+Here $O_{\rm fixed}$ may depend on the fixed payoff and initialization
+but not on $\epsilon$.  Equivalently, the leading outer and inner
+terms are, respectively,
+\[
+ O(\Delta_P\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2})
+ \quad\text{and}\quad
+ O(\Delta_P\kappa^2\sqrt\rho\,\epsilon^{-3/2}).
+\]
+Thus neither $\log(1/\epsilon)$ nor $\log\kappa$ multiplies the leading
+inner-gradient term.  Running the method with internal tolerance
+$(1536/7225)\epsilon$ gives the standard
+$(\epsilon,\sqrt{M_P\epsilon})$ guarantee, provided that internal
+tolerance lies in the pointwise regime above.
+\end{theorem}
+
+
+
+
+\begin{remark}[Oracle accounting]
+The bound in \Cref{thm:adaptive-fixed-radius-scar} counts
+inner-gradient evaluations, which is the oracle counted in
+\Cref{thm:scar-blackbox}.  SCAR's line search also evaluates
+$q_x=-f(x,\cdot)$.  Under the standard implementation in which the
+accelerated subroutine uses $O(1)$ function values per gradient
+evaluation, the function-evaluation remark following Theorem~4.1 of
+\citet{lan2026optimal} bounds the extra cost of an AR call containing
+$S_{\rm AR}$ backtracking stages by
+$2S_{\rm AR}+\log_2(\mathcal M^+/\mathcal M)$.  Summed over all
+persistent calls, the stage counts are absorbed by $N_y$, while the
+logarithmic ratios telescope because $\mathcal M$ is persistent.  In
+particular,
+\[
+ \log_2(\mathcal M_{\rm final}/a_0)
+ \le\log_2(2\ell/a_0)\le1+\log_2\kappa.
+\]
+Thus the total inner function-value count is
+$O(N_y+\log\kappa)$.  The initial corrected tuple, trial candidates,
+and scale refreshes use at most $2Q+1$ additional payoff values.
+Each stored tuple and each validator also constructs corrected
+gradient and Hessian estimators.  The inverse actions in
+\eqref{eq:corrected-value-pf} and
+\eqref{eq:corrected-derivatives} are treated as exact linear algebra,
+as in the earlier minimax analysis; iterative linear solves require a
+separate accuracy count.
+\end{remark}
+
+{\color{red}
+\subsection{What the theorem does and does not certify}
+\label{subsec:fixed-radius-red-caveats}
+
+The pointwise quantifier in
+\Cref{thm:adaptive-fixed-radius-scar} is essential.  The algorithm
+uses no unknown problem parameter, but it also cannot observe whether
+$\epsilon\le\epsilon_0$.  SCAR certifies a residual only; without a
+known lower bound on $\mu$, that residual is not a uniform certificate
+for the distance to $y^*(x)$, the inner optimality gap, the corrected
+gradient and Hessian estimators, or the corrected value.  The counterexample in
+\Cref{subsec:scar-limitation} therefore continues to rule out a
+uniform finite-accuracy claim.
+
+The fixed-radius construction handles the function-value difficulty
+in a specific, nonstandard way.  It never asserts that
+$\widehat P$ is a lower or an upper bound on $P$.  Unsafe accepted
+boundary steps need not decrease the true value function.  Instead,
+the proof telescopes the stored corrected proxy and explicitly pays
+for every proxy jump caused by a scale refresh; see
+\eqref{eq:proxy-refresh-jump}--\eqref{eq:fixed-radius-proxy-telescope}.
+This argument relies on three implementation details: the scale is
+nondecreasing, an accepted candidate inner point and corrected value
+are retained without further inner refinement, and a rejected candidate
+is discarded before the current tuple is refreshed.  Dropping any of
+these rules invalidates the displayed telescope.
+
+The high-accuracy validator is invoked only after an interior
+fixed-radius solution.  Its auxiliary residual
+$c_0a_x\epsilon^{3/2}$ controls inner accuracy only; it is not used as
+the trust-region scale or as the Hessian stopping threshold.  The
+validator eliminates false termination for each fixed problem once
+$\epsilon$ is sufficiently small, but it is not a uniformly
+verifiable certificate.  A doubling trick in $\epsilon$ does not by
+itself reveal the unknown onset of this asymptotic regime.  A uniform
+all-$\epsilon$ theorem would still require additional information such
+as a certified lower bound on $\mu$, a certified inner-gap or
+value-function interval, compactness with a computable dual gap, or
+other problem-specific structure.
+}
+
+\section{Conclusion}
+
+For unconstrained optimization, the certified-inexact adaptive UTR
+removes $M$ from the outer scale update and admits the value and
+derivative certificates needed by the minimax reduction.  Producing
+nonzero certified radii remains an oracle-interface requirement.  The
+exact-oracle specialization is fully parameter free and retains sharp
+leading dependence on $\Delta_F$, $M$, and $\epsilon$ with only
+additive search overhead.
+The fixed-scale inexact analysis is used as an outer estimate rather
+than a separate algorithm; in particular, its
+cubic-path budget is what amortizes the inner work in the minimax
+specialization.
+
+For NC--SC minimax optimization, the outer method now receives a
+residual-based maximization module as an input.  Correctness depends
+only on the module's returned residual, while AGD, restarted SCAR, and
+persistent SCAR provide different work guarantees for the same
+interface.  The Newton-corrected value-function gradient permits inner
+solves at a $\sqrt\epsilon$ scale.  This preserves the
+$O(\Delta_P\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2})$ outer complexity
+and removes the leading multiplicative $\log(1/\epsilon)$ from the
+raw-gradient tracking bound, while retaining logarithmic dependence on
+$\kappa$ for the restarted accelerated implementations.
+
+The first parameter-free residual-module UTR removes all problem
+parameters from the executable outer and inner algorithms and retains
+the sharp outer leading order for each fixed problem and initialization
+once $\epsilon$ is sufficiently small, but its uniformly accurate inner solves
+restore a leading $\log(1/\epsilon)$.  The adaptive fixed-radius
+variant replaces those ordinary solves by persistent residual-halving
+calls.  It preserves the same leading outer order and attains leading
+inner-gradient complexity
+$O(\Delta_P\kappa^2\sqrt\rho\,\epsilon^{-3/2})$, with all
+$\log(1/\epsilon)$ and $\log\kappa$ terms confined to additive
+initialization, validation, and scale-search costs.  Both
+parameter-free conclusions remain pointwise asymptotic: the unknown
+onset of their small-$\epsilon$ regime is not a uniform
+finite-accuracy certificate.
+
+\appendix
+\section{Deferred technical proofs}
+\label{app:proofs}
+The main text states the assumptions and results used by subsequent sections.  This appendix collects the technical proofs in their order of appearance.
+
+\subsection{A common inexact trust-region estimate}
+\label{app:common-tr-estimate}
+
+\begin{lemma}[Common inexact trust-region step estimate]
+\label{lem:common-inexact-tr-step}
+Suppose \Cref{ass:generic} holds.  At a point $x$, let $g$ and a
+symmetric $H$ satisfy
+\[
+ \|g-\nabla F(x)\|\le\delta_0,
+ \qquad
+ \|H-\nabla^2F(x)\|\le\xi.
+\]
+For $a\ge0$ and $R>0$, let $d$ be a global solution of
+\[
+ \min_{\|u\|\le R}\;
+ q(u):=g^Tu+\frac12u^T(H+aI)u,
+\]
+let $\lambda$ be the multiplier supplied by
+\Cref{lem:tr-global-optimality}, and write $r=\|d\|$.  Let a candidate
+gradient $g^+$ satisfy
+$\|g^+-\nabla F(x+d)\|\le\delta_+$.  Then
+\begin{subequations}\label{eq:common-tr-estimates}
+\begin{align}
+ q(d)&\le-\frac{\lambda}{2}r^2,
+       \label{eq:common-model-bound}\\
+ F(x)-F(x+d)
+ &\ge\frac{a-\xi}{2}r^2+\frac{\lambda}{2}r^2
+      -\frac M6r^3-\delta_0r,
+       \label{eq:common-function-bound}\\
+ \|g^+\|
+ &\le(a+\xi+\lambda)r+\frac M2r^2+\delta_0+\delta_+.
+       \label{eq:common-gradient-bound}
+\end{align}
+\end{subequations}
+\end{lemma}
+
+\begin{proof}
+Apply \eqref{eq:tr-global-optimality} with $B=H+aI$.  Its stationarity
+and positive-semidefiniteness conditions give
+\[
+ q(d)=-\frac12d^T(H+aI)d-\lambda r^2
+ \le-\frac{\lambda}{2}r^2,
+\]
+which proves \eqref{eq:common-model-bound}.  The Taylor bound and the
+current endpoint errors imply
+\[
+ F(x)-F(x+d)
+ \ge-g^Td-\frac12d^THd-\delta_0r-\frac{\xi}{2}r^2-\frac M6r^3.
+\]
+Since
+$-g^Td-d^THd/2=-q(d)+ar^2/2$, the model bound yields
+\eqref{eq:common-function-bound}.
+
+For the candidate gradient, decompose the two endpoint errors, Taylor
+remainder, Hessian error, and model residual:
+\begin{align*}
+g^+
+&=[g^+-\nabla F(x+d)]
+ +[\nabla F(x+d)-\nabla F(x)-\nabla^2F(x)d]\\
+&\quad+[\nabla F(x)-g]
+ +[\nabla^2F(x)-H]d+[g+Hd].
+\end{align*}
+The stationarity part of \eqref{eq:tr-global-optimality}, again with
+$B=H+aI$, gives $g+Hd=-(a+\lambda)d$.  Taking norms proves
+\eqref{eq:common-gradient-bound}.
+\end{proof}
+
+\subsection{Fixed-scale inexact UTR estimates}
+\label{app:fixed-scale-proofs}
+
+Let $K\in\mathbb N_0\cup\{\infty\}$ be the first return index of the
+procedure \eqref{eq:generic-stopping-test}--\eqref{eq:generic-subproblem},
+with $K=\infty$ if it never returns.  For $k<K$, set
+$r_k:=\|d_k\|$ and let $\lambda_k$ be the multiplier supplied by
+\Cref{lem:tr-global-optimality} with
+\[
+ g=g_k,\qquad
+ B=H_k+\sqrt{M/6}\sqrt{h_k}\,I,\qquad
+ R=\frac{\sqrt{h_k}}{4\sqrt{M/6}}.
+\]
+
+\begin{lemma}[Decrease and clipped-gradient recurrence]
+\label{lem:one-step}
+Fix $\epsilon>0$ and suppose
+\Cref{ass:generic,ass:inexact-oracle} hold.  Every nonterminal step
+$k<K$ generated by \eqref{eq:generic-stopping-test}--
+\eqref{eq:generic-subproblem} satisfies
+\begin{equation}\label{eq:basic-decrease}
+ F(x_k)-F(x_{k+1})
+ \ge \frac{31}{128}\sqrt{\frac M6}\sqrt{h_k}\,r_k^2
+     +\frac12\lambda_kr_k^2-\frac{\epsilon r_k}{256}.
+\end{equation}
+Consequently,
+\begin{subequations}\label{eq:step-type-decrease}
+\begin{align}
+ \lambda_k=0:\quad
+ F(x_k)-F(x_{k+1})
+ &\ge-\frac{\epsilon^{3/2}}{63488\sqrt{M/6}},
+      \label{eq:interior-small-increase}\\
+ \lambda_k>0:\quad
+ F(x_k)-F(x_{k+1})
+ &\ge\frac1{128}
+  \left(\frac{h_k^{3/2}}{\sqrt{M/6}}+\lambda_kr_k^2\right).
+      \label{eq:boundary-decrease}
+\end{align}
+\end{subequations}
+Moreover,
+\begin{equation}\label{eq:gradient-recurrence}
+ h_{k+1}\le
+ \max\left\{\frac{15}{32}h_k+\lambda_kr_k,\epsilon\right\}.
+\end{equation}
+\end{lemma}
+
+The small negative term in \eqref{eq:interior-small-increase} is why a
+uniform $O(\epsilon)$ gradient error is admissible.  An inexact step
+with $\lambda_k=0$ need not be monotone: it may increase $F$ by at
+most $\epsilon^{3/2}/(63488\sqrt{M/6})$.  The finite-prefix argument
+below debits every such increase against the decrease on indices in
+$\mathcal B_N$.
+
+\begin{proof}[Proof of \Cref{lem:one-step}]
+Apply \Cref{lem:common-inexact-tr-step} with
+\[
+ a=\sqrt{M/6}\sqrt{h_k},\qquad
+ R=\frac{\sqrt{h_k}}{4\sqrt{M/6}},\qquad
+ \xi=\frac{\sqrt{M/6}\sqrt\epsilon}{64},\qquad
+ \delta_0=\delta_+=\frac{\epsilon}{256}.
+\]
+Because $r_k\le R$,
+$(M/6)r_k^3\le\sqrt{M/6}\sqrt{h_k}\,r_k^2/4$.
+Using $\sqrt\epsilon\le\sqrt{h_k}$ in
+\eqref{eq:common-function-bound} therefore gives
+\[
+ F(x_k)-F(x_{k+1})
+ \ge\frac{31}{128}\sqrt{\frac M6}\sqrt{h_k}\,r_k^2
+  +\frac12\lambda_kr_k^2-\frac{\epsilon r_k}{256},
+\]
+which is \eqref{eq:basic-decrease}.
+
+If $\lambda_k=0$, minimizing
+$31\sqrt{M/6}\sqrt\epsilon\,r^2/128-\epsilon r/256$ over $r\ge0$
+has minimizer $r=\sqrt\epsilon/(124\sqrt{M/6})$ and minimum
+$-\epsilon^{3/2}/(63488\sqrt{M/6})$, proving
+\eqref{eq:interior-small-increase}.  If $\lambda_k>0$, then
+$r_k=\sqrt{h_k}/(4\sqrt{M/6})$, and
+\[
+  \frac{31}{128}\sqrt{\frac M6}\sqrt{h_k}\,r_k^2
+  -\frac{\epsilon r_k}{256}
+  \ge\left(\frac{31}{2048}-\frac1{1024}\right)
+      \frac{h_k^{3/2}}{\sqrt{M/6}}
+  =\frac{29}{2048}\frac{h_k^{3/2}}{\sqrt{M/6}}.
+\]
+Since $29/2048>1/128$, the boundary estimate follows.
+
+The common gradient estimate gives
+\begin{align*}
+\|g_{k+1}\|
+&\le \sqrt{\frac M6}\sqrt{h_k}\,r_k+\lambda_kr_k
+  +\frac M2r_k^2+\frac{\sqrt{M/6}\sqrt\epsilon}{64}r_k
+  +\frac{\epsilon}{128}\\
+&\le\left(\frac14+\frac3{16}+\frac1{256}
+  +\frac2{256}\right)h_k+\lambda_kr_k\\
+&=\frac{115}{256}h_k+\lambda_kr_k
+ <\frac{15}{32}h_k+\lambda_kr_k.
+\end{align*}
+Here we used, in order,
+$\sqrt{M/6}\sqrt{h_k}r_k\le h_k/4$,
+$(M/2)r_k^2\le3h_k/16$,
+$\sqrt{M/6}\sqrt\epsilon r_k/64\le h_k/256$, and
+$\epsilon/128\le2h_k/256$.
+Clipping the resulting bound below by $\epsilon$ proves
+\eqref{eq:gradient-recurrence}.
+\end{proof}
+
+For any finite prefix of $N\le K$ nonterminal iterations, let
+\[
+ \mathcal B_N:=\{0\le k<N:\lambda_k>0\},
+ \qquad
+ \mathcal I_N:=\{0\le k<N:\lambda_k=0\},
+\]
+and, for $k\in\mathcal B_N$, define
+\begin{equation}\label{eq:z-definition}
+ z_k:=\frac{\lambda_kr_k}{h_k}.
+\end{equation}
+
+\begin{lemma}[Boundary and interior budgets]
+\label{lem:budgets}
+Fix $\epsilon>0$ and suppose
+\Cref{ass:generic,ass:inexact-oracle} hold.  For the sequence generated
+by \eqref{eq:generic-stopping-test}--\eqref{eq:generic-subproblem},
+every finite nonterminal prefix satisfies
+\begin{subequations}\label{eq:boundary-budgets}
+\begin{align}
+ |\mathcal B_N|
+ &\le128\sqrt{\frac M6}\Delta_F\epsilon^{-3/2}
+      +\frac1{496}|\mathcal I_N|,
+      \label{eq:boundary-count}\\
+ \sum_{k\in\mathcal B_N}z_k
+ &\le512\sqrt{\frac M6}\Delta_F\epsilon^{-3/2}
+      +\frac1{124}|\mathcal I_N|.
+      \label{eq:z-budget}
+\end{align}
+\end{subequations}
+Furthermore,
+\begin{equation}\label{eq:interior-budget}
+ |\mathcal I_N|
+ \le |\mathcal B_N|+1+
+ \frac{\log_+(h_0/\epsilon)+\sum_{k\in\mathcal B_N}z_k}
+      {\log(32/15)}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}[Proof of \Cref{lem:budgets}]
+Summing \eqref{eq:step-type-decrease} and using
+$F(x_N)\ge F^*$ gives
+\[
+  \Delta_F
+  \ge\frac{\epsilon^{3/2}}{128\sqrt{M/6}}|\mathcal B_N|
+    +\frac1{128}\sum_{k\in\mathcal B_N}\lambda_kr_k^2
+    -\frac{\epsilon^{3/2}}{63488\sqrt{M/6}}|\mathcal I_N|.
+\]
+This proves \eqref{eq:boundary-count}.  For $k\in\mathcal B_N$,
+\[
+  \lambda_kr_k^2
+  =\frac{z_kh_k^{3/2}}{4\sqrt{M/6}}
+  \ge\frac{z_k\epsilon^{3/2}}{4\sqrt{M/6}},
+\]
+which proves \eqref{eq:z-budget}.
+
+For $k\in\mathcal B_N$, \eqref{eq:gradient-recurrence} implies
+\[
+ \left[\log\frac{h_{k+1}}{h_k}\right]_+
+ \le\left[\log\left(\frac{15}{32}+z_k\right)\right]_+
+ \le z_k.
+\]
+Indeed, the left-hand side is zero when $z_k\le17/32$; above this
+threshold, $z-\log(15/32+z)$ is increasing and positive.
+For $k\in\mathcal I_N$ with $h_{k+1}>\epsilon$, the quantity
+$\log h_k$ decreases by at least $\log(32/15)$.  If
+$k\in\mathcal I_N$ has
+$h_{k+1}=\epsilon$ and $k+1<N$, the gradient stopping test holds at the
+next iterate.  Since the repeated-subproblem procedure has not
+terminated,
+$\lambda_{\min}(H_{k+1})<-\sqrt{M/6}\sqrt\epsilon$, so
+$H_{k+1}+\sqrt{M/6}\sqrt\epsilon I$ is not positive semidefinite.
+Applying \eqref{eq:tr-global-optimality} at iteration $k+1$ with
+$B=H_{k+1}+\sqrt{M/6}\sqrt\epsilon I$ therefore forces
+$\lambda_{k+1}>0$, so the next index belongs to $\mathcal B_N$.
+These floor-hitting indices in
+$\mathcal I_N$ pair injectively with their successors in
+$\mathcal B_N$, apart from the possible last index $k=N-1$.  Hence
+\[
+ \bigl|\{k\in\mathcal I_N:h_{k+1}=\epsilon\}\bigr|
+ \le|\mathcal B_N|+1.
+\]
+For the remaining indices in $\mathcal I_N$, telescoping $\log h_k$,
+using $h_N\ge\epsilon$, and charging every positive increase on
+$k\in\mathcal B_N$ to $z_k$ gives
+\[
+ \bigl|\{k\in\mathcal I_N:h_{k+1}>\epsilon\}\bigr|
+ \log(32/15)
+ \le\log_+(h_0/\epsilon)+\sum_{k\in\mathcal B_N}z_k.
+\]
+Adding the last two displays proves \eqref{eq:interior-budget}.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:generic-complexity}]
+Substituting \eqref{eq:boundary-budgets} into
+\eqref{eq:interior-budget} gives
+\begin{align*}
+&\left[1-\frac1{496}
+  -\frac1{124\log(32/15)}\right]
+  |\mathcal I_N|\\
+&\quad\le
+128\left(1+\frac4{\log(32/15)}\right)
+\sqrt{\frac M6}\Delta_F\epsilon^{-3/2}
++1+\frac{\log_+(h_0/\epsilon)}{\log(32/15)}.
+\end{align*}
+The coefficient in brackets is greater than $0.98$.  Hence both
+$|\mathcal I_N|$ and $|\mathcal B_N|$ are bounded by
+\[
+ O\!\left(
+ \sqrt{M/6}\,\Delta_F\epsilon^{-3/2}
+ +\log_+(h_0/\epsilon)+1
+ \right),
+\]
+uniformly over every finite prefix.
+If $K=\infty$, then for every finite $N$ the identity
+$N=|\mathcal I_N|+|\mathcal B_N|$ would be bounded by the same constant,
+independent of $N$.  Choosing a larger $N$ gives a contradiction.
+Therefore $K<\infty$.  Taking $N=K$ proves
+\eqref{eq:generic-complexity} for the actual
+number of solved subproblems.
+
+At termination, \eqref{eq:generic-oracle-errors} gives
+$\|\nabla F(\widehat x)\|\le257\epsilon/256$ and
+\[
+  \lambda_{\min}(\nabla^2F(\widehat x))
+  \ge-\frac{65}{64}\sqrt{\frac M6}\sqrt\epsilon
+  \ge-\sqrt{M\epsilon},
+\]
+where the last inequality uses $65/(64\sqrt6)<1$.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{lem:cubic-path}]
+Since $\sqrt{h_k}\ge4\sqrt{M/6}\,r_k$,
+\eqref{eq:basic-decrease} implies
+\[
+ F(x_k)-F(x_{k+1})
+ \ge\frac{31}{192}Mr_k^3-\frac{\epsilon r_k}{256}.
+\]
+Split the first term equally and maximize
+$\epsilon r/256-(31/384)Mr^3$ over $r\ge0$.  Its maximum is
+$\epsilon^{3/2}/(384\sqrt{62M})$, and therefore
+\[
+ F(x_k)-F(x_{k+1})
+ \ge\frac{31}{384}Mr_k^3
+ -\frac{\epsilon^{3/2}}{384\sqrt{62M}}.
+\]
+Summing from $k=0$ to $K-1$ and using $F(x_K)\ge F^*$ proves
+\eqref{eq:cubic-path}.
+\end{proof}
+
+\subsection{Certified-inexact adaptive clipped UTR}
+
+\begin{lemma}[Guaranteed trial outcome]\label{lem:large-scale}
+Suppose \Cref{ass:adaptive-inexact-oracle} holds.  If
+\begin{equation}\label{eq:adaptive-scale-threshold}
+ \frac{M}{6}\le\sigma^2\le\bar\sigma^2,
 \end{equation}
 then a trial of \Cref{alg:adaptive-utr} either satisfies the stopping
 test or satisfies the acceptance test \eqref{eq:acceptance}.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}[Proof of \Cref{lem:large-scale}]
 If the stopping test holds, the algorithm returns before solving a
-subproblem.  Otherwise it solves \eqref{eq:subproblem}.  By
-\eqref{eq:taylor-function}, \eqref{eq:kkt-stationarity}, and
-\eqref{eq:kkt-psd},
-\begin{align}
-f(x_k+d)-f(x_k)
-&\le g_k^Td+\frac12d^TH_kd+\frac{M}{6}\|d\|^3 \notag\\
-&\le-\frac12(\rho\sqrt{h_k}+\lambda)\|d\|^2
-       +\frac{M}{6}\|d\|^3. \label{eq:trial-decrease-raw}
-\end{align}
-Using \eqref{eq:kkt-radius} and \eqref{eq:rho-threshold} gives
+subproblem.  Otherwise apply \Cref{lem:common-inexact-tr-step} with
+$g=g_k$, $H=H_{k,\sigma}$, $g^+=g_k^+$, and
+\[
+ a=\sigma\sqrt{h_k}+\frac{\sigma\sqrt\epsilon}{64},\qquad
+ R=\frac{\sqrt{h_k}}{4\sigma},\qquad
+ \xi=\frac{\sigma\sqrt\epsilon}{64},\qquad
+ \delta_0=\delta_+=\delta_g.
+\]
+The radius and
+\eqref{eq:adaptive-scale-threshold} give
+$(M/6)\|d\|^3\le\sigma\sqrt{h_k}\|d\|^2/4$.
+Thus \eqref{eq:common-function-bound} becomes
 \begin{equation}\label{eq:trial-decrease}
-    f(x_k)-f(x_k+d)
-    \ge\frac14\rho\sqrt{h_k}\,\|d\|^2
-       +\frac12\lambda\|d\|^2.
+    F(x_k)-F(x_k+d)
+    \ge\frac14\sigma\sqrt{h_k}\,\|d\|^2
+       +\frac12\lambda\|d\|^2-\delta_g\|d\|.
 \end{equation}
-Moreover, \eqref{eq:taylor-gradient} and
-\eqref{eq:kkt-stationarity} imply
+Similarly, \eqref{eq:common-gradient-bound} yields
 \begin{align}
-\|\nabla f(x_k+d)\|
-&\le \rho\sqrt{h_k}\,\|d\|+\lambda\|d\|
-       +\frac{M}{2}\|d\|^2 \notag\\
-&\le\left(\frac14+\frac{M}{32\rho^2}\right)h_k
-       +\lambda\|d\| \notag\\
-&\le\frac{7}{16}h_k+\lambda\|d\|
+\|g_k^+\|
+&\le \sigma\sqrt{h_k}\,\|d\|+\lambda\|d\|
+ +2\frac{\sigma\sqrt\epsilon}{64}\|d\|
+ +\frac M2\|d\|^2+2\delta_g \notag\\
+&\le\left(\frac14+\frac1{128}+\frac3{16}
+ +\frac1{128}\right)h_k+\lambda\|d\| \notag\\
+&=\frac{29}{64}h_k+\lambda\|d\|
  \le\frac12h_k+\lambda\|d\|. \label{eq:trial-gradient}
 \end{align}
 
-If $\lambda=0$, \eqref{eq:trial-decrease} and
-\eqref{eq:trial-gradient} give \eqref{eq:acceptance-interior}.  If
-$\lambda>0$, \Cref{lem:kkt} and \eqref{eq:trial-decrease} give
+If $\|d\|<\sqrt{h_k}/(4\sigma)$, complementarity gives
+$\lambda=0$ by \Cref{lem:tr-global-optimality}.  Maximizing
+$\delta_g r-\sigma\sqrt{h_k}r^2/4$ over $r\ge0$ and then adding the
+two value-oracle errors shows
 \[
-    f(x_k)-f(x_k+d)
-    \ge\frac{h_k^{3/2}}{64\rho}
-       +\frac12\lambda\|d\|^2,
+ \widetilde F_k^+-\widetilde F_k
+ \le\frac{\delta_g^2}{\sigma_*\sqrt\epsilon}+\frac\omega4
+ \le\omega.
 \]
-which, together with $\eta\le1/64$ and
-\eqref{eq:trial-gradient}, gives
-\eqref{eq:acceptance-boundary-function}--
-\eqref{eq:acceptance-boundary-gradient}.
+Together with \eqref{eq:trial-gradient}, this proves
+\eqref{eq:acceptance-interior}.
+
+If $\|d\|=\sqrt{h_k}/(4\sigma)$, then
+$\delta_g\|d\|\le h_k^{3/2}/(1024\sigma)$, so
+\eqref{eq:trial-decrease} and the two value-oracle errors give
+\[
+ \widetilde F_k-\widetilde F_k^+
+ \ge\frac{15}{1024}\frac{h_k^{3/2}}\sigma
+ +\frac12\lambda\|d\|^2-\frac\omega4.
+\]
+Condition \eqref{eq:adaptive-boundary-compatibility}, $h_k\ge\epsilon$,
+$\sigma\le\bar\sigma$, and $\eta\le1/256$ imply the boundary
+acceptance test.  The gradient test follows from
+\eqref{eq:trial-gradient}.
 Thus every subproblem actually solved with
-$\rho^2\ge M/6$ satisfies the appropriate branch of the acceptance
+$\sigma^2\ge M/6$ satisfies the appropriate branch of the acceptance
 test, which proves the stated alternative.
 \end{proof}
 
-\begin{corollary}[Uniform parameter bound]\label{cor:rho-bound}
-Every trial parameter generated by \Cref{alg:adaptive-utr} satisfies
-\begin{equation}\label{eq:rho-bar}
-    \rho\le\bar\rho
-    :=\max\left\{\rho_0,\gamma_+\sqrt{\frac{M}{6}}\right\}.
-\end{equation}
-Every inner loop terminates after finitely many trials.
+\begin{corollary}[Uniform parameter bound]\label{cor:adaptive-scale-bound}
+Suppose \Cref{ass:adaptive-inexact-oracle} holds.  Every trial parameter
+generated by \Cref{alg:adaptive-utr} satisfies
+$\sigma\le\bar\sigma$, with $\bar\sigma$ defined in
+\eqref{eq:adaptive-scale-bar}.  Every inner loop terminates after
+finitely many trials.
 \end{corollary}
 
-\begin{proof}
-Set $\rho_*:=\sqrt{M/6}$.  By \Cref{lem:large-rho}, a trial with
-$\rho\ge\rho_*$ cannot be rejected.  Since $\gamma_+>1$, repeated
-increases from any positive initial parameter reach $\rho_*$ after
-finitely many rejected trials.  Thus every inner loop is finite.
-Moreover, a rejected parameter
-satisfies $\rho<\rho_*$, so its successor is smaller than
-$\gamma_+\rho_*$.  After an accepted trial with parameter $\rho$, the
-next initial value is
-$\max\{\rho_{\min},\rho/\gamma_-\}
- \le\max\{\rho_{\min},\rho\}$.  Since $\rho_{\min}\le\rho_0$,
-induction from $\rho_0$ proves \eqref{eq:rho-bar}.
+\begin{proof}[Proof of \Cref{cor:adaptive-scale-bound}]
+The initial parameter satisfies $\sigma_0\le\bar\sigma$.  Suppose a
+trial parameter is at most $\bar\sigma$.  If it is rejected, then
+\Cref{lem:large-scale} implies $\sigma<\sigma_*$, so its successor is
+smaller than $\gamma_+\sigma_*\le\bar\sigma$.  After an accepted trial
+with parameter $\sigma$, the next initial value is
+$\max\{\sigma_{\min},\sigma/\gamma_-\}
+ \le\max\{\sigma_{\min},\sigma\}$.  Since $\sigma_{\min}\le\sigma_0$,
+induction proves the uniform bound.  Finally, repeated rejected-trial
+updates reach $\sigma_*$ after finitely many trials, and the first such
+trial lies below $\gamma_+\sigma_*\le\bar\sigma$; by
+\Cref{lem:large-scale} it cannot be rejected.  Hence every inner loop
+is finite.
 \end{proof}
 
-\section{Accepted-step complexity}
-By \Cref{cor:rho-bound}, each inner loop either returns or accepts a
-step after finitely many trials.  With $\inf\varnothing=\infty$, define
-the accepted-step stopping index
+With $\inf\varnothing=\infty$, define the accepted-step return index
 \begin{equation}\label{eq:adaptive-stopping-time}
-    K_\epsilon
-    :=\inf\{k\in\N_0:\text{Algorithm~\ref{alg:adaptive-utr}
-       returns }x_k\}
-    \in\N_0\cup\{\infty\}.
+ K_\epsilon:=\inf\{k\in\mathbb N_0:
+  \text{\Cref{alg:adaptive-utr} returns }x_k\}
+ \in\mathbb N_0\cup\{\infty\}.
 \end{equation}
-Thus, if $K_\epsilon=\infty$, the algorithm generates infinitely many
-accepted steps.  For every $k<K_\epsilon$, let $\rho_k$, $d_k$, and
-$\lambda_k$ denote the parameter, step, and multiplier of the accepted
-trial producing $x_{k+1}$.
-
-For any $N\in\N_0$ with $N\le K_\epsilon$, define the prefix sets
+For every $k<K_\epsilon$, let $\sigma_k$, $d_k$, and $\lambda_k$
+denote the parameter, step, and multiplier of the accepted trial
+producing $x_{k+1}$, set $H_k:=H_{k,\sigma_k}$ for its
+scale-dependent Hessian, and set $r_k:=\|d_k\|$.
+For any finite $N\le K_\epsilon$, define
 \begin{equation}\label{eq:adaptive-prefix-sets}
-    \mathcal B_N:=\{0\le k<N:\lambda_k>0\},
-    \qquad
-    \mathcal I_N:=\{0\le k<N:\lambda_k=0\},
+ \mathcal B_N:=\left\{0\le k<N:
+  \|d_k\|=\frac{\sqrt{h_k}}{4\sigma_k}\right\},
+ \qquad
+ \mathcal I_N:=\left\{0\le k<N:
+  \|d_k\|<\frac{\sqrt{h_k}}{4\sigma_k}\right\},
 \end{equation}
-and, for $k\in\mathcal B_N$,
+and, for $k\in\mathcal B_N$, set
 \begin{equation}\label{eq:z-def}
-    z_k:=\frac{\lambda_k\|d_k\|}{h_k}.
+ z_k:=\frac{\lambda_k\|d_k\|}{h_k}.
 \end{equation}
 
 \begin{lemma}[Boundary steps]\label{lem:boundary-count}
-For every $N\in\N_0$ with $N\le K_\epsilon$,
-\begin{equation}\label{eq:boundary-bounds}
-    |\mathcal B_N|
-    \le\frac{\bar\rho\Delta_f}{\eta\epsilon^{3/2}},
-    \qquad
-    \sum_{k\in\mathcal B_N}z_k
-    \le\frac{4\bar\rho\Delta_f}{\eta\epsilon^{3/2}}.
-\end{equation}
+Suppose \Cref{ass:adaptive-inexact-oracle} holds.  With the notation in
+\eqref{eq:adaptive-stopping-time}--\eqref{eq:z-def}, every finite
+$N\le K_\epsilon$ satisfies
+\begin{subequations}\label{eq:boundary-bounds}
+\begin{align}
+ |\mathcal B_N|
+ &\le\frac{\bar\sigma(\Delta_F+\omega/4)}
+           {\eta\epsilon^{3/2}}
+  +\frac{\bar\sigma\omega}{\eta\epsilon^{3/2}}|\mathcal I_N|,
+     \label{eq:adaptive-boundary-count}\\
+ \sum_{k\in\mathcal B_N}z_k
+ &\le\frac{4\bar\sigma(\Delta_F+\omega/4)}
+           {\eta\epsilon^{3/2}}
+  +\frac{4\bar\sigma\omega}{\eta\epsilon^{3/2}}|\mathcal I_N|.
+     \label{eq:adaptive-z-bound}
+\end{align}
+\end{subequations}
 \end{lemma}
 
-\begin{proof}
-All accepted steps are monotone.  For $k\in\mathcal B_N$,
-\eqref{eq:acceptance-boundary-function}, $h_k\ge\epsilon$, and
-$\rho_k\le\bar\rho$ yield
+\begin{proof}[Proof of \Cref{lem:boundary-count}]
+For $k\in\mathcal B_N$, the accepted value test gives a decrease of
+the stored proxy of at least
+$\eta(h_k^{3/2}/\sigma_k+\lambda_kr_k^2)+\omega$.
+For $k\in\mathcal I_N$, that proxy can increase by at most $\omega$.
+The two endpoint oracle bounds imply
+$\widetilde F_0-\widetilde F_N\le\Delta_F+\omega/4$.
+Telescoping the stored proxy therefore gives
 \[
-    f(x_k)-f(x_{k+1})
-    \ge\frac{\eta\epsilon^{3/2}}{\bar\rho}.
+ \eta\sum_{k\in\mathcal B_N}
+ \left(\frac{h_k^{3/2}}{\sigma_k}+\lambda_kr_k^2\right)
+ \le\Delta_F+\frac\omega4+\omega|\mathcal I_N|.
 \]
-Summation proves the first bound.  By complementarity,
+Using $h_k\ge\epsilon$ and $\sigma_k\le\bar\sigma$ proves
+\eqref{eq:adaptive-boundary-count}.  For $k\in\mathcal B_N$,
 \[
     \lambda_k\|d_k\|^2
     =z_k h_k\|d_k\|
-    =\frac{z_k h_k^{3/2}}{4\rho_k}
-    \ge\frac{z_k\epsilon^{3/2}}{4\bar\rho}.
+    =\frac{z_k h_k^{3/2}}{4\sigma_k}
+    \ge\frac{z_k\epsilon^{3/2}}{4\bar\sigma}.
 \]
 Summing the multiplier term in
-\eqref{eq:acceptance-boundary-function} proves the second bound.
+the same telescope proves \eqref{eq:adaptive-z-bound}.
 \end{proof}
 
 \begin{lemma}[Gradient-contraction steps]\label{lem:interior-count}
-For every $N\in\N_0$ with $N\le K_\epsilon$,
+Suppose \Cref{ass:adaptive-inexact-oracle} holds.  With the notation in
+\eqref{eq:adaptive-stopping-time}--\eqref{eq:z-def}, every finite
+$N\le K_\epsilon$ satisfies
 \begin{equation}\label{eq:interior-count}
-    |\mathcal I_N|
-    \le |\mathcal B_N|+1+
-       \frac{
-          \logp{\|\nabla f(x_0)\|/\epsilon}
-          +\sum_{k\in\mathcal B_N}z_k
-       }{\log 2}.
+ |\mathcal I_N|\le |\mathcal B_N|+1+
+ \frac{\log_+(h_0/\epsilon)+\sum_{k\in\mathcal B_N}z_k}{\log2}.
 \end{equation}
 \end{lemma}
 
-\begin{proof}
-For a boundary step $k\in\mathcal B_N$,
+\begin{proof}[Proof of \Cref{lem:interior-count}]
+For $k\in\mathcal B_N$,
 \eqref{eq:acceptance-boundary-gradient} gives
 \[
     \frac{h_{k+1}}{h_k}
@@ -501,32 +2690,38 @@ and therefore
     \le z_k.
 \]
 
-For an interior step $k\in\mathcal I_N$,
+For $k\in\mathcal I_N$,
 \eqref{eq:acceptance-interior} gives the clipped contraction
 \[
     h_{k+1}
-    =\max\{\|\nabla f(x_{k+1})\|,\epsilon\}
+    =\max\{\|g_{k+1}\|,\epsilon\}
     \le\max\left\{\frac12h_k,\epsilon\right\}.
 \]
-Thus an interior step with $h_{k+1}>\epsilon$ satisfies
+Thus an index $k\in\mathcal I_N$ with $h_{k+1}>\epsilon$ satisfies
 $\log(h_{k+1}/h_k)\le-\log2$.  The complementary case
 $h_{k+1}=\epsilon$ means precisely that the clipping floor is active,
-or equivalently that $\|\nabla f(x_{k+1})\|\le\epsilon$; the threshold
+or equivalently that $\|g_{k+1}\|\le\epsilon$; the threshold
 is $\epsilon$, rather than $\epsilon/2$, because $h_{k+1}$ is clipped
 below at $\epsilon$.
 
-Suppose now that an interior step has $h_{k+1}=\epsilon$ and
+Suppose now that $k\in\mathcal I_N$ has $h_{k+1}=\epsilon$ and
 $k+1<N$.  Then the algorithm does not return at $x_{k+1}$ and the next
 outer iteration accepts a step.  In particular, the stopping test fails
-at its accepted parameter $\rho_{k+1}$.  Since
-$\|\nabla f(x_{k+1})\|\le\epsilon$, this failure gives
+at its accepted parameter $\sigma_{k+1}$.  Since
+$\|g_{k+1}\|\le\epsilon$, this failure gives
 \[
-    \lambda_{\min}
-       (H_{k+1}+\rho_{k+1}\sqrt\epsilon I)<0.
+    \lambda_{\min}\!\left(
+       H_{k+1}+\frac{65}{64}\sigma_{k+1}\sqrt\epsilon I
+    \right)<0.
 \]
-Because $h_{k+1}=\epsilon$, the positive-semidefiniteness condition
-\eqref{eq:kkt-psd} excludes $\lambda_{k+1}=0$.  Hence
-$k+1\in\mathcal B_N$.  Pairing each such floor-hitting step with its
+Indeed, failure of the Hessian stopping test gives
+$\lambda_{\min}(H_{k+1})<-(9/8)\sigma_{k+1}\sqrt\epsilon$, and
+$65/64<9/8$.  Since $h_{k+1}=\epsilon$, applying the
+positive-semidefiniteness condition in
+\eqref{eq:tr-global-optimality} with
+$B=H_{k+1}+(65/64)\sigma_{k+1}\sqrt\epsilon I$ forces
+$\lambda_{k+1}>0$.  Complementarity then gives
+$k+1\in\mathcal B_N$.  Pairing each such floor-hitting index with its
 successor is injective, and only $k=N-1$ can remain unpaired.  Therefore
 \[
     \bigl|\{k\in\mathcal I_N:h_{k+1}=\epsilon\}\bigr|
@@ -541,69 +2736,77 @@ using $h_N\ge\epsilon$ now gives
     \le
     \log\frac{h_0}{\epsilon}
        +\sum_{k\in\mathcal B_N}z_k
-    =\logp{\|\nabla f(x_0)\|/\epsilon}
+    =\log_+\!\left(h_0/\epsilon\right)
        +\sum_{k\in\mathcal B_N}z_k.
 \]
 Adding the two disjoint interior-step counts proves
 \eqref{eq:interior-count}.
 \end{proof}
 
-The two preceding lemmas imply that the stopping index
-\eqref{eq:adaptive-stopping-time} is finite and satisfies
-\begin{equation}\label{eq:accepted-complexity}
-    K_\epsilon
-    \le
-    \frac{1}{\eta}
-    \left(2+\frac{4}{\log2}\right)
-       \frac{\bar\rho\Delta_f}{\epsilon^{3/2}}
-    +\frac{\logp{\|\nabla f(x_0)\|/\epsilon}}{\log2}
-    +1
-\end{equation}
-Indeed, for every finite $N\le K_\epsilon$,
-\Cref{lem:boundary-count,lem:interior-count} give the same inequality
-with $N$ in place of $K_\epsilon$.  If $K_\epsilon$ were infinite, this
-fixed finite upper bound would hold for arbitrarily large $N$, a
-contradiction.  Hence $K_\epsilon<\infty$, and taking
-$N=K_\epsilon$ proves \eqref{eq:accepted-complexity}.
-
-\section{Total complexity and second-order guarantee}
+Combining \Cref{lem:boundary-count,lem:interior-count} with
+\eqref{eq:adaptive-absorption-load} gives, for every finite prefix of
+$N$ accepted nonterminal steps,
+\begin{subequations}\label{eq:accepted-complexity}
+\begin{align}
+ |\mathcal I_N|
+ &\le
+ \frac{
+  (1+4/\log2)
+  \bar\sigma(\Delta_F+\omega/4)/(\eta\epsilon^{3/2})
+  +1+\log_+(h_0/\epsilon)/\log2
+ }{1-\chi},
+ \label{eq:adaptive-interior-total}\\
+ N
+ &\le\frac{\bar\sigma(\Delta_F+\omega/4)}
+              {\eta\epsilon^{3/2}}
+ +\left(1+\frac{\bar\sigma\omega}{\eta\epsilon^{3/2}}\right)
+  |\mathcal I_N|.
+ \label{eq:adaptive-accepted-total}
+\end{align}
+\end{subequations}
 
 \begin{lemma}[Rejected trials]\label{lem:rejected-trials}
-Let $U_\epsilon$ be the total number of rejected trial steps before
-termination.  Then
+Suppose \Cref{ass:adaptive-inexact-oracle} holds.  Let $K_\epsilon$ be the finite
+return index in \eqref{eq:adaptive-stopping-time}, and let
+$U_\epsilon$ be the number of rejected trials before termination.
+Then
 \begin{equation}\label{eq:rejected-count}
-    U_\epsilon
-    \le
-    \frac{\log\gamma_-}{\log\gamma_+}K_\epsilon
-    +\frac{\log(\bar\rho/\rho_0)}{\log\gamma_+}.
+ U_\epsilon
+ \le\frac{\log\gamma_-}{\log\gamma_+}K_\epsilon
+ +\frac{\log(\bar\sigma/\sigma_0)}{\log\gamma_+}.
 \end{equation}
 \end{lemma}
 
-\begin{proof}
-For $0\le k\le K_\epsilon$, let $s_k$ be the initial parameter of outer
-iteration $k$, and let $u_k$ be its number of rejected trials.  For
+\begin{proof}[Proof of \Cref{lem:rejected-trials}]
+For $0\le k\le K_\epsilon$, let $\sigma_k^{\mathrm{init}}$ be the
+initial parameter of outer iteration $k$, and let $u_k$ be its number
+of rejected trials.  For
 $0\le k<K_\epsilon$, the accepted parameter is
-$\rho_k=s_k\gamma_+^{u_k}$, so the update rule gives
+$\sigma_k=\sigma_k^{\mathrm{init}}\gamma_+^{u_k}$, so the update rule gives
 \[
-    s_{k+1}\ge\frac{s_k\gamma_+^{u_k}}{\gamma_-},
+    \sigma_{k+1}^{\mathrm{init}}
+    \ge\frac{\sigma_k^{\mathrm{init}}\gamma_+^{u_k}}{\gamma_-},
 \]
 and hence
 \[
     u_k\log\gamma_+
-    \le\log s_{k+1}-\log s_k+\log\gamma_-.
+    \le\log \sigma_{k+1}^{\mathrm{init}}
+       -\log \sigma_k^{\mathrm{init}}+\log\gamma_-.
 \]
-Summing over $0\le k<K_\epsilon$ and using $s_0=\rho_0$ yields
+Summing over $0\le k<K_\epsilon$ and using
+$\sigma_0^{\mathrm{init}}=\sigma_0$ yields
 \begin{equation}\label{eq:accepted-rejection-telescope}
     \sum_{k=0}^{K_\epsilon-1}u_k\log\gamma_+
-    \le\log\frac{s_{K_\epsilon}}{\rho_0}
+    \le\log\frac{\sigma_{K_\epsilon}^{\mathrm{init}}}{\sigma_0}
        +K_\epsilon\log\gamma_-.
 \end{equation}
 In the terminal inner loop, the stopping test returns at parameter
-$s_{K_\epsilon}\gamma_+^{u_{K_\epsilon}}\le\bar\rho$ by
-\Cref{cor:rho-bound}.  Thus
+$\sigma_{K_\epsilon}^{\mathrm{init}}
+ \gamma_+^{u_{K_\epsilon}}\le\bar\sigma$ by
+\Cref{cor:adaptive-scale-bound}.  Thus
 \[
     u_{K_\epsilon}\log\gamma_+
-    \le\log\frac{\bar\rho}{s_{K_\epsilon}}.
+    \le\log\frac{\bar\sigma}{\sigma_{K_\epsilon}^{\mathrm{init}}}.
 \]
 Since
 $U_\epsilon=\sum_{k=0}^{K_\epsilon-1}u_k+u_{K_\epsilon}$, adding this
@@ -612,59 +2815,1017 @@ inequality to
 \eqref{eq:rejected-count}.
 \end{proof}
 
-\begin{theorem}[Total complexity]\label{thm:total-complexity}
-Let $Q_\epsilon$ denote the total number of solved trial subproblems.
-Then
-\begin{equation}\label{eq:total-complexity-exact}
-    Q_\epsilon
-    \le
-    \left(1+\frac{\log\gamma_-}{\log\gamma_+}\right)K_\epsilon
-    +\frac{\log(\bar\rho/\rho_0)}{\log\gamma_+},
-\end{equation}
-where $K_\epsilon$ is bounded in
-\eqref{eq:accepted-complexity}.  The returned point $\widehat x$
-satisfies
-\begin{equation}\label{eq:return-guarantee}
-    \|\nabla f(\widehat x)\|\le\epsilon,
-    \qquad
-    \lambda_{\min}(\nabla^2 f(\widehat x))
-    \ge-\bar\rho\sqrt\epsilon.
-\end{equation}
-\end{theorem}
+\begin{proof}[Proof of \Cref{thm:total-complexity}]
+Combining \Cref{lem:boundary-count,lem:interior-count} and using
+\eqref{eq:adaptive-absorption-load} gives
+\eqref{eq:accepted-complexity} for every finite nonterminal prefix.
+The right-hand side is independent of the prefix length.  Hence
+$K_\epsilon=\infty$ would give the same finite upper bound on
+$N=|\mathcal B_N|+|\mathcal I_N|$ for arbitrarily large $N$, which is
+impossible.  Thus $K_\epsilon<\infty$, and taking $N=K_\epsilon$
+establishes the displayed accepted-step bounds.
 
-\begin{proof}
-The trial bound follows from
-$Q_\epsilon=K_\epsilon+U_\epsilon$---the final stopping test solves no
-subproblem---and
-\Cref{lem:rejected-trials}.  At termination, the current parameter is
-at most $\bar\rho$ by \Cref{cor:rho-bound}; the stopping test therefore
-implies \eqref{eq:return-guarantee}.
+The final stopping test solves no subproblem.  Therefore
+$Q_\epsilon=K_\epsilon+U_\epsilon$, and
+\Cref{lem:rejected-trials} gives the trial bound.  At termination, the
+current parameter is
+at most $\bar\sigma$ by \Cref{cor:adaptive-scale-bound}.  The gradient
+oracle error gives the first inequality in
+\eqref{eq:return-guarantee}.  Weyl's inequality, the Hessian stopping
+test, and \eqref{eq:adaptive-hessian-error} give
+\[
+ \lambda_{\min}(\nabla^2F(\widehat x))
+ \ge-\left(\frac98+\frac1{64}\right)
+       \bar\sigma\sqrt\epsilon
+ =-\frac{73}{64}\bar\sigma\sqrt\epsilon.
+\]
 \end{proof}
 
-\begin{corollary}[Additive overhead]\label{cor:additive-overhead}
-If $\rho_0\le c\sqrt M$ for a constant $c>0$, then
-\begin{equation}\label{eq:big-O-complexity}
-    Q_\epsilon
-    =O\!\left(
-       \sqrt M\,\Delta_f\epsilon^{-3/2}
-       +\logp{\|\nabla f(x_0)\|/\epsilon}
-       +\logp{\sqrt M/\rho_0}
-       +1
-    \right).
-\end{equation}
-In particular, neither the gradient-contraction cost nor the adaptive
-search cost multiplies the leading
-$\sqrt M\,\Delta_f\epsilon^{-3/2}$ term.
-\end{corollary}
+\subsection{NC--SC minimax results}
 
-The Hessian is evaluated once per outer iteration.  Thus its evaluation
-count is at most $K_\epsilon+1$; reusing accepted trial values, the
-function and gradient evaluation counts are at most $Q_\epsilon+1$.
-The persistent
-parameter update in \Cref{alg:adaptive-utr} is the same amortization
-mechanism used in adaptive regularization methods
-\citep{cartis2011adaptive2}; the multiplier-aware acceptance test is
-what couples gradient growth to objective decrease.
+\begin{proof}[Proof of \Cref{lem:inner-residual-certificate}]
+Strong concavity and Cauchy--Schwarz give the first inequality.
+The second follows from $\ell$-smoothness and
+$\nabla_yf(x,y^*(x))=0$.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{prop:agd-implementation}]
+Apply the standard AGD estimate to the smooth strongly convex
+objective
+\[
+ \phi_x(y):=-f(x,y).
+\]
+See
+\citet[Lemma~2]{wang2020improved} or
+\citet[Lemma~5]{luo2022finding}.  By
+\eqref{eq:inner-residual-certificate}, the initial distance is at most
+$R_{\rm in}/\mu$.  It is sufficient to reduce the distance to
+$\tau/\ell$, because $\ell$-smoothness then gives the requested
+residual.  Combining these facts with
+$1-1/\sqrt\kappa\le\exp(-1/\sqrt\kappa)$ proves
+\eqref{eq:agd-module-work}.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{lem:corrected-errors}]
+\smallskip\noindent\emph{Corrected value.}
+Fix $x$, write $C=\nabla^2_{yy}f(x,y)$,
+$q=\nabla_yf(x,y)$, and $\delta=y-y^*(x)$.  Taylor expansion of the
+inner gradient gives
+\[
+ v:=q-C\delta,
+ \qquad
+ \|v\|\le\frac\rho2\|\delta\|^2.
+\]
+If
+\[
+ \overline C:=\int_0^1\nabla^2_{yy}f(x,y-t\delta)\,dt,
+\]
+then the fundamental theorem of calculus gives
+$q=\overline C\delta$ and hence
+$v=(\overline C-C)\delta$.  Both matrices satisfy
+$-\ell I\preceq C\preceq-\mu I$ and
+$-\ell I\preceq\overline C\preceq-\mu I$, so
+\[
+ \|v\|\le(\ell-\mu)\|\delta\|.
+\]
+Taylor expansion of the payoff gives
+\[
+ P(x)=f(x,y)-q^T\delta+\frac12\delta^TC\delta+R,
+ \qquad |R|\le\frac\rho6\|\delta\|^3.
+\]
+Using $q=C\delta+v$ and completing the square yields
+\[
+ P(x)-\widehat P(x,y)=R+\frac12v^TC^{-1}v.
+\]
+Strong concavity gives $\|C^{-1}\|\le1/\mu$.  Moreover,
+\[
+ \|v\|^2
+ \le\frac\rho2\|\delta\|^2
+       (\ell-\mu)\|\delta\|,
+\]
+so
+\[
+ \frac12\bigl|v^TC^{-1}v\bigr|
+ \le\frac{(\kappa-1)\rho}{4}\|\delta\|^3.
+\]
+Together with the Taylor remainder, this proves
+\eqref{eq:corrected-value-error-pf}; its second inequality follows from
+$\kappa\ge1$.  If $\|\delta\|\le\mu/\rho$, then the quadratic
+Taylor bound on $v$ gives
+\[
+ \frac12\bigl|v^TC^{-1}v\bigr|
+ \le\frac{\rho}{8}\|\delta\|^3.
+\]
+Combining this estimate with the bound on $R$ proves the
+$\kappa$-independent local estimate
+\eqref{eq:corrected-value-local-error}.
+
+\smallskip\noindent\emph{Corrected gradient.}
+Let
+\[
+ y_t:=y^*(x)+t\bigl(y-y^*(x)\bigr),
+ \qquad t\in[0,1].
+\]
+Since $f$ is twice continuously differentiable, the fundamental theorem
+of calculus applied to the two partial gradients along this segment
+gives the exact identities
+\begin{align*}
+ \nabla_xf(x,y)-\nabla_xf(x,y^*(x))
+ &=\int_0^1\nabla^2_{xy}f(x,y_t)
+       \bigl(y-y^*(x)\bigr)\,dt,\\
+ \nabla_yf(x,y)
+ &=\int_0^1\nabla^2_{yy}f(x,y_t)
+       \bigl(y-y^*(x)\bigr)\,dt,
+\end{align*}
+where the second identity uses $\nabla_yf(x,y^*(x))=0$.
+Substituting these identities into \eqref{eq:corrected-gradient} and
+using \eqref{eq:value-gradient}, we obtain
+\begin{align*}
+ \widehat g(x,y)-\nabla P(x)
+ &=\int_0^1\Bigl[
+   \nabla^2_{xy}f(x,y_t)-\nabla^2_{xy}f(x,y)\\
+ &\qquad
+   +\nabla^2_{xy}f(x,y)
+    \bigl(\nabla^2_{yy}f(x,y)\bigr)^{-1}
+    \bigl(
+      \nabla^2_{yy}f(x,y)-\nabla^2_{yy}f(x,y_t)
+    \bigr)
+  \Bigr]\\
+ &\qquad {}\times\bigl(y-y^*(x)\bigr)\,dt.
+\end{align*}
+This identity displays the cancellation of the linear inner error.
+Hessian Lipschitzness, together with
+\[
+ \left\|\nabla^2_{xy}f(x,y)
+   \bigl(\nabla^2_{yy}f(x,y)\bigr)^{-1}\right\|\le\kappa,
+\]
+bounds the norm of the integrand by
+\[
+ (1+\kappa)\rho(1-t)\|y-y^*(x)\|^2.
+\]
+Integrating over $t\in[0,1]$ proves
+\eqref{eq:corrected-gradient-error}.
+
+\smallskip\noindent\emph{Corrected Hessian.}
+Retain $C=\nabla^2_{yy}f(x,y)$ and set
+\[
+ B:=\nabla^2_{xy}f(x,y),\quad
+ B_*:=\nabla^2_{xy}f(x,y^*(x)),\quad
+ C_*:=\nabla^2_{yy}f(x,y^*(x)).
+\]
+The inverse identity gives
+\[
+\begin{aligned}
+&\left\|
+ \bigl(\nabla^2_{yy}f(x,y)\bigr)^{-1}
+ -\bigl(\nabla^2_{yy}f(x,y^*(x))\bigr)^{-1}
+ \right\|\\
+&\qquad\le\frac{\rho}{\mu^2}\|y-y^*(x)\|.
+\end{aligned}
+\]
+The Schur-complement products satisfy the exact telescoping identity
+\begin{align*}
+ BC^{-1}B^T-B_*C_*^{-1}B_*^T
+ &=(B-B_*)C^{-1}B^T
+   +B_*(C^{-1}-C_*^{-1})B^T\\
+ &\quad+B_*C_*^{-1}(B-B_*)^T.
+\end{align*}
+Hessian Lipschitzness, $\|B\|,\|B_*\|\le\ell$, and
+$\|C^{-1}\|,\|C_*^{-1}\|\le1/\mu$ bound these three terms by
+$\kappa\rho\|y-y^*(x)\|$,
+$\kappa^2\rho\|y-y^*(x)\|$, and
+$\kappa\rho\|y-y^*(x)\|$, respectively.  Adding the
+$xx$-block error gives
+\begin{align*}
+ \|\widehat H(x,y)-\nabla^2P(x)\|
+ &\le \rho\|y-y^*(x)\|
+ +2\frac\ell\mu\rho\|y-y^*(x)\|\\
+ &\qquad
+ +\frac{\ell^2}{\mu^2}\rho\|y-y^*(x)\|\\
+ &=(1+\kappa)^2\rho\|y-y^*(x)\|,
+\end{align*}
+which proves \eqref{eq:corrected-hessian-error}.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{cor:ncsc-fixed-oracle}]
+The residual--distance certificate and
+\eqref{eq:outer-residual-target} give
+\[
+ \|y-y^*(x)\|
+ \le\frac{\sqrt{M_P\epsilon/6}}
+          {64(1+\kappa)^2\rho}.
+\]
+Substitution in \eqref{eq:corrected-hessian-error} gives the Hessian
+bound in \eqref{eq:ncsc-fixed-oracle-errors}.  Substitution in
+\eqref{eq:corrected-gradient-error} gives
+\[
+ \|\widehat g-\nabla P\|
+ \le\frac{M_P\epsilon}{49152(1+\kappa)^3\rho}
+ =\frac{\sqrt2}{12288}
+   \left(\frac\kappa{1+\kappa}\right)^3\epsilon
+ <\frac\epsilon{8192}.
+\]
+These bounds are stronger than \eqref{eq:generic-oracle-errors}.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{cor:ncsc-adaptive-oracle}]
+Equation \eqref{eq:inner-residual-certificate} gives
+$\|y-y^*(x)\|\le\delta_{VG}$ or $\delta_H(\sigma)$, respectively.
+The first branch of \eqref{eq:ncsc-adaptive-vg-distance} and
+\eqref{eq:corrected-gradient-error} give the gradient certificate.
+The second branch and \eqref{eq:corrected-value-error-pf} make the
+cubic value error at most $\omega/8$.
+Equation \eqref{eq:ncsc-adaptive-h-distance} and
+\eqref{eq:corrected-hessian-error} give the Hessian certificate.
+\end{proof}
+
+\begin{proof}[Verification of
+\eqref{eq:ncsc-adaptive-outer-complexity} and
+\eqref{eq:ncsc-adaptive-return}]
+For \eqref{eq:ncsc-adaptive-explicit-errors}, the interior condition
+holds with left-hand side at most $3\omega/4$, while
+\[
+ \chi=\frac1{16}\left(1+\frac4{\log2}\right)<1
+\]
+and the boundary condition follows from
+$15/1024-1/256=11/1024>5/16384$.
+Finally, \Cref{lem:value-geometry} gives the required regularity of
+$P$ and \Cref{ass:ncsc} gives $P^*>-\infty$.  Applying
+\Cref{thm:total-complexity}, and using
+$\|\widehat g_0\|\le\|\nabla P(x_0)\|+\epsilon/256$ to simplify its
+initial logarithm, proves
+\eqref{eq:ncsc-adaptive-outer-complexity} and
+\eqref{eq:ncsc-adaptive-return}.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:ncsc-complexity}]
+Let $K$ be the number of nonterminal outer iterations and write
+$r_k:=\|d_k\|$.
+The residual contract and \Cref{cor:ncsc-fixed-oracle} give
+\[
+ \|g_k-\nabla P(x_k)\|\le\epsilon/256,
+ \qquad
+ \|H_k-\nabla^2P(x_k)\|
+ \le\frac1{64}\sqrt{\frac{M_P}{6}}\sqrt\epsilon.
+\]
+Thus the outer sequence obeys the fixed-scale repeated-subproblem
+procedure in
+\Cref{sec:generic-utr}, and \Cref{thm:generic-complexity} applies with
+$M=M_P$.  Its logarithmic term uses
+$h_0=\max\{\|g_0\|,\epsilon\}$.  Since
+\[
+ \|g_0\|\le\|\nabla P(x_0)\|+\epsilon/8192,
+\]
+we have
+$\log_+(h_0/\epsilon)
+=O(\log_+(\|\nabla P(x_0)\|/\epsilon)+1)$.
+Together with
+$\sqrt{M_P}=\sqrt{4\sqrt2}\,\kappa^{3/2}\sqrt\rho$, this proves
+\eqref{eq:ncsc-return} and \eqref{eq:ncsc-outer-complexity}.
+
+It remains to transfer the work contract of $\mathcal S$.  At the
+start of the inner call for $x_{k+1}$, joint $\ell$-smoothness and the
+previous residual guarantee give the directly observable warm-start
+bound
+\[
+ \|\nabla_yf(x_{k+1},y_k)\|
+ \le\tau_{\rm out}+\ell r_k.
+\]
+Consequently, apart from the initial call, the logarithmic term in
+\eqref{eq:inner-module-work} is bounded by
+\[
+ 1+\log_2\!\left(1+\frac{\ell r_k}{\tau_{\rm out}}\right).
+\]
+By \eqref{eq:outer-residual-lower},
+\[
+ \frac{\ell r_k}{\tau_{\rm out}}
+ \le64\sqrt3\,r_k\sqrt{\frac{M_P}{\epsilon}}.
+\]
+Using $\log_2(1+t)=O(1+t^3)$ for $t\ge0$, the logarithm in
+each noninitial call is therefore
+\[
+ O\!\left(
+  1+
+  \left(r_k\sqrt{\frac{M_P}{\epsilon}}\right)^3
+ \right).
+\]
+By \Cref{lem:cubic-path},
+\begin{align*}
+ \sum_{k=0}^{K-1}
+ \left(r_k\sqrt{\frac{M_P}{\epsilon}}\right)^3
+ &=\frac{M_P^{3/2}}{\epsilon^{3/2}}
+   \sum_{k=0}^{K-1}r_k^3\\
+ &\le\frac{384}{31}\Delta_P\sqrt{M_P}\,\epsilon^{-3/2}
+ +\frac{K}{31\sqrt{62}}.
+\end{align*}
+Summing the module work bounds, adding the initial call, and
+substituting the outer bound for $K$ proves
+\eqref{eq:ncsc-gradient-complexity}.  Finally,
+$\sqrt{M_P}=\sqrt{4\sqrt2}\,\kappa^{3/2}\sqrt\rho$ proves
+\eqref{eq:ncsc-gradient-leading}.
+\end{proof}
+
+\subsection{Parameter-free residual-module UTR}
+
+\begin{proof}[Source and proof sketch for \Cref{thm:scar-blackbox}]
+This is Theorem~5.1 of \citet{lan2026optimal}.  For completeness, its
+counting argument is as follows.  An accelerated-restart call at the
+current strong-convexity guess $\mu_t$ either detects failure and
+replaces the guess by $\mu_t/4$, or reduces the gradient norm by a
+factor two.  Once $\mu_t\le\mu$, strong convexity converts the distance
+estimate produced by the accelerated subroutine into the latter
+gradient reduction.  Thus there are at most
+$\lceil\log_4(\mu_0/\mu)\rceil$ failed guesses and at most
+$\lceil\log_2(\|\nabla\phi(u_0)\|/\tau)\rceil$ successful reductions.
+The accepted guesses remain at least $\mu/4$, so summing the
+$O(\sqrt{L/\mu_t})$ cost of the accelerated calls gives
+\eqref{eq:scar-original-complexity}.  At the endpoint $L=\mu$, strong
+monotonicity, Lipschitz continuity, and Cauchy--Schwarz force
+$\nabla\phi(u)-\nabla\phi(v)=L(u-v)$ for every $u,v$.  Taking $v$ to
+be the minimizer proves the one-step claim.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{cor:scar-inner}]
+Strong monotonicity and Lipschitz continuity of $\nabla q_x$ imply
+\[
+ \mu\|z-y^{\rm in}\|
+ \le\|\nabla q_x(z)-\nabla q_x(y^{\rm in})\|
+ \le\ell\|z-y^{\rm in}\|.
+\]
+Consequently, $\mu\le a_x\le\ell$.  The initialization satisfies the
+hypotheses of \Cref{thm:scar-blackbox} when $\kappa>1$, and
+$\log_4(a_x/\mu)\le\log_4\kappa$.  Substitution in
+\eqref{eq:scar-original-complexity} proves the claim in that case.  If
+$\kappa=1$, then $a_x=\mu=\ell$ and the endpoint argument following
+\Cref{thm:scar-blackbox} gives a numerical constant per call.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{lem:pf-asymptotic-oracle}]
+The residual--distance inequality in
+\eqref{eq:inner-residual-certificate} gives
+$\|y-y^*(x)\|\le\epsilon^2/\mu$.  Hence
+after decreasing $\epsilon_0$ so that
+$\epsilon^2/\mu\le\mu/\rho$, \Cref{lem:corrected-errors} gives
+\begin{align*}
+ \|\widehat g-\nabla P\|
+ &\le\frac{(1+\kappa)\rho}{2\mu^2}\epsilon^4,\\
+ \|\widehat H-\nabla^2P\|
+ &\le\frac{(1+\kappa)^2\rho}{\mu}\epsilon^2,\\
+ |\widehat P-P|
+ &\le\frac{7\rho}{24\mu^3}\epsilon^6.
+\end{align*}
+All coefficients are finite for the fixed problem.  The first line is
+$o(\epsilon)$, the second is $o(\epsilon^{3/2})$, and the third is
+$o(\epsilon^2)$.  Since $\sigma\ge\epsilon$, decreasing
+$\epsilon_0$ if necessary proves all three inequalities uniformly.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{lem:pf-safe-trial}]
+Apply \Cref{lem:common-inexact-tr-step} with $F=P$, $M=M_P$,
+\[
+ a=\sigma\sqrt h+\frac{\sigma\sqrt\epsilon}{64},\qquad
+ R=\frac{\sqrt h}{4\sigma},\qquad
+ \xi=\frac{\sigma\sqrt\epsilon}{64},\qquad
+ \delta_0=\delta_+=\frac{(1+\kappa)\rho}{2\mu^2}\epsilon^4.
+\]
+\Cref{lem:value-geometry} supplies the required Hessian regularity.
+The radius and \eqref{eq:pf-safe-scale} imply
+$(M_P/6)r^3\le\sigma\sqrt h\,r^2/4$.
+Thus \eqref{eq:common-function-bound} proves
+\eqref{eq:pf-safe-decrease}.
+
+If the radius is active, then
+$\sigma\sqrt h\,r^2=h^{3/2}/(16\sigma)$.  Since $h\ge\epsilon$,
+the last term of \eqref{eq:pf-safe-decrease} is smaller than
+$h^{3/2}/(128\sigma)$ for all sufficiently small $\epsilon$.  This
+proves \eqref{eq:pf-safe-boundary-decrease}.
+
+The common candidate-gradient estimate gives
+\[
+ \|g^+\|
+ \le\sigma\sqrt h\,r+\lambda r
+ +2\frac{\sigma\sqrt\epsilon}{64}r
+ +\frac{(1+\kappa)\rho}{\mu^2}\epsilon^4
+ +\frac{M_P}{2}r^2.
+\]
+The radius and safe-scale condition bound the four terms other than
+$\lambda r$ by, respectively,
+$h/4$, $h/128$, $h/256$, and $3h/16$ for every sufficiently small
+$\epsilon$.  Their sum is less than $117h/256$, proving
+\eqref{eq:pf-safe-gradient}.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{lem:pf-accepted-accounting}]
+Denote the current corrected gradient, accepted step, trial scale, and
+multiplier of accepted step $k$ by $g_k,d_k,\sigma_k$, and
+$\lambda_k$, and set
+$h_k:=\max\{\|g_k\|,\epsilon\}$ and $r_k:=\|d_k\|$.  For the stated
+prefix, define
+\[
+ \mathcal B_N:=\left\{0\le k<N:
+   r_k=\frac{\sqrt{h_k}}{4\sigma_k}\right\},
+ \qquad
+ \mathcal I_N:=\left\{0\le k<N:
+   r_k<\frac{\sqrt{h_k}}{4\sigma_k}\right\}.
+\]
+Every $k\in\mathcal B_N$ gives a true decrease of at least
+\[
+ \eta\left(\frac{h_k^{3/2}}{\sigma_k}
+       +\lambda_kr_k^2\right),
+\]
+because the two corrected-value errors sum to at most
+$\omega_\epsilon/4$.  Every $k\in\mathcal I_N$ can increase the true
+value by at most $5\omega_\epsilon/4$.  Telescoping and using
+$h_k\ge\epsilon$, $\sigma_k\le\bar\sigma$ give
+\begin{subequations}\label{eq:pf-boundary-budgets}
+\begin{align}
+ |\mathcal B_N|
+ &\le\frac{\bar\sigma\Delta_P}
+          {\eta\epsilon^{3/2}}
+ +\frac{5\bar\sigma\omega_\epsilon}
+       {4\eta\epsilon^{3/2}}|\mathcal I_N|,
+       \label{eq:pf-boundary-count}\\
+ \sum_{k\in\mathcal B_N}\frac{\lambda_kr_k}{h_k}
+ &\le\frac{4\bar\sigma\Delta_P}
+          {\eta\epsilon^{3/2}}
+ +\frac{5\bar\sigma\omega_\epsilon}
+       {\eta\epsilon^{3/2}}|\mathcal I_N|.
+       \label{eq:pf-multiplier-budget}
+\end{align}
+\end{subequations}
+Here we used, for $k\in\mathcal B_N$,
+$\lambda_kr_k^2=(\lambda_kr_k/h_k)h_k^{3/2}/(4\sigma_k)$.
+
+The accepted gradient tests give
+\[
+ h_{k+1}\le
+ \begin{cases}
+  \max\{h_k/2,\epsilon\},&k\in\mathcal I_N,\\
+  \max\{h_k/2+\lambda_kr_k,\epsilon\},&k\in\mathcal B_N.
+ \end{cases}
+\]
+Thus every $k\in\mathcal I_N$ not hitting the floor $\epsilon$
+decreases $\log(h_k/\epsilon)$ by at least $\log2$, whereas
+$k\in\mathcal B_N$ can
+increase it by at most $\lambda_kr_k/h_k$.
+
+It remains to count floor-hitting indices in $\mathcal I_N$.  If such
+an index satisfies $k+1<N$, then at the next accepted outer iteration
+$h=\epsilon$ and the stopping test fails.  The gradient branch of that
+test already holds; otherwise $h>\epsilon$, contrary to the floor
+event.  Hence the Hessian branch must fail.  To show that the next
+accepted solution is on the boundary, let
+\[
+ A=H+\frac{\sigma\sqrt\epsilon}{64}I
+      +\sigma\sqrt\epsilon I.
+\]
+Failure of the stopping test gives
+$-\lambda_{\min}(A)>7\sigma\sqrt\epsilon/64$.
+Applying \eqref{eq:tr-global-optimality} with $B=A$ therefore forces
+$\lambda>0$, and complementarity forces
+$r=\sqrt\epsilon/(4\sigma)$.
+Rejected trials only increase $\sigma$ and retest stopping, so each
+nonterminal floor event is injectively followed by an index in
+$\mathcal B_N$; only the last prefix index can remain unpaired.
+Therefore
+\begin{equation}\label{eq:pf-interior-potential}
+ |\mathcal I_N|
+ \le |\mathcal B_N|+1+
+ \frac{
+  \log_+(\|g_0\|/\epsilon)
+  +\sum_{k\in\mathcal B_N}\lambda_kr_k/h_k
+ }{\log2}.
+\end{equation}
+Substituting \eqref{eq:pf-boundary-budgets} into
+\eqref{eq:pf-interior-potential} and applying
+\eqref{eq:pf-absorption-condition} bounds
+$N=|\mathcal B_N|+|\mathcal I_N|$ by the right-hand side of
+\eqref{eq:pf-accepted-bound}, uniformly in $N$.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:pf-scar-utr}]
+Set $\bar\sigma:=2\sqrt{M_P/6}$.  Decrease the threshold in
+\Cref{lem:pf-asymptotic-oracle}, if
+necessary, so that
+\begin{equation}\label{eq:pf-small-epsilon-conditions}
+\begin{gathered}
+ \epsilon\le\sqrt{M_P/6},\qquad
+ \frac{5\bar\sigma\epsilon^2}
+ {4\eta\epsilon^{3/2}}
+ \left(1+\frac4{\log2}\right)\le\frac12,\\
+ \frac1{\sqrt{M_P/6}\sqrt\epsilon}
+ \left(\frac{(1+\kappa)\rho}{2\mu^2}\epsilon^4\right)^2
+ \le\frac34\epsilon^2,\\
+ \left(\frac1{128}-\eta\right)
+ \frac{\epsilon^{3/2}}{\bar\sigma}
+ \ge\frac54\epsilon^2.
+\end{gathered}
+\end{equation}
+Each condition holds for all sufficiently small $\epsilon$.  Starting from
+$\sigma=\epsilon$, a rejected trial doubles $\sigma$.  The first trial
+with $\sigma^2\ge M_P/6$ has $\sigma\le\bar\sigma$.
+By \Cref{lem:pf-safe-trial}, its corrected-gradient test passes.  An
+interior trial can have a small true increase because of the remaining
+gradient error.  Minimizing the right-hand side of
+\eqref{eq:pf-safe-decrease} over $r\ge0$ shows that this increase is at
+most
+\[
+ \frac1{\sigma\sqrt h}
+ \left(\frac{(1+\kappa)\rho}{2\mu^2}\epsilon^4\right)^2
+ =O(\epsilon^{15/2}).
+\]
+Here we used $h\ge\epsilon$ and the fixed positive safe scale.  This is
+at most $3\omega_\epsilon/4$ for sufficiently small $\epsilon$; after
+adding the two value errors, the interior value test passes.  On a
+boundary trial,
+\eqref{eq:pf-safe-boundary-decrease} and the two value errors imply
+\[
+ \widehat P-\widehat P^+
+ \ge\frac{h^{3/2}}{128\sigma}
+     +\frac14\lambda r^2-\frac{\omega_\epsilon}{4}.
+\]
+Because $h\ge\epsilon$, $\sigma\le\bar\sigma$, and
+$\omega_\epsilon=\epsilon^2$, the right-hand side is at least
+$\eta(h^{3/2}/\sigma+\lambda r^2)+\omega_\epsilon$ for all sufficiently
+small $\epsilon$.  Hence a safe-scale trial either stops or is
+accepted, and no generated scale exceeds $\bar\sigma$.
+
+The absorption condition in \Cref{lem:pf-accepted-accounting} follows
+from \eqref{eq:pf-small-epsilon-conditions}.  Consider an arbitrary
+finite trial prefix, and let $K_N$ and $U_N$ be its numbers of accepted
+and rejected nonterminal trials.  Applying
+\Cref{lem:pf-accepted-accounting} to its accepted-step subsequence
+bounds $K_N$ by the right-hand side of
+\eqref{eq:pf-accepted-bound}, independently of the prefix length.
+Starting from $\sigma=\epsilon$, each rejection doubles $\sigma$ and
+each acceptance decreases it by at most a factor of two.  Since every
+generated scale is at most $\bar\sigma$, this gives
+\[
+ U_N\le K_N+\log_2(\bar\sigma/\epsilon)+1.
+\]
+Thus the length $K_N+U_N$ of every finite trial prefix has one common
+finite upper bound.  An infinite run would have arbitrarily long
+finite prefixes, a contradiction.  The algorithm therefore
+terminates.  Applying the same bounds to the complete finite run, with
+$K$ accepted and $U$ rejected trials, proves the same estimate with
+$\log_+(\|g_0\|/\epsilon)$ in place of the first logarithm in
+\eqref{eq:pf-outer-complexity}, because $Q\le K+U+1$; the extra unit
+accounts for a terminal solved subproblem with $d=0$.  At the initial
+tuple, \eqref{eq:pf-gradient-error} gives
+$\|g_0\|\le\|\nabla P(x_0)\|+\epsilon/256$.  After decreasing
+$\epsilon_0$ below a numerical constant, this proves
+\eqref{eq:pf-outer-complexity} as stated.
+
+If the explicit stopping test returns, the oracle errors and
+$\sigma\le\bar\sigma$ give \eqref{eq:pf-return}.  If the robust
+subproblem returns $d=0$, global optimality of the differentiable
+quadratic model gives $g=0$, $h=\epsilon$, and
+\[
+ H+\frac{\sigma\sqrt\epsilon}{64}I
+   +\sigma\sqrt\epsilon I
+ \succeq0.
+\]
+Together with \eqref{eq:pf-oracle-bounds}, this gives an even stronger
+version of \eqref{eq:pf-return}.  A constant rescaling of the internal
+tolerance converts the first inequality in \eqref{eq:pf-return} to
+$\|\nabla P(\widehat x)\|\le\epsilon$.
+
+Finally,
+$\sqrt{M_P}=\sqrt{4\sqrt2}\,\kappa^{3/2}\sqrt\rho$ gives the stated
+leading outer dependence.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{cor:pf-scar-inner-complexity}]
+The accepted-step proof gives a total interior increase of at most
+$5K\epsilon^2/4$.  By \eqref{eq:pf-accepted-bound}, the initial oracle
+bound $\|g_0\|\le\|\nabla P(x_0)\|+\epsilon/256$, and
+$\epsilon^2\log(1/\epsilon)\to0$, this quantity is at most one after
+decreasing $\epsilon_0$ again.  Hence every accepted outer point
+satisfies $P(x)-P^*\le\Delta_P+1$.  Since $\nabla P$ is
+$(1+\kappa)\ell$-Lipschitz, the standard descent inequality gives
+$\|\nabla P(x)\|^2\le2(1+\kappa)\ell(\Delta_P+1)$, and therefore
+$h\le G_0$.
+
+At a candidate point, the SCAR module is warm-started from an inner point with
+residual at most $\epsilon^2$.  The joint $\ell$-smoothness and the
+trust-region radius give the initial candidate residual bound
+\[
+ \epsilon^2+\ell\|d\|
+ \le\epsilon^2+\frac{\ell\sqrt{G_0}}{4\epsilon}.
+\]
+Apply \Cref{cor:scar-inner} with target $\epsilon^2$ to every candidate
+call and separately to the initial call at $(x_0,y_{-1})$.  There is
+one candidate call per solved subproblem, so summation gives
+\eqref{eq:pf-inner-complexity}.
+\end{proof}
+
+\subsection{Adaptive fixed-radius SCAR trust region}
+
+\begin{proof}[Proof of \Cref{lem:scar-persistent-half}]
+The AR call used in the proof of
+\citet[Theorems~4.1 and~5.1]{lan2026optimal}, when called with the
+current guess $\nu$ and an admissible line-search estimate, uses at
+most
+\[
+ 4+C_1\sqrt{10L/\nu}
+\]
+gradient evaluations and returns a point $v$ satisfying
+\[
+ \|\nabla\phi_j(v)\|
+ \le\frac\nu2\|u-u_j^*\|,
+ \qquad u_j^*:=\arg\min_u\phi_j(u).
+\]
+If $\nu\le\mu$, strong convexity gives
+$\|u-u_j^*\|\le\|\nabla\phi_j(u)\|/\mu$, so the returned residual is
+at most $R/2$.  Therefore a failed halving test implies $\nu>\mu$.
+Every failure divides $\nu$ by four, and once $\nu\le\mu$ no later
+function in the sequence can cause another failure.  This proves
+\eqref{eq:persistent-scar-failures}.  Moreover, throughout the process
+$\nu\ge\mu/4$.  Hence each attempted stage costs at most
+\[
+ 4+C_1\sqrt{40\kappa}
+ \le(4+2\sqrt{10}\,C_1)\sqrt\kappa.
+\]
+There are $N$ successful attempts and at most the number of failed
+attempts in \eqref{eq:persistent-scar-failures}, which proves
+\eqref{eq:persistent-scar-count}.  The line-search statement is the
+uniform estimate in \Cref{thm:scar-blackbox}.  Since all $\phi_j$ have
+the same global smoothness bound $L$, a retained estimate remains an
+admissible initialization after the objective changes.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{lem:working-residual-invariant}]
+Lipschitz continuity of the full gradient gives
+\[
+ \|\nabla_yf(x+d,y)\|
+ \le\|\nabla_yf(x,y)\|+\ell\|d\|
+ \le(1+c_0)\ell R(\sigma).
+\]
+After $N_{\rm w}$ successful halvings this is at most
+$c_0\ell R(\sigma)$ by \eqref{eq:working-half-count}.  At the same
+$x$, one halving reduces the old residual bound to
+$c_0\ell R(\sigma)/2=c_0\ell R(2\sigma)$.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{lem:fixed-radius-oracle-accuracy}]
+Because
+$c_0\kappa\sqrt\epsilon\,\mathcal A_\epsilon\to0$ as
+$\epsilon\downarrow0$, there is a problem-dependent threshold below
+which \eqref{eq:working-distance-bound} and
+$\sigma\ge\mathcal A_\epsilon^{-1}$ imply
+$\|y-y^*(x)\|\le\mu/\rho$.  Substituting
+\eqref{eq:working-distance-bound} into
+\eqref{eq:corrected-value-local-error} then gives
+\eqref{eq:fixed-radius-proxy-error}, proving part~(i).
+
+For part (ii), \Cref{lem:corrected-errors} and
+\eqref{eq:working-distance-bound} imply
+\begin{align*}
+ \|\widehat g-\nabla P\|
+ &\le\frac{(1+\kappa)\rho}{2}
+       \frac{c_0^2\kappa^2\epsilon}{\sigma^2},\\
+ \|\widehat H-\nabla^2P\|
+ &\le(1+\kappa)^2\rho
+       \frac{c_0\kappa\sqrt\epsilon}{\sigma}.
+\end{align*}
+Using $\kappa\ge1$, $M_P=4\sqrt2\kappa^3\rho$, and
+$M_P\le6\sigma^2$, the right-hand sides are at most
+\[
+ \frac{3c_0^2}{2\sqrt2}\epsilon,
+ \qquad
+ 3\sqrt2c_0\sigma\sqrt\epsilon,
+\]
+respectively.  With $c_0=2^{-12}$ these are bounded by the first two
+quantities in \eqref{eq:working-safe-errors}.  For the value bound, the
+ratio of \eqref{eq:fixed-radius-proxy-error} to
+$\epsilon^{3/2}/\sigma$ is at most $7c_0^3/(1024\sqrt2)$, which is
+smaller than $1/4096$.  This proves the third inequality.
+
+For part (iii), $\mu\le a_x\le\ell$ and
+\eqref{eq:inner-residual-certificate} give
+\[
+ \|y_{\rm v}-y^*(x)\|
+ \le c_0\kappa\epsilon^{3/2}.
+\]
+The corrected-gradient and corrected-Hessian errors are, uniformly in
+$x$, at most
+\[
+ \frac{(1+\kappa)\rho c_0^2\kappa^2}{2}\epsilon^3,
+ \qquad
+ (1+\kappa)^2\rho c_0\kappa\epsilon^{3/2},
+\]
+respectively.  The first is at most $\epsilon/1024$ for sufficiently
+small $\epsilon$.  For the second, note that
+$\epsilon\mathcal A_\epsilon\to0$ and
+$\sigma\ge\mathcal A_\epsilon^{-1}$, so
+the displayed Hessian error is at most
+$\sigma\sqrt\epsilon/32$ for all sufficiently small $\epsilon$.
+This proves \eqref{eq:validator-errors}.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{lem:adaptive-fixed-radius-safe}]
+Take $\epsilon_3\le\min\{\epsilon_1,\epsilon_2\}$ from
+\Cref{lem:fixed-radius-oracle-accuracy}.
+Let
+\[
+ m(d):=\widehat g^Td+\frac12d^T
+ \left(\widehat H+\frac{65}{64}\sigma\sqrt\epsilon I\right)d.
+\]
+Apply \Cref{lem:common-inexact-tr-step} with $F=P$, $M=M_P$,
+\[
+ a=\frac{65}{64}\sigma\sqrt\epsilon,\qquad
+ R=R(\sigma),\qquad
+ \xi=\frac{\sigma\sqrt\epsilon}{64},\qquad
+ \delta_0=\frac{\epsilon}{1024},\qquad
+ \delta_+=0,
+\]
+and $g^+=\nabla P(x+d)$.  The model part of the common estimate gives
+\begin{equation}\label{eq:fixed-radius-model-bound}
+ m(d)\le-\frac\lambda2\|d\|^2.
+\end{equation}
+
+At a safe scale, \eqref{eq:working-safe-errors}, the Taylor bound
+\eqref{eq:function-taylor}, and
+\eqref{eq:fixed-radius-model-bound} yield, with $r=\|d\|$,
+\begin{equation}\label{eq:fixed-radius-taylor-model}
+\begin{aligned}
+ P(x+d)-P(x)
+ \le{}&-\frac\lambda2r^2
+ -\frac{65}{128}\sigma\sqrt\epsilon\,r^2
+ +\frac{\epsilon}{1024}r
+ +\frac{\sigma\sqrt\epsilon}{128}r^2
+ +\frac{M_P}{6}r^3.
+\end{aligned}
+\end{equation}
+For a boundary step, $r=\sqrt\epsilon/(4\sigma)$ and
+$M_P r/6\le\sigma\sqrt\epsilon/4$.  Rearranging
+\eqref{eq:fixed-radius-taylor-model} gives
+\[
+ P(x)-P(x+d)
+ \ge\frac14\sigma\sqrt\epsilon\,r^2
+     +\frac\lambda2r^2-\frac{\epsilon}{1024}r,
+\]
+which is exactly \eqref{eq:safe-boundary-true-decrease}.  The two
+endpoint value errors in \eqref{eq:working-safe-errors} then give
+\begin{equation}\label{eq:safe-boundary-proxy-decrease}
+ \widehat P(x,y)-\widehat P(x+d,y^+)
+ \ge\frac{61}{4096}\frac{\epsilon^{3/2}}{\sigma}
+     +\frac\lambda2R(\sigma)^2
+ >\frac{\epsilon^{3/2}}{256\sigma}.
+\end{equation}
+Thus the boundary step is accepted.
+
+Now suppose $r<R(\sigma)$.  Complementarity gives $\lambda=0$.
+The common candidate-gradient estimate gives
+\begin{align*}
+ \|\nabla P(x+d)\|
+ &\le\frac{\epsilon}{1024}
+ +\frac{\sigma\sqrt\epsilon}{64}r
+ +\frac{65}{64}\sigma\sqrt\epsilon\,r
+ +\frac{M_P}{2}r^2\\
+ &\le\frac{1+4+260+192}{1024}\epsilon
+ =\frac{457}{1024}\epsilon.
+\end{align*}
+Applying the positive-semidefiniteness part of
+\eqref{eq:tr-global-optimality} with
+$B=\widehat H+(65/64)\sigma\sqrt\epsilon I$ and using Hessian
+Lipschitz continuity likewise imply
+\begin{align*}
+ \lambda_{\min}(\nabla^2P(x+d))
+ &\ge-\frac{65}{64}\sigma\sqrt\epsilon
+      -\frac{1}{64}\sigma\sqrt\epsilon-M_P r\\
+ &\ge-\frac{162}{64}\sigma\sqrt\epsilon
+ =-\frac{81}{32}\sigma\sqrt\epsilon.
+\end{align*}
+The validation errors in \eqref{eq:validator-errors} therefore give
+\[
+ \|\widehat g_{\rm v}\|
+ \le458\epsilon/1024<\epsilon/2,
+ \qquad
+ \lambda_{\min}(\widehat H_{\rm v})
+ \ge-82\sigma\sqrt\epsilon/32
+ >-(21/8)\sigma\sqrt\epsilon.
+\]
+This proves (ii).  Finally, if the validation test succeeds, the same
+error bounds give
+\[
+ \|\nabla P(x^+)\|
+ \le\epsilon/2+\epsilon/1024<\epsilon,
+\]
+and
+\[
+ \lambda_{\min}(\nabla^2P(x^+))
+ \ge-\left(\frac{21}{8}+\frac1{32}\right)
+       \sigma\sqrt\epsilon
+ =-\frac{85}{32}\sigma\sqrt\epsilon.
+\]
+This proves (iii).
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:adaptive-fixed-radius-scar}]
+Set
+\begin{equation}\label{eq:fixed-radius-scale-cap}
+ \sigma_*:=\sqrt{M_P/6},
+ \qquad
+ \overline\sigma:=2\sigma_*=2\sqrt{M_P/6}.
+\end{equation}
+These quantities are positive because \Cref{ass:ncsc} assumes
+$\rho>0$.
+Decrease $\epsilon_0$ so that
+\Cref{lem:fixed-radius-oracle-accuracy,lem:adaptive-fixed-radius-safe}
+apply and
+\begin{equation}\label{eq:initial-scale-below-safe}
+ \sigma_0=\mathcal A_\epsilon^{-1}<\sigma_*.
+\end{equation}
+The last condition is possible because
+$\mathcal A_\epsilon\to\infty$ as $\epsilon\downarrow0$ and the fixed
+problem has $M_P>0$.
+
+The scale is doubled only after a rejected boundary trial or a failed
+interior validation.  By \Cref{lem:adaptive-fixed-radius-safe}, once a
+generated scale is at least $\sigma_*$, a boundary trial is accepted
+and an interior trial terminates the method.  The first generated scale
+at least $\sigma_*$ is smaller than $2\sigma_*$, so no scale exceeds
+$\overline\sigma$.  Counting the doublings needed to cross from
+$\mathcal A_\epsilon^{-1}$ to $\sigma_*$ proves
+\begin{equation}\label{eq:fixed-radius-doubling-count}
+ J\le
+ \left\lceil\log_2(\sigma_*\mathcal A_\epsilon)\right\rceil.
+\end{equation}
+
+It remains to bound accepted boundary steps, including those at unsafe
+scales.  The corrected value is not a one-sided bound on $P$, so we
+must account explicitly for changes in the stored proxy.  At scale
+$\sigma$, \eqref{eq:working-proxy-bound} gives
+\[
+ |\widehat P-P(x)|\le\mathcal E_\epsilon(\sigma).
+\]
+Every accepted boundary step decreases the stored proxy by at least
+$\epsilon^{3/2}/(256\sigma)$.  The candidate tuple becomes the next
+stored tuple without recomputation.  A failure leaves $x$ unchanged,
+doubles the scale, and recomputes the current tuple.  At such a refresh
+from $\sigma$ to $2\sigma$, the upward jump of the stored proxy is at
+most
+\begin{equation}\label{eq:proxy-refresh-jump}
+ \mathcal E_\epsilon(\sigma)
+ +\mathcal E_\epsilon(2\sigma).
+\end{equation}
+The failure scales form a subset of
+$\{2^j\sigma_0:j\ge0\}$.  Extending the sum to the whole set gives
+\begin{equation}\label{eq:cubic-refresh-series}
+ \sum_{j\ge0}\left(2^{-3j}+2^{-3(j+1)}\right)=\frac97.
+\end{equation}
+The initial proxy is at most
+$P(x_0)+\mathcal E_\epsilon(\sigma_0)$, and every final stored proxy is
+at least $P^*-\mathcal E_\epsilon(\sigma_0)$ because the scale never
+decreases.  Therefore, for every finite prefix with $N$ accepted
+boundary steps, enumerate those steps chronologically and let
+$\sigma_k$ denote the scale of the $k$th accepted boundary trial.  Then
+\begin{align}
+ \frac{\epsilon^{3/2}}{256}
+ \sum_{k=0}^{N-1}\frac1{\sigma_k}
+ \le{}&\Delta_P
+ +\frac{23}{1536}c_0^3\rho\kappa^3
+      \epsilon^{3/2}\mathcal A_\epsilon^3.
+ \label{eq:fixed-radius-proxy-telescope}
+\end{align}
+Indeed, before substituting \eqref{eq:fixed-radius-proxy-error}, the
+proxy-error multiplier $23/7$ is the sum of two endpoint copies and the
+refresh sum in \eqref{eq:cubic-refresh-series}.
+Since every $\sigma_k\le\overline\sigma$,
+\eqref{eq:fixed-radius-proxy-telescope} implies
+\begin{align}
+ N\le{}&256\overline\sigma\Delta_P\epsilon^{-3/2}
+ +\frac{23}{6}\overline\sigma
+   c_0^3\rho\kappa^3\mathcal A_\epsilon^3.
+ \label{eq:fixed-radius-boundary-count}
+\end{align}
+
+This uniform finite-prefix bound also proves termination.  Suppose, to
+the contrary, that the loop is infinite.  At any fixed unsafe scale,
+infinitely many accepted boundary steps would contradict
+\eqref{eq:fixed-radius-boundary-count}.  Hence a nonaccepted trial must
+eventually occur.  Under the nontermination hypothesis, such a trial
+either fails the interior validation or rejects a boundary candidate,
+and therefore doubles the scale.  After finitely many such doublings a
+safe scale is generated.  At a safe scale, an interior trial terminates,
+a boundary rejection is impossible, and an infinite sequence of
+accepted boundary steps again contradicts
+\eqref{eq:fixed-radius-boundary-count}.  This contradiction proves
+termination.
+Every nonterminal trial is either an accepted boundary or a failure,
+and the final trial is interior, so $Q=K+J+1$.  Combining
+\eqref{eq:fixed-radius-doubling-count} and
+\eqref{eq:fixed-radius-boundary-count}, now with $N=K$, gives the more
+explicit estimate
+\begin{align}
+ Q\le{}&256\overline\sigma\Delta_P\epsilon^{-3/2}
+ +\frac{23}{6}\overline\sigma
+   c_0^3\rho\kappa^3\mathcal A_\epsilon^3
+ \notag\\
+ &+\left\lceil\log_2(\sigma_*\mathcal A_\epsilon)\right\rceil+1.
+ \label{eq:fixed-radius-explicit-outer-count}
+\end{align}
+Substituting $\overline\sigma=2\sqrt{M_P/6}$ proves
+\eqref{eq:fixed-radius-leading-outer}; the coefficient of its leading
+term is $512/\sqrt6$.
+
+Finally, \eqref{eq:validator-true-return} and
+$\sigma\le\overline\sigma$ give
+\eqref{eq:fixed-radius-return}.  Since
+\[
+ \left(\frac{85}{16\sqrt6}\right)^2=\frac{7225}{1536},
+\]
+replacing the internal tolerance by $(1536/7225)\epsilon$ gives the
+standard curvature threshold $-\sqrt{M_P\epsilon}$; its gradient
+bound is only strengthened.
+
+It remains to count inner-gradient evaluations.  Define, only for this
+accounting argument,
+\begin{align}
+ N_{\rm init}
+ &:={}
+ \left\lceil
+  \log_2\max\left\{1,
+   \frac{\|\nabla_yf(x_0,y_{-1})\|}
+        {c_0a_0R(\sigma_0)}
+  \right\}
+ \right\rceil,
+ \label{eq:initial-half-count}\\
+ N_{\rm val}
+ &:={}
+ \left\lceil
+  \log_2\max\left\{1,
+   \frac{\kappa\mathcal A_\epsilon}{4\epsilon}
+  \right\}
+ \right\rceil.
+ \label{eq:validation-half-count}
+\end{align}
+The initial sequence of halving calls needs at most
+$N_{\rm init}$ successful calls to reach
+$c_0a_0R(\sigma_0)$.  Every trust-region trial uses exactly
+$N_{\rm w}$ successful calls to construct its working candidate.
+Every failure uses one additional successful call to refresh the
+current tuple at the doubled scale.  Hence these operations require at
+most
+\[
+ N_{\rm init}+N_{\rm w}Q+J
+\]
+successful halvings.
+
+It remains to count validation.  There are at most $J$ failed
+validators and one terminal validator.  Immediately before validation,
+the candidate satisfies the working invariant, so its residual is at
+most
+\[
+ c_0\ell R(\sigma)
+ =\frac{c_0\ell\sqrt\epsilon}{4\sigma}.
+\]
+The target in \eqref{eq:validator-residual} is at least
+$c_0\mu\epsilon^{3/2}$.  Since
+$\sigma\ge\sigma_0=\mathcal A_\epsilon^{-1}$, the ratio between the
+starting residual and the validation target is at most
+$\kappa\mathcal A_\epsilon/(4\epsilon)$.  Therefore each validator
+requires at most $N_{\rm val}$ additional successful halvings.  The
+total number of successful halving calls is consequently bounded by
+\[
+ N_{\rm w}Q+J+(J+1)N_{\rm val}+N_{\rm init}.
+\]
+
+Apply \Cref{lem:scar-persistent-half} to the entire sequence of inner
+objectives $q_x=-f(x,\cdot)$.  They share the same $(\mu,\ell)$, and
+the initial secant obeys $\mu\le a_0\le\ell$.  Thus all failed
+curvature guesses together contribute at most
+$\lceil\log_4\kappa\rceil$ attempted stages, not one such term per
+outer trial.  Computing the initial secant and at most $J+1$
+validation secants costs no more than $2(J+2)$ additional
+inner-gradient evaluations.  Consequently,
+\begin{align}
+ N_y\le{}&(4+2\sqrt{10}\,C_1)\sqrt\kappa
+ \Bigl[
+  N_{\rm w}Q+J+(J+1)N_{\rm val}+N_{\rm init}
+  +\lceil\log_4\kappa\rceil
+ \Bigr]
+ +2(J+2).
+ \label{eq:fixed-radius-inner-explicit}
+\end{align}
+
+Finally, $N_{\rm w}$ is a universal integer, and
+\[
+ \begin{aligned}
+ J&=O_{\rm fixed}(\log\mathcal A_\epsilon+1),\\
+ N_{\rm val}&=O_{\rm fixed}(\log(1/\epsilon)),\\
+ N_{\rm init}&=O_{\rm fixed}(\log(1/\epsilon)).
+ \end{aligned}
+\]
+The last relation uses $a_0\ge\mu$ and
+$R(\sigma_0)=\sqrt\epsilon\,\mathcal A_\epsilon/4$.  Substituting
+\eqref{eq:fixed-radius-explicit-outer-count} into
+\eqref{eq:fixed-radius-inner-explicit} proves
+\eqref{eq:fixed-radius-inner-leading}.  Finally,
+$\sqrt{\kappa M_P}=\Theta(\kappa^2\sqrt\rho)$ gives the equivalent
+leading dependence stated in the theorem.
+\end{proof}
 
 \bibliographystyle{unsrtnat}
 \bibliography{ref}
