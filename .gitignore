@@ -1,4 +1,11 @@
+# macOS
 .DS_Store
+
+# Temporary and rendered files
+tmp/
+out/
+
+# LaTeX auxiliary files
 *.aux
 *.blg
 *.fdb_latexmk
@@ -6,4 +13,15 @@
 *.log
 *.out
 *.synctex.gz
-out/
+*.toc
+*.lof
+*.lot
+*.nav
+*.snm
+*.vrb
+*.xdv
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
