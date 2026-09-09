@@ -28,3 +28,5 @@ __pycache__/
 
 ./numerical_experiment/outputs
 /numerical_experiment/docs/
+
+/numerical_experiment/outputs/

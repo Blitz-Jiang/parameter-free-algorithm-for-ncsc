@@ -1,0 +1,58 @@
+{
+   "expected" : {
+      "MCN" : {
+         "inner_grad_calls" : 6101,
+         "subproblem_solves" : 78
+      },
+      "UTR2" : {
+         "inner_grad_calls" : 3813,
+         "subproblem_solves" : 174
+      },
+      "UTR3-early" : {
+         "inner_grad_calls" : 931,
+         "subproblem_solves" : 28
+      },
+      "UTR4-early" : {
+         "inner_grad_calls" : 79712,
+         "subproblem_solves" : 5643
+      }
+   },
+   "files" : {
+      "algorithms/base.py" : "bd85d99c50c122368612ac4a071dd77af5f239b6b42643a32bdbf90f648adeb0",
+      "algorithms/mcn.py" : "a8e0ea3f7fee568cf5d62b8874aad60e5caa75cc8ef635d47d1fc54e90095a9a",
+      "algorithms/utr2.py" : "1778bb632398505360434b7d4bc6174309ded296d48831b552d05c17e1bd3818",
+      "algorithms/utr3.py" : "43db4b0d0bd72eac6469c68ea3888b6c74439e14065c97d17e08f825f3b69d9d",
+      "algorithms/utr4.py" : "d2de76b6c1bf4c0a0fffdf4903622d574357680a3c73687a97dde0e0ac1505e8",
+      "inner_solvers/base.py" : "694cdca84cf83ab6e8bfb1af7470d277715096d4ee9a0a0e7ee096368da3323f",
+      "inner_solvers/nesterov.py" : "5ae034ff6fa65d23da37b957a9a6b0a8cdb77ebec2af773d8a1f97a551ebba90",
+      "inner_solvers/scar.py" : "9e9d41ac055b063fbba343d933ca25b77141f1703e620e6497bb92c4d11523aa",
+      "inner_solvers/scar_early.py" : "21892d83d12832140164f898808a1e521d6d8c1756ddd67d4841bb4ba1127abb",
+      "inner_solvers/scar_persistent_early.py" : "f60ae1c476565b904b4d1ac639e4ce4f1f0b1fb3b77bbe1a5e94ffc9728f1096",
+      "problems/CosLogCosh.py" : "4e610119141755625007e8a51772768ba885fa1202d1158906bab701ab0a0ac4",
+      "problems/NCSC.py" : "887db506697e28809c535578c8f0f04082aedf3b8548285ba5169a5961983eab",
+      "subproblem_solvers/cubic.py" : "ea897b4ff9cf0f657115cb603de59abd7772fe7fdf2bd95743d6f78b84a97242",
+      "subproblem_solvers/trs.py" : "a48827e55edb43714c57f3d0f59f50d0552549ccdd46d0ee1388149b297f1fd3"
+   },
+   "persistent_early_source" : {
+      "record" : 1555,
+      "source" : "recorded original source patch",
+      "used_by" : "utr4_early_seed2_rerun.json"
+   },
+   "settings" : {
+      "beta" : 0.5,
+      "d" : 5,
+      "device" : "cpu",
+      "dtype" : "float64",
+      "epsilon" : 1e-07,
+      "epsilon_H" : 0.000316227766016838,
+      "max_iterations" : 100000,
+      "mu_y" : 1,
+      "omega" : 1,
+      "reference_inner_target" : 1e-12,
+      "seed" : 2,
+      "subproblem_max_iter" : 1000,
+      "subproblem_tol" : 1e-14,
+      "threads" : 1
+   },
+   "source_root" : "/Users/koa/PhD/MyWorks/NCSC-UTR/param-free-algo-for-ncsc"
+}
