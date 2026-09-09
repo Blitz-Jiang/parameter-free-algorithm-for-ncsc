@@ -25,3 +25,6 @@ out/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+
+./numerical_experiment/outputs
+./numerical_experiment/docs
