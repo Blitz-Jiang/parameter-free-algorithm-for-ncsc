@@ -27,4 +27,4 @@ __pycache__/
 .pytest_cache/
 
 ./numerical_experiment/outputs
-./numerical_experiment/docs
+/numerical_experiment/docs/

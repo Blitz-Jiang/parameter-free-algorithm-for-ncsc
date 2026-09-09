@@ -48,7 +48,7 @@ quadratic; relative to the explicit raw-gradient analysis of Luo et
 al., this removes the leading multiplicative $\log(1/\epsilon)$.
 
 Third, we instantiate the same residual interface with the
-parameter-free SCAR solver and give two fully observable outer
+parameter-free SCAR solver and give three fully observable outer
 constructions.  An over-accurate adaptive SCAR--UTR retains the sharp
 outer rate but restores a leading inner $\log(1/\epsilon)$.  An
 adaptive fixed-radius variant with persistent SCAR instead has leading
@@ -59,7 +59,9 @@ outer and inner complexities
  O(\Delta_P\kappa^2\sqrt\rho\,\epsilon^{-3/2}),
 \]
 respectively, with only additive instance-dependent lower-order terms.
-Both parameter-free guarantees are asymptotic but class-uniform: after
+A gradient-scaled variant retains these leading bounds by amortizing
+its variable tracking work through a cubic-path budget.
+These parameter-free guarantees are asymptotic but class-uniform: after
 fixing common regularity constants $(\ell,\mu,\rho)$, one unknown
 threshold works for every payoff in the class and every initialization.
 For the over-accurate construction, the displayed sufficient threshold
@@ -165,6 +167,9 @@ follows.
  \qquad
  O(\Delta_P\kappa^2\sqrt\rho\,\epsilon^{-3/2}).
  \]
+ A gradient-scaled persistent-SCAR variant has the same leading bounds,
+ with variable tracking work controlled by a gradient-level potential
+ and a cubic-path estimate.
  These parameter-free results are asymptotic but class-uniform: for
  fixed common regularity constants, one small-tolerance threshold works
  over the entire problem class and all initializations.  For the
@@ -181,8 +186,8 @@ later in the minimax proof, and
 \Cref{sec:adaptive-utr} gives a certified-inexact adaptive method and
 its complete trial complexity.  \Cref{sec:ncsc} then introduces the
 minimax setting, the residual-based inner module, and the corrected
-oracle reduction.  \Cref{sec:pf-scar-utr,sec:pf-fixed-radius} give the
-two parameter-free SCAR implementations.
+oracle reduction.  \Cref{sec:pf-scar-utr,sec:pf-fixed-radius,sec:pf-gradient-scaled}
+give the parameter-free SCAR implementations.
 \Cref{app:proofs} collects the deferred proofs, and
 \Cref{app:parameter-free-scope} explains the class-uniform quantifiers
 and the limitation of residual-only certificates.
@@ -661,8 +666,11 @@ an abstract residual module.  \Cref{sec:pf-scar-utr} removes the
 parameters by using uniformly over-accurate SCAR calls, while
 \Cref{sec:pf-fixed-radius} combines a fixed-radius outer method with
 persistent SCAR to remove the resulting leading logarithms from the
-inner-oracle bound.  Keeping the residual interface common to all three
-layers makes clear which conclusions use only correctness of the inner
+inner-oracle bound.  The gradient-scaled variant in
+\Cref{sec:pf-gradient-scaled} retains the latter bounds with a radius
+depending on the corrected gradient.  Keeping the residual interface
+common to these constructions makes clear which conclusions use only
+correctness of the inner
 solve and which additionally use a particular work guarantee.
 
 We impose the assumptions used by \citet{luo2022finding}.
@@ -2100,6 +2108,234 @@ as in the earlier minimax analysis; iterative linear solves require a
 separate accuracy count.
 \end{remark}
 
+\section{Adaptive gradient-scaled SCAR trust region}
+\label{sec:pf-gradient-scaled}
+
+We next allow the trust-region radius to depend on the corrected
+gradient while retaining the working accuracy and persistent SCAR
+module of \Cref{sec:pf-fixed-radius}.  The number of tracking halvings
+now depends on the step length.  A gradient-level potential and a
+cubic-path estimate control their cumulative cost.
+
+\subsection{Working accuracy and tracking}
+
+Retain $\mathcal A_\epsilon$, $\sigma_0$, and $c_0$ from
+\eqref{eq:fixed-radius-parameters}, and distinguish the inner scale
+\[
+ r_\epsilon(\sigma):=\frac{\sqrt\epsilon}{4\sigma}
+\]
+from the outer radius.  A stored tuple is working-accurate when
+\begin{equation}\label{eq:gs-working-invariant}
+ \|\nabla_yf(x,y)\|\le c_0\ell r_\epsilon(\sigma).
+\end{equation}
+This is the same invariant as \eqref{eq:working-residual-invariant};
+the unknown $\ell$ is used only in its analysis.
+
+\begin{lemma}[Variable-step tracking]
+\label{lem:gs-tracking}
+Suppose \eqref{eq:gs-working-invariant} holds at $(x,y)$, and let
+$d$ be any step with $r=\|d\|$.  Starting from $y$ at $x+d$, apply
+\begin{equation}\label{eq:gs-tracking-count}
+ N_{\rm tr}(r,\sigma):=
+ \left\lceil\log_2\left(
+  1+\frac{r}{c_0r_\epsilon(\sigma)}
+ \right)\right\rceil
+\end{equation}
+successful persistent SCAR halvings.  The returned point satisfies
+\eqref{eq:gs-working-invariant} at $x+d$ with the same scale.
+At an unchanged $x$, one successful halving restores the invariant
+after $\sigma$ is doubled.
+\end{lemma}
+
+The following error bounds will also be used at unsafe scales.  Set
+\begin{equation}\label{eq:gs-error-constants}
+ C_g:=\frac{c_0^2(1+\kappa)\rho\kappa^2}{32},
+ \qquad
+ C_v:=\frac{7c_0^3\rho\kappa^3}{1536}.
+\end{equation}
+\begin{lemma}[Working-oracle errors]
+\label{lem:gs-working-errors}
+Fix the common constants $(\ell,\mu,\rho)$ in \Cref{ass:ncsc}.
+For all sufficiently small $\epsilon$, uniformly over the class,
+every working-accurate tuple at $\sigma\ge\sigma_0$ satisfies
+\begin{equation}\label{eq:gs-working-errors}
+ \|\widehat g-\nabla P(x)\|
+ \le C_g\frac{\epsilon}{\sigma^2},
+ \qquad
+ |\widehat P-P(x)|
+ \le C_v\frac{\epsilon^{3/2}}{\sigma^3}.
+\end{equation}
+The safe-scale bounds \eqref{eq:working-safe-errors} and the
+validation bounds \eqref{eq:validator-errors} remain valid.
+\end{lemma}
+
+\subsection{The gradient-scaled algorithm}
+
+Given a working-accurate tuple, define
+\begin{equation}\label{eq:gs-radius}
+ h:=\max\{\|\widehat g\|,\epsilon\},
+ \qquad R(h,\sigma):=\frac{\sqrt h}{4\sigma},
+\end{equation}
+and solve
+\begin{equation}\label{eq:gs-subproblem}
+ \min_{\|d\|\le R(h,\sigma)}\quad
+ \widehat g^Td+\frac12d^T
+ \left(\widehat H+\frac{\sigma\sqrt\epsilon}{64}I
+                    +\sigma\sqrt h I\right)d.
+\end{equation}
+For a global solution $d$ and its multiplier $\lambda\ge0$, write
+\begin{equation}\label{eq:gs-step-quantities}
+ r:=\|d\|,
+ \qquad W:=\sigma\sqrt h\,r^2,
+ \qquad U:=\lambda r^2,
+ \qquad T:=\frac{\epsilon^{3/2}}{\sigma}.
+\end{equation}
+When $h=\epsilon$, the model and radius coincide with
+\eqref{eq:adaptive-fixed-radius-subproblem}.  Otherwise the larger
+radius is accompanied by the regularization $\sigma\sqrt h I$.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\caption{Parameter-free gradient-scaled TR with persistent SCAR}
+\label{alg:gradient-scaled-scar}
+\KwIn{$x_0,y_{-1}$ and $0<\epsilon<1$}
+$\mathcal A_\epsilon\leftarrow\log(e/\epsilon)$,
+$\sigma\leftarrow\mathcal A_\epsilon^{-1}$,
+$c_0\leftarrow2^{-12}$, and $x\leftarrow x_0$\;
+Choose $z_0\ne y_{-1}$, compute $a_0$ from
+\eqref{eq:scar-secant}, and initialize the persistent SCAR state with
+$\nu_0=\mathcal M_0=a_0$\;
+At $x_0$, apply persistent SCAR halving from $y_{-1}$ until
+$\|\nabla_yf(x_0,y)\|\le c_0a_0r_\epsilon(\sigma)$; compute
+$(\widehat P,\widehat g,\widehat H)$\;
+\While{true}{
+ Set $h\leftarrow\max\{\|\widehat g\|,\epsilon\}$, solve
+ \eqref{eq:gs-subproblem} globally, and obtain $(d,\lambda)$\;
+ Set $x^+\leftarrow x+d$, $r\leftarrow\|d\|$, and form
+ $(W,U,T)$ from \eqref{eq:gs-step-quantities}\;
+ Starting from $y$, apply $N_{\rm tr}(r,\sigma)$ successful persistent
+ SCAR halvings to $q_{x^+}$ and call the result $y^+$\;
+ \eIf{$h=\epsilon$ and $r<R(h,\sigma)$}{
+  Choose $z^+\ne y^+$ and compute at $x^+$ the secant $a^+$ from
+  \eqref{eq:scar-secant}\;
+  Continue persistent SCAR halving at $x^+$ until
+  $\|\nabla_yf(x^+,y_{\rm v})\|\le c_0a^+\epsilon^{3/2}$;
+  compute $(\widehat g_{\rm v},\widehat H_{\rm v})$\;
+  \eIf{$\|\widehat g_{\rm v}\|\le\epsilon/2$ and
+   $\lambda_{\min}(\widehat H_{\rm v})
+    \ge-(21/8)\sigma\sqrt\epsilon$}{
+   \Return{$x^+$}\;
+  }{
+   discard the candidate and validator tuples, set
+   $\sigma\leftarrow2\sigma$, apply one successful persistent halving
+   at the unchanged $x$, replace $y$ by the returned point, and
+   recompute the current corrected tuple\;
+  }
+ }{
+  Compute $(\widehat P^+,\widehat g^+,\widehat H^+)$ at $(x^+,y^+)$\;
+  \eIf{$\widehat P-\widehat P^+
+        \ge W/8+U/4-T/1024$ and
+        $\|\widehat g^+\|\le h/2+\lambda r$}{
+   $(x,y,\widehat P,\widehat g,\widehat H)
+    \leftarrow(x^+,y^+,\widehat P^+,\widehat g^+,\widehat H^+)$\;
+  }{
+   discard the candidate tuple, set $\sigma\leftarrow2\sigma$,
+   apply one successful persistent halving at the unchanged $x$,
+   replace $y$ by the returned point, and recompute the current
+   corrected tuple\;
+  }
+ }
+}
+\end{algorithm}
+
+An accepted candidate tuple is stored without further refinement.
+The scale is nondecreasing, and the persistent state
+$(\nu,\mathcal M)$ is retained after accepted trials, rejected trials,
+and failed validations.  As in \Cref{sec:pf-fixed-radius}, only the
+curvature estimates are retained across changes of the inner
+objective; accelerated momentum is restarted.  The initial residual
+query is counted as the first gradient evaluation of the corresponding
+AR call, and the terminal residual gradient is reused in the corrected
+tuple.  Initialization establishes \eqref{eq:gs-working-invariant}
+because $a_0\le\ell$, and \Cref{lem:gs-tracking} preserves it.
+
+\subsection{Safe scale and complexity}
+
+\begin{lemma}[Safe scale for the gradient-scaled method]
+\label{lem:gs-safe}
+Under \Cref{ass:ncsc}, for all sufficiently small $\epsilon$ with a
+threshold depending only on $(\ell,\mu,\rho)$, the following hold.
+If $\sigma^2\ge M_P/6$, every ordinary trial of
+\Cref{alg:gradient-scaled-scar} satisfies both acceptance tests, and
+every trial with $h=\epsilon$ and $r<R(h,\sigma)$ passes validation.
+At any scale $\sigma\ge\sigma_0$, successful validation implies
+\begin{equation}\label{eq:gs-validator-return}
+ \|\nabla P(x^+)\|<\epsilon,
+ \qquad
+ \lambda_{\min}(\nabla^2P(x^+))
+ \ge-\frac{85}{32}\sigma\sqrt\epsilon.
+\end{equation}
+\end{lemma}
+
+\begin{theorem}[Class-uniform gradient-scaled complexity]
+\label{thm:gradient-scaled-scar}
+Fix $\ell\ge\mu>0$ and $\rho>0$.  There exists
+$\epsilon_0=\epsilon_0(\ell,\mu,\rho)\in(0,1)$ such that the following
+holds for every payoff satisfying \Cref{ass:ncsc} with these common
+constants and every initialization $(x_0,y_{-1})$.  Set
+$\kappa=\ell/\mu$, $M_P=4\sqrt2\,\kappa^3\rho$, and
+$\Delta_P=P(x_0)-\inf_xP(x)$.
+For every $0<\epsilon\le\epsilon_0$,
+\Cref{alg:gradient-scaled-scar} terminates using only $\epsilon$ and
+universal numerical constants.  Its output satisfies
+\begin{equation}\label{eq:gs-return}
+ \|\nabla P(x_{\rm out})\|<\epsilon,
+ \qquad
+ \lambda_{\min}(\nabla^2P(x_{\rm out}))
+ \ge-\frac{85}{16\sqrt6}\sqrt{M_P\epsilon}.
+\end{equation}
+If $Q$ counts all solved trust-region subproblems and $N_y$ counts
+all inner-gradient evaluations, including the secant evaluations, then
+\begin{subequations}\label{eq:gs-complexities}
+\begin{align}
+ Q&=O\!\left(\Delta_P\sqrt{M_P}\,\epsilon^{-3/2}\right)
+     +O_{\rm fixed}(\mathcal A_\epsilon^3),
+     \label{eq:gs-outer-complexity}\\
+ N_y&=O\!\left(
+       \Delta_P\sqrt{\kappa M_P}\,\epsilon^{-3/2}\right)
+       +O_{\rm fixed}(\sqrt\kappa\,\mathcal A_\epsilon^3).
+     \label{eq:gs-inner-complexity}
+\end{align}
+\end{subequations}
+Here $O_{\rm fixed}$ may depend on the fixed payoff, regularity
+constants, and initialization, but not on $\epsilon$.  The leading
+outer and inner terms are equivalently
+\[
+ O(\Delta_P\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2})
+ \quad\text{and}\quad
+ O(\Delta_P\kappa^2\sqrt\rho\,\epsilon^{-3/2}).
+\]
+Using internal tolerance $(1536/7225)\epsilon$ gives the standard
+$(\epsilon,\sqrt{M_P\epsilon})$ guarantee whenever that internal
+tolerance is in the stated regime.
+\end{theorem}
+
+The fixed-radius method uses a constant number of working halvings
+per trial.  Here the accepted-step analysis instead uses
+\begin{equation}\label{eq:gs-potential}
+ \mathcal L_\epsilon(h):=\left\lceil\log_2(h/\epsilon)\right\rceil,
+ \qquad
+ \Phi:=\widehat P+\frac{\epsilon^{3/2}}{512\sigma}
+                         \mathcal L_\epsilon(h).
+\end{equation}
+Interior acceptance decreases the gradient level, while boundary
+acceptance pays for a possible level increase through $\lambda r^2$.
+After accounting for scale refreshes, the same budget controls
+$\sum \sigma_k^2\|d_k\|^3$ and the total tracking work.
+The proofs are given in \Cref{app:gradient-scaled-proofs}.
+The class-uniform interpretation and exact-linear-algebra convention
+are the same as in \Cref{sec:pf-fixed-radius}.
+
 \section{Conclusion}
 
 For unconstrained optimization, the certified-inexact adaptive UTR
@@ -2140,8 +2376,10 @@ calls.  It preserves the same leading outer order and attains leading
 inner-gradient complexity
 $O(\Delta_P\kappa^2\sqrt\rho\,\epsilon^{-3/2})$, with all
 $\log(1/\epsilon)$ and $\log\kappa$ terms confined to additive
-initialization, validation, and scale-search costs.  Both
-parameter-free conclusions are asymptotic but class-uniform: their
+initialization, validation, and scale-search costs.  The gradient-scaled
+variant retains these leading bounds; its variable tracking work is
+amortized by a gradient-level potential and a cubic-path budget.
+These parameter-free conclusions are asymptotic but class-uniform: their
 onset depends only on the common regularity constants and not on the
 payoff or initialization.  For the first construction, the displayed
 sufficient onset is $\Theta(\mu)$ for fixed $\ell$ and $\rho$.  Because
@@ -3889,6 +4127,431 @@ $R(\sigma_0)=\sqrt\epsilon\,\mathcal A_\epsilon/4$.  Substituting
 \eqref{eq:fixed-radius-inner-leading}.  Finally,
 $\sqrt{\kappa M_P}=\Theta(\kappa^2\sqrt\rho)$ gives the equivalent
 leading dependence stated in the theorem.
+\end{proof}
+
+\subsection{Adaptive gradient-scaled SCAR trust region}
+\label{app:gradient-scaled-proofs}
+
+\begin{proof}[Proof of \Cref{lem:gs-tracking}]
+Lipschitz continuity of the full gradient gives
+\[
+ \|\nabla_yf(x+d,y)\|
+ \le\|\nabla_yf(x,y)\|+\ell r
+ \le\ell\bigl(c_0r_\epsilon(\sigma)+r\bigr).
+\]
+After $N_{\rm tr}(r,\sigma)$ successful halvings, this is at most
+$c_0\ell r_\epsilon(\sigma)$ by \eqref{eq:gs-tracking-count}.
+The case $r=0$ requires no halving.  At an unchanged $x$, use
+$r_\epsilon(2\sigma)=r_\epsilon(\sigma)/2$.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{lem:gs-working-errors}]
+Strong concavity and \eqref{eq:gs-working-invariant} imply
+\[
+ e:=\|y-y^*(x)\|
+ \le\frac{c_0\kappa\sqrt\epsilon}{4\sigma}
+ \le\frac{c_0\kappa}{4}\sqrt\epsilon\,\mathcal A_\epsilon.
+\]
+For sufficiently small $\epsilon$, uniformly over the class, this is
+at most $\mu/\rho$.  The corrected-oracle estimates in
+\Cref{sec:ncsc} therefore give
+\[
+ \|\widehat g-\nabla P(x)\|
+ \le\frac{(1+\kappa)\rho}{2}e^2,
+ \qquad
+ |\widehat P-P(x)|\le\frac{7\rho}{24}e^3.
+\]
+Substitution yields \eqref{eq:gs-working-errors} with the constants
+in \eqref{eq:gs-error-constants}.  The working invariant and the
+validation target are unchanged from \Cref{sec:pf-fixed-radius}, so
+\Cref{lem:fixed-radius-oracle-accuracy} gives the remaining assertions.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{lem:gs-safe}]
+Apply \Cref{lem:common-inexact-tr-step} with $F=P$, $M=M_P$,
+\[
+ a=\sigma\sqrt h+\frac{\sigma\sqrt\epsilon}{64},
+ \qquad
+ \xi=\frac{\sigma\sqrt\epsilon}{64},
+ \qquad
+ \delta_0=\delta_+=\frac{\epsilon}{1024}.
+\]
+The endpoint errors follow from \eqref{eq:working-safe-errors}.
+Since $r\le\sqrt h/(4\sigma)$ and $M_P\le6\sigma^2$,
+\[
+ \frac{M_P}{6}r^3\le\frac W4.
+\]
+Thus \eqref{eq:common-function-bound} gives
+\[
+ P(x)-P(x+d)\ge\frac W4+\frac U2-\frac{\epsilon r}{1024}.
+\]
+Young's inequality and $h\ge\epsilon$ imply
+\[
+ \frac{\epsilon r}{1024}
+ \le\frac W8+
+       \frac{2\epsilon^2}{1024^2\sigma\sqrt h}
+ \le\frac W8+\frac{2T}{1024^2}.
+\]
+After paying the two corrected-value errors,
+\[
+ \widehat P-\widehat P^+
+ \ge\frac W8+\frac U2
+       -\left(\frac{2}{1024^2}+\frac{2}{4096}\right)T
+ \ge\frac W8+\frac U4-\frac T{1024}.
+\]
+For the gradient test, \eqref{eq:common-gradient-bound} gives
+\[
+ \|\widehat g^+\|
+ \le\lambda r+\frac h4+\frac h{128}
+                    +\frac{3h}{16}+\frac h{512}
+ =\lambda r+\frac{229h}{512}
+ \le\lambda r+\frac h2.
+\]
+Hence every ordinary trial is accepted at a safe scale.
+
+If $h=\epsilon$ and $r<R(h,\sigma)$, the model is exactly
+\eqref{eq:adaptive-fixed-radius-subproblem}, with an interior
+solution.  The interior argument in the proof of
+\Cref{lem:adaptive-fixed-radius-safe} applies to the same
+working-accurate endpoint tuples and validation target.  It gives
+\[
+ \|\widehat g_{\rm v}\|\le\frac{458}{1024}\epsilon,
+ \qquad
+ \lambda_{\min}(\widehat H_{\rm v})
+ \ge-\frac{82}{32}\sigma\sqrt\epsilon,
+\]
+so validation succeeds.  At any generated scale, a successful
+validation and \eqref{eq:validator-errors} imply
+\[
+ \|\nabla P(x^+)\|
+ \le\frac\epsilon2+\frac\epsilon{1024}<\epsilon,
+ \qquad
+ \lambda_{\min}(\nabla^2P(x^+))
+ \ge-\left(\frac{21}{8}+\frac1{32}\right)\sigma\sqrt\epsilon.
+\]
+This proves \eqref{eq:gs-validator-return}.
+\end{proof}
+
+\begin{lemma}[Accepted-step potential decrease]
+\label{lem:gs-descent}
+Every ordinary accepted step of
+\Cref{alg:gradient-scaled-scar} satisfies
+\begin{equation}\label{eq:gs-potential-decrease}
+ \Phi-\Phi^+\ge\frac W{32}+\frac T{1024}+\frac U{16},
+\end{equation}
+where the scale is unchanged and $\Phi$ is defined by
+\eqref{eq:gs-potential}.
+\end{lemma}
+
+\begin{proof}
+First note that if $h>\epsilon$ and
+$h^+\le\max\{h/2,\epsilon\}$, then
+\begin{equation}\label{eq:gs-layer-halving}
+ \mathcal L_\epsilon(h^+)\le\mathcal L_\epsilon(h)-1.
+\end{equation}
+For $\epsilon<h\le2\epsilon$, the two levels are $1$ and $0$.
+For $h>2\epsilon$, the result follows from
+$\lceil t-1\rceil=\lceil t\rceil-1$.
+We will also use, for $c\ge1$ and $h^+\le ch$,
+\begin{equation}\label{eq:gs-layer-growth}
+ \mathcal L_\epsilon(h^+)-\mathcal L_\epsilon(h)
+ \le\lceil\log_2c\rceil\le1+\log_2c.
+\end{equation}
+
+Suppose first that the accepted step is interior.  Then $\lambda=0$
+and $U=0$.  Since this is an ordinary trial, $h>\epsilon$.
+The gradient acceptance test implies
+$h^+\le\max\{h/2,\epsilon\}$, so \eqref{eq:gs-layer-halving} and
+the value test yield
+\[
+ \Phi-\Phi^+\ge\frac W8-\frac T{1024}+\frac T{512}
+ =\frac W8+\frac T{1024}.
+\]
+This proves \eqref{eq:gs-potential-decrease} in the interior case.
+
+For a boundary step, put $z=\lambda r/h$.  The gradient test gives
+$h^+/h\le\max\{1,1/2+z\}$.  By \eqref{eq:gs-layer-growth},
+\[
+ \mathcal L_\epsilon(h^+)-\mathcal L_\epsilon(h)
+ \le1+\log_2\max\{1,1/2+z\}
+ \le1+\frac z{\ln2}.
+\]
+Since $r=\sqrt h/(4\sigma)$,
+\[
+ W=\frac{h^{3/2}}{16\sigma}\ge\frac T{16},
+ \qquad
+ U=\frac{zh^{3/2}}{4\sigma},
+ \qquad Tz\le4U.
+\]
+Consequently,
+\begin{align*}
+ \Phi-\Phi^+
+ &\ge\frac W8+\frac U4-\frac T{1024}
+       -\frac T{512}\left(1+\frac z{\ln2}\right)\\
+ &\ge\frac W8+
+       \left(\frac14-\frac1{128\ln2}\right)U
+       -\frac{3T}{1024}\\
+ &\ge\frac{5W}{64}
+       +\left(\frac14-\frac1{128\ln2}\right)U.
+\end{align*}
+Finally,
+$5W/64\ge W/32+T/1024$ and
+$1/4-1/(128\ln2)\ge1/16$, proving the claim.
+\end{proof}
+
+To account for changes of scale, define
+\begin{equation}\label{eq:gs-budget-parameters}
+\begin{aligned}
+ E(\sigma)&:=C_v\frac{\epsilon^{3/2}}{\sigma^3},
+ &E_0&:=E(\sigma_0),
+ &T_0&:=\frac{\epsilon^{3/2}}{\sigma_0},\\
+ h_0&:=\max\{\|\widehat g_0\|,\epsilon\},
+ &\mathcal L_0&:=\mathcal L_\epsilon(h_0),
+ &D_0&:=1+\log_2\left(1+\frac{5C_g}{4\sigma_0^2}\right).
+\end{aligned}
+\end{equation}
+Here $\widehat g_0$ is the corrected gradient after initialization.
+Set
+\begin{equation}\label{eq:gs-budget}
+ B_\epsilon:=
+ \Delta_P+\frac{23}{7}E_0+\frac{T_0}{512}(\mathcal L_0+D_0).
+\end{equation}
+
+Choose $\epsilon$ small enough that the working-error and safe-scale
+lemmas apply and $\sigma_0<\sigma_*:=\sqrt{M_P/6}$.
+Every failed trial doubles $\sigma$, and
+\Cref{lem:gs-safe} excludes failures at or above $\sigma_*$.
+Thus every finite prefix satisfies
+\begin{equation}\label{eq:gs-scale-bound}
+ J\le\left\lceil\log_2(\sigma_*\mathcal A_\epsilon)\right\rceil,
+ \qquad
+ \sigma\le\overline\sigma:=2\sigma_*.
+\end{equation}
+
+\begin{lemma}[Cumulative accepted-step budget]
+\label{lem:gs-budget}
+Under the preceding conditions, every finite prefix satisfies
+\begin{equation}\label{eq:gs-cumulative-budget}
+ \sum_{\rm accepted}
+ \left(\frac{W_k}{32}+\frac{T_k}{1024}+\frac{U_k}{16}\right)
+ \le B_\epsilon.
+\end{equation}
+If $K$ denotes its number of accepted steps, then
+\begin{equation}\label{eq:gs-path-budget}
+ K\le1024\overline\sigma B_\epsilon\epsilon^{-3/2},
+ \qquad
+ \sum_{\rm accepted}\sigma_k^2r_k^3\le8B_\epsilon.
+\end{equation}
+Every stored iterate satisfies $P(x)-P^*\le B_\epsilon$, and
+\begin{equation}\label{eq:gs-budget-asymptotic}
+ B_\epsilon
+ =\Delta_P+O_{\rm fixed}
+       (\epsilon^{3/2}\mathcal A_\epsilon^3).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+At a refresh, $x$ is unchanged and the scale goes from $\sigma$ to
+$2\sigma$.  By \eqref{eq:gs-working-errors}, the corrected-value jump
+is at most
+\[
+ E(\sigma)+E(2\sigma)=\frac98E(\sigma).
+\]
+The scales at failures form a doubling sequence, so the sum of all
+positive value jumps is at most
+\[
+ \frac98E_0\sum_{j\ge0}2^{-3j}=\frac97E_0.
+\]
+For the gradient-level term, the two corrected-gradient errors give
+\[
+ \|\widehat g_{\rm new}-\widehat g_{\rm old}\|
+ \le\frac{5C_g\epsilon}{4\sigma^2}.
+\]
+The map $g\mapsto\max\{\|g\|,\epsilon\}$ is $1$-Lipschitz and
+$h_{\rm old}\ge\epsilon$.  Hence
+\[
+ \frac{h_{\rm new}}{h_{\rm old}}
+ \le1+\frac{5C_g}{4\sigma^2},
+ \qquad
+ \mathcal L_\epsilon(h_{\rm new})
+       -\mathcal L_\epsilon(h_{\rm old})\le D_0.
+\]
+Write $\mathcal L_{\rm old}$ and $\mathcal L_{\rm new}$ for these
+two levels.  Since $T_{\rm new}=T_{\rm old}/2$ and the levels are
+nonnegative, the positive jump of the level contribution is at most
+\[
+ \left[
+  \frac{T_{\rm old}}{1024}
+  (\mathcal L_{\rm new}-2\mathcal L_{\rm old})
+ \right]_+
+ \le\frac{T_{\rm old}D_0}{1024}.
+\]
+Its cumulative positive jump is therefore bounded by
+\[
+ \frac{T_0D_0}{1024}\sum_{j\ge0}2^{-j}
+ =\frac{T_0D_0}{512}.
+\]
+
+The initial potential is at most
+$P(x_0)+E_0+T_0\mathcal L_0/512$, and every stored potential is at
+least $P^*-E_0$.  Telescoping \eqref{eq:gs-potential-decrease} and
+paying the two refresh bounds gives
+\[
+ \sum_{\rm accepted}
+ \left(\frac W{32}+\frac T{1024}+\frac U{16}\right)
+ \le\Delta_P+2E_0+\frac97E_0
+       +\frac{T_0}{512}(\mathcal L_0+D_0)=B_\epsilon.
+\]
+The same upper bound on the stored potential, together with
+$P(x)\le\Phi+E_0$, gives $P(x)-P^*\le B_\epsilon$.
+
+By \eqref{eq:gs-scale-bound},
+$T_k\ge\epsilon^{3/2}/\overline\sigma$, which proves the bound on $K$.
+The radius constraint also gives
+\[
+ 4\sigma_k^2r_k^3\le\sigma_k\sqrt{h_k}\,r_k^2=W_k.
+\]
+Combining this with \eqref{eq:gs-cumulative-budget} proves the
+cubic-path bound.
+
+Finally,
+\[
+ E_0=C_v\epsilon^{3/2}\mathcal A_\epsilon^3,
+ \qquad T_0=\epsilon^{3/2}\mathcal A_\epsilon.
+\]
+At the initial stored point,
+\[
+ \|\widehat g_0\|
+ \le\|\nabla P(x_0)\|+C_g\epsilon\mathcal A_\epsilon^2.
+\]
+For each fixed payoff and initialization this implies
+$\mathcal L_0=O_{\rm fixed}(\mathcal A_\epsilon)$, while
+$D_0=O_{\rm fixed}(1+\log\mathcal A_\epsilon)$.
+Substitution into \eqref{eq:gs-budget} yields
+\eqref{eq:gs-budget-asymptotic}.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:gradient-scaled-scar}]
+Choose $\epsilon_0$ so that
+\Cref{lem:gs-working-errors,lem:gs-safe} hold and
+$\mathcal A_\epsilon^{-1}<\sqrt{M_P/6}$ for
+$0<\epsilon\le\epsilon_0$.  These restrictions depend only on the
+common constants $(\ell,\mu,\rho)$.
+
+Each inner sequence is finite by
+\Cref{lem:scar-persistent-half} and the positive residual targets.
+Every nonterminal outer trial is either accepted or increases the
+scale.  The finite-prefix bounds
+\eqref{eq:gs-scale-bound,eq:gs-path-budget} bound both possibilities,
+so the algorithm terminates.  With $K$ accepted steps and $J$
+failures, $Q=K+J+1$, and hence
+\[
+ Q\le1024\overline\sigma B_\epsilon\epsilon^{-3/2}
+       +\left\lceil\log_2(\sigma_*\mathcal A_\epsilon)\right\rceil+1.
+\]
+Using \eqref{eq:gs-budget-asymptotic} and
+$\overline\sigma=2\sqrt{M_P/6}$ gives
+\eqref{eq:gs-outer-complexity}.
+The output bound \eqref{eq:gs-return} follows from
+\eqref{eq:gs-validator-return} and the scale cap.
+The tolerance conversion follows from
+$(85/(16\sqrt6))^2=7225/1536$.
+
+It remains to count successful halvings.  On an accepted step, set
+$z_k=\sigma_kr_k/\sqrt\epsilon$.  Since $c_0=2^{-12}$,
+\[
+ N_{{\rm tr},k}
+ =\left\lceil\log_2(1+2^{14}z_k)\right\rceil
+ \le16+z_k^3.
+\]
+For $0\le z\le1$, the ceiling is at most $15$.  For $z\ge1$, use
+$1+2^{14}z\le2^{15}z$ and $\log_2z\le z^3$.
+Thus \eqref{eq:gs-path-budget} gives
+\begin{align}
+ \sum_{\rm accepted}N_{{\rm tr},k}
+ &\le16K+\epsilon^{-3/2}
+                  \sum_{\rm accepted}\sigma_k^3r_k^3\notag\\
+ &\le16K+8\overline\sigma B_\epsilon\epsilon^{-3/2}\notag\\
+ &\le16392\overline\sigma B_\epsilon\epsilon^{-3/2}.
+ \label{eq:gs-accepted-tracking}
+\end{align}
+
+To bound tracking at failed trials, put $L_P=(1+\kappa)\ell$.
+Smoothness and the lower bound $P^*$ imply
+\[
+ \|\nabla P(x)\|^2\le2L_P(P(x)-P^*).
+\]
+At every stored iterate, \Cref{lem:gs-budget} and
+\eqref{eq:gs-working-errors} therefore give
+\[
+ h\le\overline h_\epsilon:=
+ \max\left\{\epsilon,\sqrt{2L_PB_\epsilon}
+                   +C_g\epsilon\mathcal A_\epsilon^2\right\}
+ =O_{\rm fixed}(1).
+\]
+Since $r\le R(h,\sigma)$, each failed trial requires at most
+\[
+ N_{\rm fail}:=
+ \left\lceil\log_2\left(
+  1+\frac1{c_0}\sqrt{\frac{\overline h_\epsilon}{\epsilon}}
+ \right)\right\rceil
+ =O_{\rm fixed}(\mathcal A_\epsilon)
+\]
+working halvings.  A terminal trial has $h=\epsilon$ and
+$r<r_\epsilon(\sigma)$, so its working tracking uses at most
+$\lceil\log_2(1+1/c_0)\rceil=13$ halvings.
+Each failure uses one additional halving for the refresh.
+
+Immediately before a validation, the residual is at most
+$c_0\ell\sqrt\epsilon/(4\sigma)$.  The validation target is at least
+$c_0\mu\epsilon^{3/2}$, so the number of additional halvings is at
+most
+\[
+ N_{\rm val}:=
+ \left\lceil\log_2\max\left\{1,
+  \frac{\kappa\mathcal A_\epsilon}{4\epsilon}\right\}\right\rceil
+ =O_{\rm fixed}(\mathcal A_\epsilon).
+\]
+There are at most $J+1$ validations.  Initialization uses at most
+\[
+ N_{\rm init}:=
+ \left\lceil\log_2\max\left\{1,
+  \frac{\|\nabla_yf(x_0,y_{-1})\|}
+       {c_0a_0r_\epsilon(\sigma_0)}\right\}\right\rceil
+ =O_{\rm fixed}(\mathcal A_\epsilon)
+\]
+halvings.  Consequently the total number of successful halvings obeys
+\begin{align}
+ N_{\rm half}\le{}&
+ \sum_{\rm accepted}N_{{\rm tr},k}
+ +J N_{\rm fail}+J+13
+ +(J+1)N_{\rm val}+N_{\rm init}.
+ \label{eq:gs-total-halvings}
+\end{align}
+By \eqref{eq:gs-scale-bound},
+$J=O_{\rm fixed}(1+\log\mathcal A_\epsilon)$.
+Equations \eqref{eq:gs-budget-asymptotic,eq:gs-accepted-tracking}
+therefore imply
+\[
+ N_{\rm half}
+ =O(\Delta_P\sqrt{M_P}\,\epsilon^{-3/2})
+  +O_{\rm fixed}(\mathcal A_\epsilon^3).
+\]
+
+All inner objectives $q_x=-f(x,\cdot)$ share the same $(\mu,\ell)$.
+Apply \Cref{lem:scar-persistent-half} once to the complete sequence,
+including rejected candidates, refreshes, and validators.
+The initial and validation secants require at most $2(J+2)$
+additional gradient evaluations, giving
+\begin{equation}\label{eq:gs-inner-explicit}
+ N_y\le(4+2\sqrt{10}\,C_1)\sqrt\kappa
+       \bigl(N_{\rm half}+\lceil\log_4\kappa\rceil\bigr)
+       +2(J+2).
+\end{equation}
+This proves \eqref{eq:gs-inner-complexity}.
+Finally, $\sqrt{M_P}=\Theta(\kappa^{3/2}\sqrt\rho)$ and
+$\sqrt{\kappa M_P}=\Theta(\kappa^2\sqrt\rho)$ give the stated leading
+dependence.
 \end{proof}
 
 \section{Scope of the parameter-free guarantees}
