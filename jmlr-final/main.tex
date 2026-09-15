@@ -1,0 +1,27 @@
+% !TeX program = pdflatex
+\providecommand{\JMLRRoot}{}
+\makeatletter
+\edef\input@path{{\JMLRRoot}}
+\makeatother
+
+\input{\JMLRRoot preamble.tex}
+
+\begin{document}
+
+\input{\JMLRRoot frontmatter.tex}
+\input{\JMLRRoot abstract.tex}
+
+\input{\JMLRRoot sections/section1.tex}
+\input{\JMLRRoot sections/section2.tex}
+\input{\JMLRRoot sections/section3.tex}
+\input{\JMLRRoot sections/section4.tex}
+
+\nocite{jiang2026utr,hamad2022consistently,fang2026parameter,luo2022finding,wang2025gradient,nesterov2004introductory,luenberger2021linear,cartis2011adaptive2,lan2026optimal,wang2020improved}
+\bibliography{\JMLRRoot ref}
+
+\appendix
+
+\input{\JMLRRoot appendices/appendixA.tex}
+\input{\JMLRRoot appendices/appendixB.tex}
+\input{\JMLRRoot appendices/appendixC.tex}
+\end{document}

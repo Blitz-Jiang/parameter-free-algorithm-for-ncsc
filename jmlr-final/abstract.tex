@@ -1,0 +1,28 @@
+% !TeX root = main.tex
+\begin{abstract}
+We study fully parameter-free second-order methods for smooth
+nonconvex--strongly-concave minimax optimization. Our analysis uses an
+existing implicit gradient estimator and its known quadratic accuracy
+with respect to the inner solution error. Combining this oracle with
+an inexact universal trust-region framework and a cumulative cubic
+path analysis, we first obtain a known-parameter method with leading
+inner-gradient complexity
+$O((1+\log\kappa)\Delta_P\kappa^2\sqrt{\rho}\,\epsilon^{-3/2})$.
+This removes the multiplicative $\log(1/\epsilon)$ factor in the
+explicit inner-gradient bound of Minimax Cubic Newton.
+We then develop a fully parameter-free method based on
+gradient-scaled trust regions and persistent SCAR tracking.
+To reach an $O(\epsilon,\sqrt{\kappa^3\rho\epsilon})$ second-order
+stationary point of the primal function $P(x)=\max_y f(x,y)$,
+its leading trust-region subproblem and inner-gradient complexities
+are
+$O(\Delta_P\kappa^{3/2}\sqrt{\rho}\,\epsilon^{-3/2})$ and
+$O(\Delta_P\kappa^2\sqrt{\rho}\,\epsilon^{-3/2})$, respectively,
+with additive instance-dependent polylogarithmic terms in
+$1/\epsilon$.
+Here $\Delta_P$ is the initial primal-function gap, $\kappa$ the
+condition number, and $\rho$ the Hessian-Lipschitz constant of $f$.
+The parameter-free guarantees hold for sufficiently small $\epsilon$,
+with an unknown threshold depending only on the regularity constants
+and uniform over admissible objectives and initializations.
+\end{abstract}

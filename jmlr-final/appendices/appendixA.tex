@@ -1,0 +1,373 @@
+% !TeX root = ../main.tex
+\section{Proofs for Section~\ref{sec:preliminaries}}
+\label{app:preliminaries}
+
+
+\subsection{Proof of the Quantitative Primal-Function Oracle Bounds}
+\label{app:corrected-estimators}
+
+\begin{proof}[Proof of Lemma~\ref{lem:corrected-errors}]
+
+\paragraph{Corrected value.}
+Fix $x$, and write
+\[
+    C:=\nabla^2_{yy}f(x,y),
+    \qquad
+    q:=\nabla_yf(x,y),
+    \qquad
+    \delta:=y-y^*(x).
+\]
+Taylor expansion of the inner gradient gives
+\begin{equation}
+    v:=q-C\delta,
+    \qquad
+    \|v\|
+    \le
+    \frac{\rho}{2}\|\delta\|^2.
+    \label{eq:app-value-v-quadratic}
+\end{equation}
+Define
+\[
+    \overline C
+    :=
+    \int_0^1
+    \nabla^2_{yy}f(x,y-t\delta)\,dt.
+\]
+The fundamental theorem of calculus gives
+$q=\overline C\delta$, and hence
+\[
+    v=(\overline C-C)\delta.
+\]
+Both $C$ and $\overline C$ satisfy
+\[
+    -\ell I
+    \preceq
+    C,\overline C
+    \preceq
+    -\mu I,
+\]
+and therefore
+\begin{equation}
+    \|v\|
+    \le
+    (\ell-\mu)\|\delta\|.
+    \label{eq:app-value-v-linear}
+\end{equation}
+
+Taylor expansion of the payoff around $y$ gives
+\begin{equation}
+    P(x)
+    =
+    f(x,y)
+    -
+    q^\top\delta
+    +
+    \frac12\delta^\top C\delta
+    +
+    R,
+    \qquad
+    |R|
+    \le
+    \frac{\rho}{6}\|\delta\|^3.
+    \label{eq:app-value-taylor}
+\end{equation}
+Using $q=C\delta+v$ and completing the square yields
+\begin{equation}
+    P(x)-\widehat P(x,y)
+    =
+    R+\frac12v^\top C^{-1}v.
+    \label{eq:app-value-square}
+\end{equation}
+Strong concavity gives
+$\|C^{-1}\|\le1/\mu$.
+Combining
+\eqref{eq:app-value-v-quadratic} and
+\eqref{eq:app-value-v-linear},
+\[
+    \|v\|^2
+    \le
+    \frac{\rho}{2}\|\delta\|^2
+    (\ell-\mu)\|\delta\|.
+\]
+Hence
+\[
+    \frac12
+    |v^\top C^{-1}v|
+    \le
+    \frac{(\kappa-1)\rho}{4}\|\delta\|^3.
+\]
+Together with \eqref{eq:app-value-taylor}, this gives
+\[
+    |\widehat P(x,y)-P(x)|
+    \le
+    \frac{(3\kappa-1)\rho}{12}\|\delta\|^3.
+\]
+The inequality
+\[
+    \frac{(3\kappa-1)\rho}{12}
+    \le
+    \frac{\kappa\rho}{4}
+\]
+follows from $\kappa\ge1$.
+
+If $\|\delta\|\le\mu/\rho$, then
+\eqref{eq:app-value-v-quadratic} gives
+\[
+    \frac12|v^\top C^{-1}v|
+    \le
+    \frac{\rho^2}{8\mu}\|\delta\|^4
+    \le
+    \frac{\rho}{8}\|\delta\|^3.
+\]
+Combining this with
+$|R|\le\rho\|\delta\|^3/6$ proves
+\[
+    |\widehat P(x,y)-P(x)|
+    \le
+    \frac{7\rho}{24}\|\delta\|^3.
+\]
+
+
+\paragraph{Corrected gradient.}
+Let
+\[
+    y_t
+    :=
+    y^*(x)+t\bigl(y-y^*(x)\bigr),
+    \qquad
+    t\in[0,1].
+\]
+Since $f$ is twice continuously differentiable, the fundamental
+theorem of calculus gives
+\begin{align}
+    \nabla_xf(x,y)-\nabla_xf(x,y^*(x))
+    &=
+    \int_0^1
+    \nabla^2_{xy}f(x,y_t)
+    \bigl(y-y^*(x)\bigr)\,dt,
+    \label{eq:app-gradient-x-path}
+    \\
+    \nabla_yf(x,y)
+    &=
+    \int_0^1
+    \nabla^2_{yy}f(x,y_t)
+    \bigl(y-y^*(x)\bigr)\,dt,
+    \label{eq:app-gradient-y-path}
+\end{align}
+where the second identity uses
+$\nabla_yf(x,y^*(x))=0$.
+
+Substituting
+\eqref{eq:app-gradient-x-path}--\eqref{eq:app-gradient-y-path}
+into \eqref{eq:corrected-gradient} and using
+\eqref{eq:primal-gradient} gives
+\begin{align}
+    \widehat g(x,y)-\nabla P(x)
+    &=
+    \int_0^1
+    \Big[
+        \nabla^2_{xy}f(x,y_t)
+        -
+        \nabla^2_{xy}f(x,y)
+        \notag\\
+    &\qquad
+        +
+        \nabla^2_{xy}f(x,y)
+        \bigl(\nabla^2_{yy}f(x,y)\bigr)^{-1}
+        \bigl(
+            \nabla^2_{yy}f(x,y)
+            -
+            \nabla^2_{yy}f(x,y_t)
+        \bigr)
+    \Big]
+    \notag\\
+    &\qquad\qquad\times
+    \bigl(y-y^*(x)\bigr)\,dt.
+    \label{eq:app-gradient-cancellation}
+\end{align}
+This identity displays the cancellation of the linear inner error.
+
+Hessian Lipschitz continuity and
+\[
+    \left\|
+    \nabla^2_{xy}f(x,y)
+    \bigl(\nabla^2_{yy}f(x,y)\bigr)^{-1}
+    \right\|
+    \le
+    \kappa
+\]
+give
+\[
+    \|\widehat g(x,y)-\nabla P(x)\|
+    \le
+    (1+\kappa)\rho
+    \int_0^1(1-t)\,dt\,
+    \|y-y^*(x)\|^2.
+\]
+Therefore
+\[
+    \|\widehat g(x,y)-\nabla P(x)\|
+    \le
+    \frac{(1+\kappa)\rho}{2}
+    \|y-y^*(x)\|^2.
+\]
+
+
+\paragraph{Schur-complement Hessian.}
+Retain
+\[
+    C:=\nabla^2_{yy}f(x,y)
+\]
+and set
+\[
+    B:=\nabla^2_{xy}f(x,y),
+    \qquad
+    B_*:=\nabla^2_{xy}f(x,y^*(x)),
+    \qquad
+    C_*:=\nabla^2_{yy}f(x,y^*(x)).
+\]
+The inverse identity gives
+\begin{equation}
+\begin{aligned}
+    &
+    \left\|
+    C^{-1}-C_*^{-1}
+    \right\|
+    \\
+    &\qquad\le
+    \frac{\rho}{\mu^2}
+    \|y-y^*(x)\|.
+\end{aligned}
+\label{eq:app-inverse-difference}
+\end{equation}
+
+The Schur-complement products satisfy
+\begin{align}
+    BC^{-1}B^\top-B_*C_*^{-1}B_*^\top
+    &=
+    (B-B_*)C^{-1}B^\top
+    \notag\\
+    &\quad+
+    B_*(C^{-1}-C_*^{-1})B^\top
+    \notag\\
+    &\quad+
+    B_*C_*^{-1}(B-B_*)^\top.
+    \label{eq:app-schur-telescope}
+\end{align}
+Hessian Lipschitz continuity,
+$\|B\|,\|B_*\|\le\ell$, and
+$\|C^{-1}\|,\|C_*^{-1}\|\le1/\mu$
+bound the three terms on the right-hand side by
+\[
+    \kappa\rho\|y-y^*(x)\|,
+    \qquad
+    \kappa^2\rho\|y-y^*(x)\|,
+    \qquad
+    \kappa\rho\|y-y^*(x)\|,
+\]
+respectively.
+Adding the $xx$-block error yields
+\begin{align*}
+    \|\widehat H(x,y)-\nabla^2P(x)\|
+    &\le
+    \rho\|y-y^*(x)\|
+    +
+    2\kappa\rho\|y-y^*(x)\|
+    \\
+    &\qquad+
+    \kappa^2\rho\|y-y^*(x)\|
+    \\
+    &=
+    (1+\kappa)^2\rho
+    \|y-y^*(x)\|.
+\end{align*}
+This proves the Hessian estimate and completes the proof.
+\end{proof}
+
+
+\subsection{Proof of the Common Inexact Trust-Region Estimate}
+\label{app:common-tr-step}
+
+\begin{proof}[Proof of Lemma~\ref{lem:common-inexact-tr-step}]
+Apply Lemma~\ref{lem:tr-global-optimality} with
+\[
+    B=H+aI.
+\]
+Its stationarity and positive-semidefiniteness conditions give
+\[
+    q(d)
+    =
+    -\frac12d^\top(H+aI)d-\lambda r^2
+    \le
+    -\frac{\lambda}{2}r^2,
+\]
+which proves \eqref{eq:common-model-bound}.
+
+The Taylor bound
+\eqref{eq:function-taylor} and the current endpoint errors imply
+\begin{align*}
+    F(x)-F(x+d)
+    &\ge
+    -g^\top d
+    -\frac12d^\top Hd
+    -\delta_0r
+    -\frac{\xi}{2}r^2
+    -\frac{M}{6}r^3.
+\end{align*}
+Since
+\[
+    -g^\top d-\frac12d^\top Hd
+    =
+    -q(d)+\frac{a}{2}r^2,
+\]
+the model bound gives
+\[
+    F(x)-F(x+d)
+    \ge
+    \frac{a-\xi}{2}r^2
+    +
+    \frac{\lambda}{2}r^2
+    -
+    \frac{M}{6}r^3
+    -
+    \delta_0r,
+\]
+which proves \eqref{eq:common-function-bound}.
+
+For the candidate gradient, decompose
+\begin{align*}
+    g^+
+    &=
+    [g^+-\nabla F(x+d)]
+    \\
+    &\quad+
+    [\nabla F(x+d)-\nabla F(x)-\nabla^2F(x)d]
+    \\
+    &\quad+
+    [\nabla F(x)-g]
+    +
+    [\nabla^2F(x)-H]d
+    +
+    [g+Hd].
+\end{align*}
+The stationarity condition in
+\eqref{eq:tr-global-optimality}, again with $B=H+aI$, gives
+\[
+    g+Hd=-(a+\lambda)d.
+\]
+Taking norms and using
+\eqref{eq:gradient-taylor},
+\eqref{eq:common-current-errors}, and
+\eqref{eq:common-candidate-error} yields
+\[
+    \|g^+\|
+    \le
+    (a+\xi+\lambda)r
+    +
+    \frac{M}{2}r^2
+    +
+    \delta_0+\delta_+,
+\]
+which proves \eqref{eq:common-gradient-bound}.
+\end{proof}
+

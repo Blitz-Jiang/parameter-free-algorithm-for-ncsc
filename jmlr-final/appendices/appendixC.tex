@@ -1,0 +1,1676 @@
+\section{Proofs for Section~\ref{sec:parameter-free}}
+\label{app:parameter-free-proofs}
+
+
+\subsection{Uniform-Accuracy Parameter-Free Method}
+\label{app:uniform-parameter-free-proofs}
+
+
+\begin{proof}[Proof of Corollary~\ref{cor:scar-inner}]
+For $q_x=-f(x,\cdot)$, strong monotonicity and Lipschitz continuity
+of $\nabla q_x$ give
+\[
+    \mu\|z-y^{\rm in}\|
+    \le
+    \|\nabla q_x(z)-\nabla q_x(y^{\rm in})\|
+    \le
+    \ell\|z-y^{\rm in}\|.
+\]
+Hence
+\[
+    \mu\le a_x\le\ell.
+\]
+For $\kappa>1$, the initialization
+$\mu_0=M_0=a_x$ therefore satisfies the hypotheses of
+Theorem~\ref{thm:scar-blackbox}, and
+\[
+    \log_4\frac{a_x}{\mu}
+    \le
+    \log_4\kappa.
+\]
+Substitution into \eqref{eq:scar-original-complexity} proves
+\eqref{eq:scar-inner-complexity}.
+
+When $\kappa=1$, strong monotonicity and Lipschitz continuity with the
+same modulus imply the corresponding endpoint estimate directly, so
+the cost of a residual-reduction call is bounded by a numerical
+constant.
+\end{proof}
+
+
+\begin{proof}[Proof of Lemma~\ref{lem:pf-asymptotic-oracle}]
+Let
+\[
+    s:=\sqrt{M_P/6}.
+\]
+Choose
+\begin{equation}
+    \epsilon_{\rm or}
+    :=
+    \min\left\{
+        1,\,
+        \frac{\mu}{\sqrt\rho},\,
+        \left(
+            \frac{\mu^2}{
+                128(1+\kappa)\rho
+            }
+        \right)^{1/3},\,
+        \left(
+            \frac{
+                s\mu
+            }{
+                64(1+\kappa)^2\rho
+            }
+        \right)^{2/3},\,
+        \left(
+            \frac{
+                3\mu^3
+            }{
+                7\rho
+            }
+        \right)^{1/3}
+    \right\}.
+    \label{eq:pf-uniform-oracle-onset}
+\end{equation}
+By Lemma~\ref{lem:inner-residual-certificate},
+\[
+    \|y-y^*(x)\|
+    \le
+    \frac{\epsilon^2}{\mu}.
+\]
+The choice \eqref{eq:pf-uniform-oracle-onset} ensures
+\[
+    \frac{\epsilon^2}{\mu}
+    \le
+    \frac{\mu}{\rho}.
+\]
+Lemma~\ref{lem:corrected-errors} therefore gives
+\begin{align*}
+    \|\widehat g-\nabla P\|
+    &\le
+    \frac{(1+\kappa)\rho}{2\mu^2}\epsilon^4,
+    \\
+    \|\widehat H-\nabla^2P\|
+    &\le
+    \frac{(1+\kappa)^2\rho}{\mu}\epsilon^2,
+    \\
+    |\widehat P-P|
+    &\le
+    \frac{7\rho}{24\mu^3}\epsilon^6.
+\end{align*}
+The remaining conditions in
+\eqref{eq:pf-uniform-oracle-onset} make these quantities at most
+\[
+    \frac{\epsilon}{256},
+    \qquad
+    \frac{s\sqrt\epsilon}{64},
+    \qquad
+    \frac{\epsilon^3}{8},
+\]
+respectively.
+All coefficients depend only on $(\ell,\mu,\rho)$, so the same
+threshold applies uniformly over the entire parameter class.
+\end{proof}
+
+
+\begin{lemma}[Safe-scale robust trial]
+\label{lem:pf-safe-trial}
+Consider a nonzero trial of
+Algorithm~\ref{alg:pf-residual-utr}, and write
+\[
+    h:=\max\{\|g\|,\epsilon\},
+    \qquad
+    r:=\|d\|.
+\]
+Suppose both current and candidate inner points satisfy
+$\|\nabla_yf\|\le\epsilon^2$, and suppose
+\eqref{eq:pf-oracle-bounds} holds.
+If
+\[
+    \sigma^2\ge M_P/6,
+\]
+then
+\begin{subequations}
+\begin{align}
+    P(x)-P(x+d)
+    &\ge
+    \frac14\sigma\sqrt h\,r^2
+    +
+    \frac12\lambda r^2
+    -
+    \frac{(1+\kappa)\rho}{2\mu^2}
+    \epsilon^4r,
+    \label{eq:pf-safe-decrease}
+    \\
+    \|g^+\|
+    &\le
+    \frac{117}{256}h+\lambda r.
+    \label{eq:pf-safe-gradient}
+\end{align}
+\end{subequations}
+If in addition
+\[
+    r=\frac{\sqrt h}{4\sigma},
+\]
+then
+\begin{equation}
+    P(x)-P(x+d)
+    \ge
+    \frac{h^{3/2}}{128\sigma}
+    +
+    \frac14\lambda r^2.
+    \label{eq:pf-safe-boundary-decrease}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Apply Lemma~\ref{lem:common-inexact-tr-step} with
+\[
+    F=P,
+    \qquad
+    M=M_P,
+\]
+and
+\[
+    a
+    =
+    \sigma\sqrt h
+    +
+    \frac{\sigma\sqrt\epsilon}{64},
+    \qquad
+    R
+    =
+    \frac{\sqrt h}{4\sigma},
+\]
+\[
+    \xi
+    =
+    \frac1{64}
+    \sqrt{\frac{M_P\epsilon}{6}},
+    \qquad
+    \delta_0=\delta_+
+    =
+    \frac{(1+\kappa)\rho}{2\mu^2}\epsilon^4.
+\]
+At a safe scale,
+\[
+    \xi
+    \le
+    \frac{\sigma\sqrt\epsilon}{64},
+\]
+so
+\[
+    a-\xi\ge\sigma\sqrt h,
+    \qquad
+    a+\xi
+    \le
+    \sigma\sqrt h
+    +
+    \frac{2\sigma\sqrt\epsilon}{64}.
+\]
+The trust-region radius and
+$M_P\le6\sigma^2$ imply
+\[
+    \frac{M_P}{6}r^3
+    \le
+    \frac14\sigma\sqrt h\,r^2.
+\]
+Equation~\eqref{eq:common-function-bound} therefore proves
+\eqref{eq:pf-safe-decrease}.
+
+If the radius is active,
+\[
+    \sigma\sqrt h\,r^2
+    =
+    \frac{h^{3/2}}{16\sigma}.
+\]
+By \eqref{eq:pf-gradient-error}, the last term in
+\eqref{eq:pf-safe-decrease} is at most
+$h^{3/2}/(1024\sigma)$, which yields
+\eqref{eq:pf-safe-boundary-decrease}.
+
+Finally, \eqref{eq:common-gradient-bound} gives
+\[
+    \|g^+\|
+    \le
+    \sigma\sqrt h\,r
+    +
+    \lambda r
+    +
+    2\frac{\sigma\sqrt\epsilon}{64}r
+    +
+    \frac{(1+\kappa)\rho}{\mu^2}\epsilon^4
+    +
+    \frac{M_P}{2}r^2.
+\]
+The four terms other than $\lambda r$ are bounded by
+\[
+    \frac h4,
+    \qquad
+    \frac h{128},
+    \qquad
+    \frac h{128},
+    \qquad
+    \frac{3h}{16},
+\]
+respectively. Their sum is smaller than $117h/256$, which proves
+\eqref{eq:pf-safe-gradient}.
+\end{proof}
+
+
+\begin{lemma}[Accepted-step accounting]
+\label{lem:pf-accepted-accounting}
+Consider any finite prefix of $N$ accepted nonterminal steps of
+Algorithm~\ref{alg:pf-residual-utr}.
+Suppose \eqref{eq:pf-oracle-bounds} holds at every stored tuple and
+all trial scales are bounded by $\bar\sigma$.
+If
+\begin{equation}
+    \frac{
+        5\bar\sigma\epsilon^{3/2}
+    }{
+        4\eta
+    }
+    \left(
+        1+\frac4{\log2}
+    \right)
+    \le
+    \frac12,
+    \label{eq:pf-absorption-condition}
+\end{equation}
+then
+\begin{equation}
+    N
+    =
+    O\!\left(
+        \bar\sigma\Delta_P\epsilon^{-3/2}
+        +
+        \log_+\frac{\|g_0\|}{\epsilon}
+        +1
+    \right).
+    \label{eq:pf-accepted-bound}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+For an accepted step $k$, write
+\[
+    h_k:=\max\{\|g_k\|,\epsilon\},
+    \qquad
+    r_k:=\|d_k\|,
+\]
+and define
+\[
+    \mathcal B_N
+    :=
+    \left\{
+        0\le k<N:
+        r_k=\frac{\sqrt{h_k}}{4\sigma_k}
+    \right\},
+\]
+\[
+    \mathcal I_N
+    :=
+    \left\{
+        0\le k<N:
+        r_k<\frac{\sqrt{h_k}}{4\sigma_k}
+    \right\}.
+\]
+Every $k\in\mathcal B_N$ gives a true decrease of at least
+\[
+    \eta
+    \left(
+        \frac{h_k^{3/2}}{\sigma_k}
+        +
+        \lambda_kr_k^2
+    \right),
+\]
+because the two corrected-value errors sum to at most
+$\epsilon^3/4$.
+Every $k\in\mathcal I_N$ can increase the true primal value by at
+most $5\epsilon^3/4$.
+Telescoping and using
+$h_k\ge\epsilon$ and $\sigma_k\le\bar\sigma$ give
+\begin{subequations}
+\label{eq:pf-boundary-budgets}
+\begin{align}
+    |\mathcal B_N|
+    &\le
+    \frac{
+        \bar\sigma\Delta_P
+    }{
+        \eta\epsilon^{3/2}
+    }
+    +
+    \frac{
+        5\bar\sigma\epsilon^{3/2}
+    }{
+        4\eta
+    }
+    |\mathcal I_N|,
+    \label{eq:pf-boundary-count}
+    \\
+    \sum_{k\in\mathcal B_N}
+    \frac{\lambda_kr_k}{h_k}
+    &\le
+    \frac{
+        4\bar\sigma\Delta_P
+    }{
+        \eta\epsilon^{3/2}
+    }
+    +
+    \frac{
+        5\bar\sigma\epsilon^{3/2}
+    }{
+        \eta
+    }
+    |\mathcal I_N|.
+    \label{eq:pf-multiplier-budget}
+\end{align}
+\end{subequations}
+For the second inequality we used
+\[
+    \lambda_kr_k^2
+    =
+    \frac{\lambda_kr_k}{h_k}
+    \frac{h_k^{3/2}}{4\sigma_k}.
+\]
+
+The accepted gradient tests imply
+\[
+    h_{k+1}
+    \le
+    \begin{cases}
+        \max\{h_k/2,\epsilon\},
+        &k\in\mathcal I_N,
+        \\
+        \max\{h_k/2+\lambda_kr_k,\epsilon\},
+        &k\in\mathcal B_N.
+    \end{cases}
+\]
+Thus every interior step that does not hit the floor decreases
+$\log(h_k/\epsilon)$ by at least $\log2$, while a boundary step can
+increase it by at most $\lambda_kr_k/h_k$.
+
+Suppose an interior step hits the floor and $k+1<N$.
+At the next accepted outer iteration, $h=\epsilon$ and the stopping
+test fails through its Hessian branch.
+With
+\[
+    A
+    :=
+    H
+    +
+    \frac{\sigma\sqrt\epsilon}{64}I
+    +
+    \sigma\sqrt\epsilon\,I,
+\]
+failure of the stopping test gives
+\[
+    -\lambda_{\min}(A)
+    >
+    \frac{7}{64}\sigma\sqrt\epsilon.
+\]
+Lemma~\ref{lem:tr-global-optimality} therefore forces
+$\lambda>0$, and hence the next accepted step lies on the boundary.
+Thus every nonterminal floor event is injectively followed by an
+index in $\mathcal B_N$, apart from a possible final prefix index.
+Therefore
+\begin{equation}
+    |\mathcal I_N|
+    \le
+    |\mathcal B_N|+1
+    +
+    \frac{
+        \log_+(\|g_0\|/\epsilon)
+        +
+        \sum_{k\in\mathcal B_N}
+        \lambda_kr_k/h_k
+    }{
+        \log2
+    }.
+    \label{eq:pf-interior-potential}
+\end{equation}
+Substituting \eqref{eq:pf-boundary-budgets} and using
+\eqref{eq:pf-absorption-condition} proves
+\eqref{eq:pf-accepted-bound}.
+\end{proof}
+
+
+\begin{proof}[Proof of Theorem~\ref{thm:pf-scar-utr}]
+Set
+\[
+    s:=\sqrt{M_P/6},
+    \qquad
+    \bar\sigma:=2s.
+\]
+Choose the class-uniform threshold no larger than
+$\epsilon_{\rm or}$ and so that
+\begin{equation}
+\begin{gathered}
+    \epsilon\le s,
+    \\
+    \frac{
+        5\bar\sigma\epsilon^3
+    }{
+        4\eta\epsilon^{3/2}
+    }
+    \left(
+        1+\frac4{\log2}
+    \right)
+    \le
+    \frac12,
+    \\
+    \frac1{s\sqrt\epsilon}
+    \left(
+        \frac{(1+\kappa)\rho}{2\mu^2}
+        \epsilon^4
+    \right)^2
+    \le
+    \frac34\epsilon^3,
+    \\
+    \left(
+        \frac1{128}-\eta
+    \right)
+    \frac{\epsilon^{3/2}}{\bar\sigma}
+    \ge
+    \frac54\epsilon^3.
+\end{gathered}
+\label{eq:pf-small-epsilon-conditions}
+\end{equation}
+For example, the choice
+\begin{equation}
+    \epsilon_0
+    :=
+    \frac12
+    \min\left\{
+        \epsilon_{\rm or},
+        s,
+        \left(
+            \frac{
+                \eta
+            }{
+                5s(1+4/\log2)
+            }
+        \right)^{2/3},
+        \left(
+            \frac{
+                3s\mu^4
+            }{
+                (1+\kappa)^2\rho^2
+            }
+        \right)^{2/9}
+    \right\}
+    \label{eq:pf-class-uniform-onset}
+\end{equation}
+is sufficient.
+This threshold depends only on $(\ell,\mu,\rho)$.
+
+Starting from $\sigma=\epsilon$, a rejected trial doubles $\sigma$.
+Unless the method has already terminated, the first nonzero trial
+with $\sigma\ge s$ satisfies
+\[
+    \sigma\le2s=\bar\sigma.
+\]
+Lemma~\ref{lem:pf-safe-trial} implies that its gradient acceptance
+test holds.
+
+For an interior trial, minimizing the right-hand side of
+\eqref{eq:pf-safe-decrease} over $r\ge0$ shows that the possible true
+increase is at most
+\[
+    \frac1{\sigma\sqrt h}
+    \left(
+        \frac{(1+\kappa)\rho}{2\mu^2}
+        \epsilon^4
+    \right)^2.
+\]
+By \eqref{eq:pf-small-epsilon-conditions}, this is at most
+$3\epsilon^3/4$. After adding the two corrected-value errors, the
+interior value test holds.
+
+On a boundary trial,
+\eqref{eq:pf-safe-boundary-decrease} and the two value errors give
+\[
+    \widehat P-\widehat P^+
+    \ge
+    \frac{h^{3/2}}{128\sigma}
+    +
+    \frac14\lambda r^2
+    -
+    \frac{\epsilon^3}{4}.
+\]
+The last condition in
+\eqref{eq:pf-small-epsilon-conditions} implies the boundary
+acceptance test.
+Hence a safe-scale trial either terminates or is accepted, and no
+generated scale exceeds $\bar\sigma$.
+
+Consider a finite trial prefix with $K_N$ accepted and $U_N$
+rejected nonterminal trials.
+Lemma~\ref{lem:pf-accepted-accounting} bounds $K_N$ independently of
+the prefix length.
+Because each rejection doubles $\sigma$ and each acceptance decreases
+it by at most a factor two,
+\[
+    U_N
+    \le
+    K_N+
+    \log_2(\bar\sigma/\epsilon)+1.
+\]
+Hence every finite prefix has a common finite length bound, so an
+infinite run is impossible.
+
+For the complete run,
+\[
+    Q
+    \le
+    K+U+1.
+\]
+Moreover,
+\[
+    \|g_0\|
+    \le
+    \|\nabla P(x_0)\|
+    +
+    \frac{\epsilon}{256},
+\]
+so the initial logarithm can be replaced by
+$\log_+(\|\nabla P(x_0)\|/\epsilon)$ up to a universal additive
+constant. This proves \eqref{eq:pf-outer-complexity}.
+
+If the explicit stopping test returns, then
+\eqref{eq:pf-gradient-error},
+\eqref{eq:pf-hessian-error},
+and $\sigma\le2s$ give
+\[
+    \|\nabla P(x)\|
+    \le
+    \frac{257}{256}\epsilon,
+\]
+and
+\[
+    \lambda_{\min}(\nabla^2P(x))
+    \ge
+    -\frac{145}{64}s\sqrt\epsilon
+    \ge
+    -\sqrt{M_P\epsilon}.
+\]
+If the robust subproblem returns $d=0$, global optimality gives
+$g=0$, $h=\epsilon$, and
+\[
+    H+
+    \frac{\sigma\sqrt\epsilon}{64}I
+    +
+    \sigma\sqrt\epsilon I
+    \succeq0.
+\]
+The same oracle bounds then imply
+\[
+    \|\nabla P(x)\|
+    \le
+    \frac{\epsilon}{256},
+    \qquad
+    \lambda_{\min}(\nabla^2P(x))
+    \ge
+    -\frac{131}{64}s\sqrt\epsilon
+    \ge
+    -\sqrt{M_P\epsilon}.
+\]
+This proves \eqref{eq:pf-return}.
+\end{proof}
+
+
+\begin{proof}[Proof of Corollary~\ref{cor:pf-scar-inner-complexity}]
+Every accepted boundary step decreases the true primal value, while
+every accepted interior step can increase it by at most
+$5\epsilon^3/4$.
+Since there are at most $Q$ accepted steps,
+\[
+    P(x)-P^*
+    \le
+    \Delta_P+\frac54Q\epsilon^3
+\]
+at every accepted outer point.
+
+Because $\nabla P$ is $(1+\kappa)\ell$-Lipschitz, the standard
+descent inequality together with
+\eqref{eq:pf-gradient-error} gives
+\[
+    h\le G_Q.
+\]
+
+At a candidate point, SCAR is warm-started from a point whose previous
+inner residual is at most $\epsilon^2$.
+Joint $\ell$-smoothness and the trust-region radius give
+\[
+    \|\nabla_yf(x+d,y)\|
+    \le
+    \epsilon^2+\ell\|d\|
+    \le
+    \epsilon^2
+    +
+    \frac{\ell\sqrt{G_Q}}{4\epsilon}.
+\]
+Apply Corollary~\ref{cor:scar-inner} with target $\epsilon^2$ to
+every candidate call and separately to the initial call.
+There is at most one candidate call per solved subproblem, and
+summing the resulting bounds gives
+\eqref{eq:pf-inner-complexity}.
+\end{proof}
+
+
+\subsection{Persistent Inner Tracking}
+\label{app:persistent-scar-proofs}
+
+
+\begin{proof}[Proof of Lemma~\ref{lem:scar-persistent-half}]
+The AR estimate used in the proof of
+\citet[Theorem~5.1]{lan2026optimal}, obtained from their
+Theorem~4.1, states that a call with current guess $\nu$ and an
+admissible line-search estimate uses at most
+\[
+    4+C_1\sqrt{10L/\nu}
+\]
+gradient evaluations and returns $v$ satisfying
+\[
+    \|\nabla\phi_j(v)\|
+    \le
+    \frac{\nu}{2}
+    \|u-u_j^*\|,
+    \qquad
+    u_j^*
+    :=
+    \arg\min_u\phi_j(u).
+\]
+If $\nu\le\mu$, strong convexity gives
+\[
+    \|u-u_j^*\|
+    \le
+    \frac{\|\nabla\phi_j(u)\|}{\mu},
+\]
+so the returned residual is at most $R/2$.
+Therefore a failed halving implies $\nu>\mu$.
+
+Every failure divides $\nu$ by four.
+Once $\nu\le\mu$, no later objective in the sequence can cause
+another curvature-guess failure.
+Thus the total number of failures is at most
+\[
+    \left\lceil
+        \log_4\frac{\nu_0}{\mu}
+    \right\rceil.
+\]
+Throughout the process,
+\[
+    \nu\ge\mu/4,
+\]
+so every attempted stage costs at most
+\[
+    4+C_1\sqrt{40\kappa}
+    \le
+    (4+2\sqrt{10}\,C_1)\sqrt\kappa.
+\]
+There are $N$ successful attempts plus at most the displayed number
+of failed attempts, which proves
+\eqref{eq:persistent-scar-count}.
+The line-search estimate follows from the corresponding SCAR bound.
+\end{proof}
+
+
+\begin{proof}[Proof of Lemma~\ref{lem:gs-tracking}]
+Joint Lipschitz continuity of the gradient gives
+\[
+    \|\nabla_yf(x+d,y)\|
+    \le
+    \|\nabla_yf(x,y)\|
+    +
+    \ell r
+    \le
+    \ell
+    \bigl(
+        c_0r_\epsilon(\sigma)+r
+    \bigr).
+\]
+After
+$N_{\rm tr}(r,\sigma)$ successful residual halvings, the right-hand
+side is at most
+\[
+    c_0\ell r_\epsilon(\sigma),
+\]
+which proves the tracking claim.
+At an unchanged $x$,
+\[
+    r_\epsilon(2\sigma)
+    =
+    \frac12r_\epsilon(\sigma),
+\]
+so one successful halving restores the invariant after scale
+doubling.
+\end{proof}
+
+
+\begin{proof}[Proof of Lemma~\ref{lem:gs-working-errors}]
+From strong concavity and
+\eqref{eq:gs-working-invariant},
+\[
+    e
+    :=
+    \|y-y^*(x)\|
+    \le
+    \frac{
+        c_0\kappa\sqrt\epsilon
+    }{
+        4\sigma
+    }
+    \le
+    \frac{c_0\kappa}{4}
+    \sqrt\epsilon\,
+    \mathcal A_\epsilon.
+\]
+For all sufficiently small $\epsilon$, uniformly over the fixed
+parameter class,
+\[
+    e\le\frac{\mu}{\rho}.
+\]
+Lemma~\ref{lem:corrected-errors} therefore gives
+\[
+    \|\widehat g-\nabla P(x)\|
+    \le
+    \frac{(1+\kappa)\rho}{2}e^2,
+\]
+\[
+    |\widehat P-P(x)|
+    \le
+    \frac{7\rho}{24}e^3,
+\]
+and
+\[
+    \|\widehat H-\nabla^2P(x)\|
+    \le
+    (1+\kappa)^2\rho e.
+\]
+Substitution gives
+\eqref{eq:gs-working-errors}.
+
+At a safe scale,
+\[
+    M_P\le6\sigma^2.
+\]
+Using
+$M_P=4\sqrt2\,\kappa^3\rho$ and $\kappa\ge1$ gives
+\begin{align*}
+    \|\widehat g-\nabla P(x)\|
+    &\le
+    \frac{3c_0^2}{32\sqrt2}\epsilon,
+    \\
+    \|\widehat H-\nabla^2P(x)\|
+    &\le
+    \frac{3\sqrt2c_0}{4}
+    \sigma\sqrt\epsilon,
+    \\
+    |\widehat P-P(x)|
+    &\le
+    \frac{7c_0^3}{1024\sqrt2}
+    \frac{\epsilon^{3/2}}{\sigma}.
+\end{align*}
+Since $c_0=2^{-12}$, these imply
+\eqref{eq:working-safe-errors}.
+
+For a validation point,
+$\mu\le a_x\le\ell$ and
+Lemma~\ref{lem:inner-residual-certificate} imply
+\[
+    \|y_{\rm v}-y^*(x)\|
+    \le
+    c_0\kappa\epsilon^{3/2}.
+\]
+The corrected-gradient and Hessian errors are therefore at most
+\[
+    \frac{
+        (1+\kappa)\rho
+        c_0^2\kappa^2
+    }2
+    \epsilon^3
+\]
+and
+\[
+    (1+\kappa)^2\rho
+    c_0\kappa
+    \epsilon^{3/2},
+\]
+respectively.
+The first is at most $\epsilon/1024$ for sufficiently small
+$\epsilon$.
+Since
+\[
+    \epsilon\mathcal A_\epsilon\to0
+\]
+and
+$\sigma\ge\mathcal A_\epsilon^{-1}$,
+the second is at most
+$\sigma\sqrt\epsilon/32$ for sufficiently small $\epsilon$.
+This proves \eqref{eq:validator-errors}.
+\end{proof}
+
+
+\begin{proof}[Proof of Lemma~\ref{lem:gs-safe}]
+Apply Lemma~\ref{lem:common-inexact-tr-step} with
+\[
+    F=P,
+    \qquad
+    M=M_P,
+\]
+\[
+    a
+    =
+    \sigma\sqrt h
+    +
+    \frac{\sigma\sqrt\epsilon}{64},
+    \qquad
+    \xi
+    =
+    \frac{\sigma\sqrt\epsilon}{64},
+\]
+and
+\[
+    \delta_0=\delta_+
+    =
+    \frac{\epsilon}{1024}.
+\]
+The endpoint errors follow from
+\eqref{eq:working-safe-errors}.
+Because
+\[
+    r\le\frac{\sqrt h}{4\sigma},
+    \qquad
+    M_P\le6\sigma^2,
+\]
+we have
+\[
+    \frac{M_P}{6}r^3
+    \le
+    \frac W4.
+\]
+Thus
+\[
+    P(x)-P(x+d)
+    \ge
+    \frac W4
+    +
+    \frac U2
+    -
+    \frac{\epsilon r}{1024}.
+\]
+Young's inequality and $h\ge\epsilon$ give
+\[
+    \frac{\epsilon r}{1024}
+    \le
+    \frac W8
+    +
+    \frac{2T}{1024^2}.
+\]
+After paying the two corrected-value errors,
+\[
+    \widehat P-\widehat P^+
+    \ge
+    \frac W8
+    +
+    \frac U2
+    -
+    \left(
+        \frac2{1024^2}
+        +
+        \frac2{4096}
+    \right)T
+    \ge
+    \frac W8
+    +
+    \frac U4
+    -
+    \frac T{1024}.
+\]
+The candidate-gradient estimate similarly gives
+\[
+    \|\widehat g^+\|
+    \le
+    \lambda r
+    +
+    \frac h4
+    +
+    \frac h{128}
+    +
+    \frac{3h}{16}
+    +
+    \frac h{512}
+    =
+    \lambda r+\frac{229}{512}h
+    \le
+    \lambda r+\frac h2.
+\]
+Hence every ordinary trial is accepted at a safe scale.
+
+If $h=\epsilon$ and $r<R(h,\sigma)$, then complementarity gives
+$\lambda=0$.
+The candidate-gradient estimate yields
+\[
+    \|\nabla P(x+d)\|
+    \le
+    \frac{457}{1024}\epsilon.
+\]
+Positive semidefiniteness of the trust-region model, the working
+Hessian error, and Hessian Lipschitz continuity give
+\[
+    \lambda_{\min}
+    (\nabla^2P(x+d))
+    \ge
+    -\frac{81}{32}
+    \sigma\sqrt\epsilon.
+\]
+Using the validation errors,
+\[
+    \|\widehat g_{\rm v}\|
+    \le
+    \frac{458}{1024}\epsilon,
+\]
+and
+\[
+    \lambda_{\min}(\widehat H_{\rm v})
+    \ge
+    -\frac{82}{32}
+    \sigma\sqrt\epsilon,
+\]
+so validation succeeds.
+
+Finally, successful validation at any generated scale gives
+\[
+    \|\nabla P(x^+)\|
+    <
+    \epsilon
+\]
+and
+\[
+    \lambda_{\min}(\nabla^2P(x^+))
+    \ge
+    -
+    \left(
+        \frac{21}{8}
+        +
+        \frac1{32}
+    \right)
+    \sigma\sqrt\epsilon
+    =
+    -\frac{85}{32}
+    \sigma\sqrt\epsilon.
+\]
+\end{proof}
+
+
+\begin{lemma}[Accepted-step potential decrease]
+\label{lem:gs-descent}
+Every ordinary accepted step satisfies
+\begin{equation}
+    \Phi-\Phi^+
+    \ge
+    \frac W{32}
+    +
+    \frac T{1024}
+    +
+    \frac U{16}.
+    \label{eq:gs-potential-decrease-app}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+If $h>\epsilon$ and
+\[
+    h^+\le\max\{h/2,\epsilon\},
+\]
+then
+\begin{equation}
+    \mathcal L_\epsilon(h^+)
+    \le
+    \mathcal L_\epsilon(h)-1.
+    \label{eq:gs-layer-halving}
+\end{equation}
+More generally, if $c\ge1$ and $h^+\le ch$, then
+\begin{equation}
+    \mathcal L_\epsilon(h^+)
+    -
+    \mathcal L_\epsilon(h)
+    \le
+    \lceil\log_2c\rceil
+    \le
+    1+\log_2c.
+    \label{eq:gs-layer-growth}
+\end{equation}
+
+For an interior accepted step,
+$\lambda=0$ and $U=0$.
+The gradient acceptance test and
+\eqref{eq:gs-layer-halving} give
+\[
+    \Phi-\Phi^+
+    \ge
+    \frac W8
+    -
+    \frac T{1024}
+    +
+    \frac T{512}
+    =
+    \frac W8+\frac T{1024}.
+\]
+
+For a boundary step, let
+\[
+    z:=\frac{\lambda r}{h}.
+\]
+The gradient acceptance test gives
+\[
+    \frac{h^+}{h}
+    \le
+    \max\{1,1/2+z\}.
+\]
+Hence
+\[
+    \mathcal L_\epsilon(h^+)
+    -
+    \mathcal L_\epsilon(h)
+    \le
+    1+\frac z{\ln2}.
+\]
+Since
+\[
+    r=\frac{\sqrt h}{4\sigma},
+\]
+we have
+\[
+    W
+    =
+    \frac{h^{3/2}}{16\sigma}
+    \ge
+    \frac T{16},
+\]
+\[
+    U
+    =
+    \frac{zh^{3/2}}{4\sigma},
+    \qquad
+    Tz\le4U.
+\]
+Therefore
+\begin{align*}
+    \Phi-\Phi^+
+    &\ge
+    \frac W8
+    +
+    \frac U4
+    -
+    \frac T{1024}
+    -
+    \frac T{512}
+    \left(
+        1+\frac z{\ln2}
+    \right)
+    \\
+    &\ge
+    \frac{5W}{64}
+    +
+    \left(
+        \frac14-\frac1{128\ln2}
+    \right)U.
+\end{align*}
+Finally,
+\[
+    \frac{5W}{64}
+    \ge
+    \frac W{32}
+    +
+    \frac T{1024},
+\]
+and
+\[
+    \frac14-\frac1{128\ln2}
+    \ge
+    \frac1{16},
+\]
+which proves the claim.
+\end{proof}
+
+
+Define
+\begin{equation}
+\begin{aligned}
+    E(\sigma)
+    &:=
+    C_v\frac{\epsilon^{3/2}}{\sigma^3},
+    &
+    E_0
+    &:=
+    E(\sigma_0),
+    \\
+    T_0
+    &:=
+    \frac{\epsilon^{3/2}}{\sigma_0},
+    &
+    h_0
+    &:=
+    \max\{\|\widehat g_0\|,\epsilon\},
+    \\
+    \mathcal L_0
+    &:=
+    \mathcal L_\epsilon(h_0),
+    &
+    D_0
+    &:=
+    1+
+    \log_2
+    \left(
+        1+\frac{5C_g}{4\sigma_0^2}
+    \right).
+\end{aligned}
+\label{eq:gs-budget-parameters}
+\end{equation}
+Set
+\begin{equation}
+    B_\epsilon
+    :=
+    \Delta_P
+    +
+    \frac{23}{7}E_0
+    +
+    \frac{T_0}{512}
+    (\mathcal L_0+D_0).
+    \label{eq:gs-budget}
+\end{equation}
+
+For sufficiently small $\epsilon$, let
+\[
+    \sigma_*:=\sqrt{M_P/6}.
+\]
+Lemma~\ref{lem:gs-safe} implies that every failed trial occurs below
+$\sigma_*$.
+Hence, for every finite prefix,
+\begin{equation}
+    J
+    \le
+    \left\lceil
+        \log_2(
+            \sigma_*\mathcal A_\epsilon
+        )
+    \right\rceil,
+    \qquad
+    \sigma
+    \le
+    \overline\sigma
+    :=
+    2\sigma_*.
+    \label{eq:gs-scale-bound}
+\end{equation}
+
+\begin{lemma}[Cumulative accepted-step budget]
+\label{lem:gs-budget}
+Every finite prefix satisfies
+\begin{equation}
+    \sum_{\rm accepted}
+    \left(
+        \frac{W_k}{32}
+        +
+        \frac{T_k}{1024}
+        +
+        \frac{U_k}{16}
+    \right)
+    \le
+    B_\epsilon.
+    \label{eq:gs-cumulative-budget}
+\end{equation}
+If $K$ denotes its number of accepted steps, then
+\begin{equation}
+    K
+    \le
+    1024\overline\sigma
+    B_\epsilon
+    \epsilon^{-3/2},
+    \qquad
+    \sum_{\rm accepted}
+    \sigma_k^2r_k^3
+    \le
+    8B_\epsilon.
+    \label{eq:gs-path-budget}
+\end{equation}
+Every stored iterate satisfies
+\[
+    P(x)-P^*
+    \le
+    B_\epsilon,
+\]
+and
+\begin{equation}
+    B_\epsilon
+    =
+    \Delta_P
+    +
+    O_{\rm fixed}
+    \bigl(
+        \epsilon^{3/2}\mathcal A_\epsilon^3
+    \bigr).
+    \label{eq:gs-budget-asymptotic-app}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+When the scale is refreshed from $\sigma$ to $2\sigma$ at an
+unchanged outer point,
+\eqref{eq:gs-working-errors} bounds the corrected-value jump by
+\[
+    E(\sigma)+E(2\sigma)
+    =
+    \frac98E(\sigma).
+\]
+The failure scales form a doubling sequence, so the sum of all
+positive corrected-value jumps is at most
+\[
+    \frac98E_0
+    \sum_{j\ge0}2^{-3j}
+    =
+    \frac97E_0.
+\]
+
+For the gradient-level contribution,
+the two corrected-gradient errors imply
+\[
+    \|\widehat g_{\rm new}
+    -
+    \widehat g_{\rm old}\|
+    \le
+    \frac{5C_g\epsilon}{4\sigma^2}.
+\]
+Since
+$g\mapsto\max\{\|g\|,\epsilon\}$ is $1$-Lipschitz,
+\[
+    \frac{h_{\rm new}}{h_{\rm old}}
+    \le
+    1+
+    \frac{5C_g}{4\sigma^2},
+\]
+and therefore
+\[
+    \mathcal L_\epsilon(h_{\rm new})
+    -
+    \mathcal L_\epsilon(h_{\rm old})
+    \le
+    D_0.
+\]
+Because the corresponding
+$T=\epsilon^{3/2}/\sigma$ is halved after scale doubling, the positive
+jump of the level term is at most
+\[
+    \frac{T_{\rm old}D_0}{1024}.
+\]
+Summing the doubling sequence gives a total at most
+\[
+    \frac{T_0D_0}{512}.
+\]
+
+The initial potential is bounded above by
+\[
+    P(x_0)
+    +
+    E_0
+    +
+    \frac{T_0}{512}\mathcal L_0,
+\]
+while every stored potential is bounded below by
+$P^*-E_0$.
+Telescoping
+Lemma~\ref{lem:gs-descent}
+and paying the two types of positive scale-refresh jumps gives
+\[
+    \sum_{\rm accepted}
+    \left(
+        \frac W{32}
+        +
+        \frac T{1024}
+        +
+        \frac U{16}
+    \right)
+    \le
+    \Delta_P
+    +
+    2E_0
+    +
+    \frac97E_0
+    +
+    \frac{T_0}{512}
+    (\mathcal L_0+D_0)
+    =
+    B_\epsilon.
+\]
+This proves
+\eqref{eq:gs-cumulative-budget}.
+
+Since
+\[
+    T_k
+    \ge
+    \frac{\epsilon^{3/2}}{\overline\sigma},
+\]
+the first estimate in
+\eqref{eq:gs-path-budget} follows.
+The radius constraint gives
+\[
+    4\sigma_k^2r_k^3
+    \le
+    \sigma_k\sqrt{h_k}\,r_k^2
+    =
+    W_k,
+\]
+which proves the second estimate.
+
+Finally,
+\[
+    E_0
+    =
+    C_v\epsilon^{3/2}
+    \mathcal A_\epsilon^3,
+    \qquad
+    T_0
+    =
+    \epsilon^{3/2}
+    \mathcal A_\epsilon.
+\]
+At the initial stored point,
+\[
+    \|\widehat g_0\|
+    \le
+    \|\nabla P(x_0)\|
+    +
+    C_g\epsilon
+    \mathcal A_\epsilon^2.
+\]
+For every fixed payoff and initialization,
+\[
+    \mathcal L_0
+    =
+    O_{\rm fixed}(\mathcal A_\epsilon),
+\]
+and
+\[
+    D_0
+    =
+    O_{\rm fixed}
+    (1+\log\mathcal A_\epsilon).
+\]
+Substitution into \eqref{eq:gs-budget} gives
+\eqref{eq:gs-budget-asymptotic-app}.
+\end{proof}
+
+
+\begin{proof}[Proof of Theorem~\ref{thm:gradient-scaled-scar}]
+Choose $\epsilon_0$ so that
+Lemmas~\ref{lem:gs-working-errors} and~\ref{lem:gs-safe} hold and
+\[
+    \mathcal A_\epsilon^{-1}
+    <
+    \sqrt{M_P/6}
+\]
+for every $0<\epsilon\le\epsilon_0$.
+These restrictions depend only on the common constants
+$(\ell,\mu,\rho)$.
+
+Every inner sequence is finite by
+Lemma~\ref{lem:scar-persistent-half}.
+Every nonterminal outer trial is either accepted or increases
+$\sigma$.
+The finite-prefix bounds
+\eqref{eq:gs-scale-bound} and
+\eqref{eq:gs-path-budget}
+therefore imply finite termination.
+
+Let $K$ and $J$ denote the numbers of accepted steps and failed
+trials. Then
+\[
+    Q=K+J+1,
+\]
+and
+\[
+    Q
+    \le
+    1024\overline\sigma
+    B_\epsilon
+    \epsilon^{-3/2}
+    +
+    \left\lceil
+        \log_2(
+            \sigma_*
+            \mathcal A_\epsilon
+        )
+    \right\rceil
+    +1.
+\]
+Using
+\eqref{eq:gs-budget-asymptotic-app} and
+\[
+    \overline\sigma
+    =
+    2\sqrt{M_P/6}
+\]
+gives
+\eqref{eq:gs-outer-complexity}.
+The output guarantee follows from
+\eqref{eq:gs-validator-return} and the scale cap.
+
+It remains to count successful residual halvings.
+For an accepted step, set
+\[
+    z_k
+    :=
+    \frac{
+        \sigma_kr_k
+    }{
+        \sqrt\epsilon
+    }.
+\]
+Since $c_0=2^{-12}$,
+\[
+    N_{{\rm tr},k}
+    =
+    \left\lceil
+        \log_2(1+2^{14}z_k)
+    \right\rceil
+    \le
+    16+z_k^3.
+\]
+Therefore
+\begin{align}
+    \sum_{\rm accepted}
+    N_{{\rm tr},k}
+    &\le
+    16K
+    +
+    \epsilon^{-3/2}
+    \sum_{\rm accepted}
+    \sigma_k^3r_k^3
+    \notag\\
+    &\le
+    16K
+    +
+    8\overline\sigma
+    B_\epsilon
+    \epsilon^{-3/2}.
+    \label{eq:gs-accepted-tracking}
+\end{align}
+
+To control failed trials, let
+\[
+    L_P:=(1+\kappa)\ell.
+\]
+Smoothness of $P$ and its lower bound give
+\[
+    \|\nabla P(x)\|^2
+    \le
+    2L_P(P(x)-P^*).
+\]
+Hence every stored iterate satisfies
+\[
+    h
+    \le
+    \overline h_\epsilon
+    :=
+    \max\left\{
+        \epsilon,\,
+        \sqrt{2L_PB_\epsilon}
+        +
+        C_g\epsilon
+        \mathcal A_\epsilon^2
+    \right\}
+    =
+    O_{\rm fixed}(1).
+\]
+Each failed trial therefore requires at most
+\[
+    N_{\rm fail}
+    :=
+    \left\lceil
+        \log_2\left(
+            1+
+            \frac1{c_0}
+            \sqrt{
+                \frac{\overline h_\epsilon}{\epsilon}
+            }
+        \right)
+    \right\rceil
+    =
+    O_{\rm fixed}(\mathcal A_\epsilon)
+\]
+tracking halvings.
+
+A terminal working update uses at most
+\[
+    \left\lceil
+        \log_2(1+1/c_0)
+    \right\rceil
+    =
+    13
+\]
+halvings, and each failure uses one additional halving for the scale
+refresh.
+
+Before validation, the working residual is at most
+\[
+    \frac{
+        c_0\ell\sqrt\epsilon
+    }{
+        4\sigma
+    },
+\]
+while the validation target is at least
+\[
+    c_0\mu\epsilon^{3/2}.
+\]
+Thus every validation requires at most
+\[
+    N_{\rm val}
+    :=
+    \left\lceil
+        \log_2
+        \max\left\{
+            1,\,
+            \frac{
+                \kappa\mathcal A_\epsilon
+            }{
+                4\epsilon
+            }
+        \right\}
+    \right\rceil
+    =
+    O_{\rm fixed}(\mathcal A_\epsilon)
+\]
+additional successful halvings.
+Initialization similarly uses
+\[
+    N_{\rm init}
+    :=
+    \left\lceil
+        \log_2
+        \max\left\{
+            1,\,
+            \frac{
+                \|\nabla_yf(x_0,y_{-1})\|
+            }{
+                c_0a_0r_\epsilon(\sigma_0)
+            }
+        \right\}
+    \right\rceil
+    =
+    O_{\rm fixed}(\mathcal A_\epsilon)
+\]
+halvings.
+
+Consequently,
+\[
+    N_{\rm half}
+    \le
+    \sum_{\rm accepted}N_{{\rm tr},k}
+    +
+    JN_{\rm fail}
+    +
+    J+13
+    +
+    (J+1)N_{\rm val}
+    +
+    N_{\rm init}.
+\]
+Since
+\[
+    J
+    =
+    O_{\rm fixed}
+    (1+\log\mathcal A_\epsilon),
+\]
+we obtain
+\[
+    N_{\rm half}
+    =
+    O\!\left(
+        \Delta_P\sqrt{M_P}\,
+        \epsilon^{-3/2}
+    \right)
+    +
+    O_{\rm fixed}
+    (\mathcal A_\epsilon^3).
+\]
+
+All inner objectives $q_x=-f(x,\cdot)$ share the same
+$(\mu,\ell)$.
+Applying Lemma~\ref{lem:scar-persistent-half} once to the complete
+sequence, including rejected candidates, scale refreshes, and
+validators, gives
+\begin{equation}
+    N_y
+    \le
+    (4+2\sqrt{10}\,C_1)
+    \sqrt\kappa
+    \left(
+        N_{\rm half}
+        +
+        \lceil\log_4\kappa\rceil
+    \right)
+    +
+    2(J+2).
+    \label{eq:gs-inner-explicit}
+\end{equation}
+This proves
+\eqref{eq:gs-inner-complexity}.
+Finally,
+\[
+    \sqrt{M_P}
+    =
+    \Theta(\kappa^{3/2}\sqrt\rho),
+    \qquad
+    \sqrt{\kappa M_P}
+    =
+    \Theta(\kappa^2\sqrt\rho),
+\]
+which gives \eqref{eq:gs-leading-complexities}.
+\end{proof}

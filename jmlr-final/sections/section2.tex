@@ -1,0 +1,519 @@
+% !TeX root = ../main.tex
+\section{Preliminaries}
+\label{sec:preliminaries}
+
+This section collects the notation and analytical ingredients used
+throughout the paper. We first recall standard properties of the
+primal function associated with smooth NC--SC minimax optimization.
+We then formulate the inner maximization through an observable
+gradient-residual interface and record quantitative bounds for the
+primal-function estimators used below. Finally, we record a generic inexact trust-region estimate
+that will be repeatedly specialized in the subsequent sections.
+
+
+\subsection{Problem Setting and Standard Properties}
+\label{sec:problem-setting}
+
+We consider the smooth NC--SC minimax problem
+\begin{equation}
+    \min_{x\in\mathbb{R}^{d_x}} P(x),
+    \qquad
+    P(x):=\max_{y\in\mathbb{R}^{d_y}} f(x,y).
+    \label{eq:ncsc-problem}
+\end{equation}
+For every $x$, define
+\begin{equation}
+    y^*(x):=\arg\max_{y\in\mathbb{R}^{d_y}} f(x,y).
+    \label{eq:inner-maximizer}
+\end{equation}
+We write
+\[
+    P^*:=\inf_x P(x),
+    \qquad
+    \Delta_P:=P(x_0)-P^*.
+\]
+Throughout the paper, $\|\cdot\|$ denotes the Euclidean norm for
+vectors and the spectral norm for matrices. For a symmetric matrix
+$A$, $\lambda_{\min}(A)$ denotes its smallest eigenvalue.
+
+\begin{assumption}[NC--SC regularity]
+\label{ass:ncsc}
+The payoff
+$f:\mathbb{R}^{d_x}\times\mathbb{R}^{d_y}\to\mathbb{R}$
+is twice continuously differentiable and satisfies:
+\begin{enumerate}[label=(\roman*)]
+    \item $\nabla f$ is $\ell$-Lipschitz;
+    \item $\nabla^2 f$ is $\rho$-Lipschitz;
+    \item $f(x,\cdot)$ is $\mu$-strongly concave for every $x$,
+          where $0<\mu\le\ell$;
+    \item $P^*>-\infty$.
+\end{enumerate}
+We write
+\begin{equation}
+    \kappa:=\frac{\ell}{\mu}.
+    \label{eq:kappa}
+\end{equation}
+\end{assumption}
+
+Under Assumption~\ref{ass:ncsc}, the maximizer $y^*(x)$ is unique and
+$\nabla^2_{yy}f(x,y)$ is nonsingular. Define the Schur-complement map
+\begin{equation}
+\begin{aligned}
+    \mathcal H(x,y)
+    &:=
+    \nabla^2_{xx}f(x,y)
+    -
+    \nabla^2_{xy}f(x,y)
+    \bigl(\nabla^2_{yy}f(x,y)\bigr)^{-1}
+    \nabla^2_{yx}f(x,y).
+\end{aligned}
+\label{eq:schur-definition}
+\end{equation}
+
+We use the following standard properties of the primal function.
+
+\begin{lemma}[Primal-function geometry]
+\label{lem:primal-geometry}
+Under Assumption~\ref{ass:ncsc}, $y^*(\cdot)$ is
+$\kappa$-Lipschitz and $P$ is twice continuously differentiable with
+\begin{subequations}
+\label{eq:primal-derivatives}
+\begin{align}
+    \nabla P(x)
+    &=
+    \nabla_x f(x,y^*(x)),
+    \label{eq:primal-gradient}
+    \\
+    \nabla^2P(x)
+    &=
+    \mathcal H(x,y^*(x)).
+    \label{eq:primal-hessian}
+\end{align}
+\end{subequations}
+Moreover, $\nabla P$ is $(1+\kappa)\ell$-Lipschitz and
+\begin{equation}
+    \|\nabla^2P(x)-\nabla^2P(x')\|
+    \le
+    M_P\|x-x'\|,
+    \qquad
+    M_P:=4\sqrt{2}\,\kappa^3\rho.
+    \label{eq:primal-hessian-lipschitz}
+\end{equation}
+\end{lemma}
+
+These properties follow from
+\citet[Lemmas~1--3]{luo2022finding}.
+
+\begin{definition}[Approximate second-order stationarity]
+\label{def:sosp}
+For $\epsilon_g,\epsilon_H>0$, a point $x$ is an
+$(\epsilon_g,\epsilon_H)$-second-order stationary point of $P$ if
+\begin{equation}
+    \|\nabla P(x)\|\le\epsilon_g,
+    \qquad
+    \lambda_{\min}(\nabla^2P(x))\ge-\epsilon_H.
+    \label{eq:sosp}
+\end{equation}
+Our main target is an
+$(\epsilon,\sqrt{M_P\epsilon})$-second-order stationary point.
+\end{definition}
+
+
+\subsection{Inner Residuals and Primal-Function Estimators}
+\label{sec:corrected-estimators}
+
+The distance $\|y-y^*(x)\|$ is useful analytically but is not directly
+observable. We therefore formulate the inner maximization in terms of
+the gradient residual $\|\nabla_yf(x,y)\|$.
+
+\begin{lemma}[Residual--distance certificate]
+\label{lem:inner-residual-certificate}
+Under Assumption~\ref{ass:ncsc}, for every $x$ and $y$,
+\begin{equation}
+    \|y-y^*(x)\|
+    \le
+    \frac{\|\nabla_yf(x,y)\|}{\mu}
+    \le
+    \kappa\|y-y^*(x)\|.
+    \label{eq:inner-residual-certificate}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The first inequality follows from strong concavity and the
+Cauchy--Schwarz inequality. The second follows from
+$\ell$-smoothness and $\nabla_yf(x,y^*(x))=0$.
+\end{proof}
+
+We use the inner maximization only through the following interface.
+
+\begin{definition}[Inner residual module]
+\label{def:inner-residual-module}
+Given an outer point $x$, a warm start $y^{\rm in}$, and a target
+$\tau>0$, an inner residual module $\mathcal S$ returns
+\begin{equation}
+    y^{\rm out}
+    =
+    \operatorname{MaxRes}_{\mathcal S}
+    (x,y^{\rm in},\tau)
+    \quad\text{such that}\quad
+    \|\nabla_yf(x,y^{\rm out})\|\le\tau.
+    \label{eq:maxres-interface}
+\end{equation}
+
+We call $\mathcal S$ accelerated if there exist
+$C_{\mathcal S}>0$ and $b_{\mathcal S}\ge1$, which may depend on the
+implementation and on $\kappa$ but not on
+$x$, $\tau$, the initial residual, $\epsilon$, or the call index,
+such that a call with
+\[
+    R_{\rm in}:=
+    \|\nabla_yf(x,y^{\rm in})\|
+\]
+uses at most
+\begin{equation}
+    C_{\mathcal S}\sqrt{\kappa}
+    \left[
+        b_{\mathcal S}
+        +
+        \left\lceil
+        \log_2
+        \max\left\{
+            1,\frac{R_{\rm in}}{\tau}
+        \right\}
+        \right\rceil
+    \right]
+    \label{eq:inner-module-work}
+\end{equation}
+evaluations of $\nabla_yf$.
+\end{definition}
+
+The residual condition \eqref{eq:maxres-interface} is the only
+inner-solver property needed for outer correctness. The work bound
+\eqref{eq:inner-module-work} is used only when deriving total
+inner-gradient complexity. Concrete realizations by accelerated
+gradient descent and SCAR are introduced in
+Sections~\ref{sec:known-parameter} and~\ref{sec:parameter-free},
+respectively.
+
+We count one evaluation of $\nabla_yf(x,y)$ as one inner-gradient
+evaluation. Corrected-gradient and Schur-complement constructions,
+trust-region subproblem solves, and linear algebra used to apply
+$(\nabla^2_{yy}f)^{-1}$ are accounted for separately.
+
+We use the following value, gradient, and Hessian approximations
+at an approximate inner maximizer $y$. Define
+\begin{equation}
+    \widehat P(x,y)
+    :=
+    f(x,y)
+    -
+    \frac12
+    \nabla_yf(x,y)^\top
+    \bigl(\nabla^2_{yy}f(x,y)\bigr)^{-1}
+    \nabla_yf(x,y),
+    \label{eq:corrected-value}
+\end{equation}
+and
+\begin{subequations}
+\label{eq:corrected-derivatives}
+\begin{align}
+    \widehat g(x,y)
+    &:=
+    \nabla_xf(x,y)
+    -
+    \nabla^2_{xy}f(x,y)
+    \bigl(\nabla^2_{yy}f(x,y)\bigr)^{-1}
+    \nabla_yf(x,y),
+    \label{eq:corrected-gradient}
+    \\
+    \widehat H(x,y)
+    &:=
+    \mathcal H(x,y).
+    \label{eq:corrected-hessian}
+\end{align}
+\end{subequations}
+Since $\nabla^2_{yy}f(x,y)\prec0$, the correction in
+\eqref{eq:corrected-value} raises the raw payoff and is exact for a
+concave quadratic inner problem.
+
+The gradient in \eqref{eq:corrected-gradient} is the existing
+implicit estimator studied by \citet{ablin2020superefficiency},
+adapted to inner maximization. Its quadratic accuracy is established
+in their Proposition~2.3. The same total-gradient expression and
+the Schur-complement Hessian appear in \citet{zhang2020newton}.
+We use these oracle ingredients and the value correction to obtain
+the explicit bounds required by the complexity analysis.
+MCN instead uses the raw plug-in gradient $\nabla_xf(x,y)$, while
+both methods use the Schur-complement Hessian.
+
+\begin{lemma}[Quantitative primal-function oracle bounds]
+\label{lem:corrected-errors}
+Under Assumption~\ref{ass:ncsc}, for every $x$ and $y$,
+\begin{subequations}
+\label{eq:corrected-error-bounds}
+\begin{align}
+    |\widehat P(x,y)-P(x)|
+    &\le
+    \frac{(3\kappa-1)\rho}{12}
+    \|y-y^*(x)\|^3
+    \le
+    \frac{\kappa\rho}{4}
+    \|y-y^*(x)\|^3,
+    \label{eq:corrected-value-error}
+    \\
+    \|\widehat g(x,y)-\nabla P(x)\|
+    &\le
+    \frac{(1+\kappa)\rho}{2}
+    \|y-y^*(x)\|^2,
+    \label{eq:corrected-gradient-error}
+    \\
+    \|\widehat H(x,y)-\nabla^2P(x)\|
+    &\le
+    (1+\kappa)^2\rho
+    \|y-y^*(x)\|.
+    \label{eq:corrected-hessian-error}
+\end{align}
+\end{subequations}
+Moreover, whenever
+\begin{equation}
+    \|y-y^*(x)\|\le\frac{\mu}{\rho},
+    \label{eq:corrected-value-local-region}
+\end{equation}
+the corrected value satisfies
+\begin{equation}
+    |\widehat P(x,y)-P(x)|
+    \le
+    \frac{7\rho}{24}\|y-y^*(x)\|^3.
+    \label{eq:corrected-value-local-error}
+\end{equation}
+\end{lemma}
+
+The proof is given in
+Appendix~\ref{app:corrected-estimators}.
+For completeness, we recall the cancellation behind the known
+quadratic gradient error in \eqref{eq:corrected-gradient-error}.
+With
+\[
+    y_t:=y^*(x)+t\bigl(y-y^*(x)\bigr),
+    \qquad t\in[0,1],
+\]
+the proof derives the exact identity
+\begin{align}
+    \widehat g(x,y)-\nabla P(x)
+    &=
+    \int_0^1
+    \Big[
+        \nabla^2_{xy}f(x,y_t)-\nabla^2_{xy}f(x,y)
+        \notag\\
+    &\qquad
+        +
+        \nabla^2_{xy}f(x,y)
+        \bigl(\nabla^2_{yy}f(x,y)\bigr)^{-1}
+        \bigl(
+            \nabla^2_{yy}f(x,y)
+            -
+            \nabla^2_{yy}f(x,y_t)
+        \bigr)
+    \Big]
+    \notag\\
+    &\qquad\qquad\times
+    \bigl(y-y^*(x)\bigr)\,dt.
+    \label{eq:corrected-gradient-cancellation}
+\end{align}
+Hessian Lipschitz continuity then gives the quadratic bound in
+\eqref{eq:corrected-gradient-error}.
+
+For comparison, the raw plug-in gradient satisfies
+\begin{equation}
+    \|\nabla_xf(x,y)-\nabla P(x)\|
+    \le
+    \ell\|y-y^*(x)\|.
+    \label{eq:raw-gradient-error}
+\end{equation}
+Under these upper bounds, an inner distance of order $O(\epsilon)$
+is sufficient for an $O(\epsilon)$ gradient approximation with the
+raw estimator, whereas an inner distance of order
+$O(\sqrt{\epsilon})$ suffices for the implicit estimator, with the
+regularity constants fixed.
+
+Combining Lemmas~\ref{lem:inner-residual-certificate}
+and~\ref{lem:corrected-errors} gives an observable form of the same
+estimates.
+
+\begin{corollary}[Residual-based estimator bounds]
+\label{cor:residual-estimator-bounds}
+Let
+\[
+    R_y(x,y):=\|\nabla_yf(x,y)\|.
+\]
+Under Assumption~\ref{ass:ncsc},
+\begin{subequations}
+\label{eq:residual-estimator-bounds}
+\begin{align}
+    |\widehat P(x,y)-P(x)|
+    &\le
+    \frac{(3\kappa-1)\rho}{12\mu^3}
+    R_y(x,y)^3,
+    \label{eq:residual-value-bound}
+    \\
+    \|\widehat g(x,y)-\nabla P(x)\|
+    &\le
+    \frac{(1+\kappa)\rho}{2\mu^2}
+    R_y(x,y)^2,
+    \label{eq:residual-gradient-bound}
+    \\
+    \|\widehat H(x,y)-\nabla^2P(x)\|
+    &\le
+    \frac{(1+\kappa)^2\rho}{\mu}
+    R_y(x,y).
+    \label{eq:residual-hessian-bound}
+\end{align}
+\end{subequations}
+If
+\begin{equation}
+    R_y(x,y)\le\frac{\mu^2}{\rho},
+    \label{eq:residual-local-region}
+\end{equation}
+then
+\begin{equation}
+    |\widehat P(x,y)-P(x)|
+    \le
+    \frac{7\rho}{24\mu^3}R_y(x,y)^3.
+    \label{eq:residual-local-value-bound}
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+By Lemma~\ref{lem:inner-residual-certificate},
+$\|y-y^*(x)\|\le R_y(x,y)/\mu$.
+Substitution into Lemma~\ref{lem:corrected-errors} proves the result.
+\end{proof}
+
+
+\subsection{Trust-Region Preliminaries}
+\label{sec:tr-preliminaries}
+
+We finally record the generic trust-region estimates used by the outer
+methods. Let $F:\mathbb{R}^n\to\mathbb{R}$ be twice continuously
+differentiable and suppose that its Hessian is $M$-Lipschitz:
+\begin{equation}
+    \|\nabla^2F(x)-\nabla^2F(z)\|
+    \le M\|x-z\|.
+    \label{eq:generic-hessian-lipschitz}
+\end{equation}
+
+The following Taylor estimates are standard.
+
+\begin{lemma}[Second-order Taylor bounds]
+\label{lem:taylor-bounds}
+For all $x,d\in\mathbb{R}^n$,
+\begin{subequations}
+\label{eq:taylor-bounds}
+\begin{align}
+    \|\nabla F(x+d)-\nabla F(x)-\nabla^2F(x)d\|
+    &\le
+    \frac{M}{2}\|d\|^2,
+    \label{eq:gradient-taylor}
+    \\
+    F(x+d)
+    &\le
+    F(x)+\nabla F(x)^\top d
+    +\frac12d^\top\nabla^2F(x)d
+    +\frac{M}{6}\|d\|^3.
+    \label{eq:function-taylor}
+\end{align}
+\end{subequations}
+\end{lemma}
+
+These estimates are standard; see, e.g.,
+\citet[Lemma~1.2.4]{nesterov2004introductory}.
+
+We also use the classical characterization of a globally solved
+quadratic trust-region subproblem.
+
+\begin{lemma}[Global optimality for a quadratic trust-region problem]
+\label{lem:tr-global-optimality}
+Let $g\in\mathbb{R}^n$, let $B\in\mathbb{R}^{n\times n}$ be symmetric,
+and let $R>0$. A vector $d$ is a global solution of
+\begin{equation}
+    \min_{\|u\|\le R}
+    \quad
+    g^\top u+\frac12u^\top Bu
+    \label{eq:generic-tr-subproblem}
+\end{equation}
+if and only if there exists $\lambda\ge0$ such that
+\begin{equation}
+    (B+\lambda I)d=-g,
+    \qquad
+    B+\lambda I\succeq0,
+    \qquad
+    \|d\|\le R,
+    \qquad
+    \lambda(\|d\|-R)=0.
+    \label{eq:tr-global-optimality}
+\end{equation}
+In particular, $\lambda>0$ implies $\|d\|=R$.
+\end{lemma}
+
+This characterization is classical; see, e.g.,
+\citet[Section~8.7]{luenberger2021linear}.
+
+The next estimate is the common one-step inequality underlying the
+fixed-scale and adaptive UTR analyses as well as the parameter-free
+trust-region constructions later in the paper.
+
+\begin{lemma}[Common inexact trust-region step estimate]
+\label{lem:common-inexact-tr-step}
+Suppose \eqref{eq:generic-hessian-lipschitz} holds.
+At a point $x$, let $g$ and a symmetric matrix $H$ satisfy
+\begin{equation}
+    \|g-\nabla F(x)\|\le\delta_0,
+    \qquad
+    \|H-\nabla^2F(x)\|\le\xi.
+    \label{eq:common-current-errors}
+\end{equation}
+For $a\ge0$ and $R>0$, let $d$ be a global solution of
+\begin{equation}
+    \min_{\|u\|\le R}
+    \quad
+    q(u):=
+    g^\top u+\frac12u^\top(H+aI)u,
+    \label{eq:common-tr-model}
+\end{equation}
+let $\lambda$ be its trust-region multiplier, and write
+$r:=\|d\|$.
+Let a candidate gradient $g^+$ satisfy
+\begin{equation}
+    \|g^+-\nabla F(x+d)\|\le\delta_+.
+    \label{eq:common-candidate-error}
+\end{equation}
+Then
+\begin{subequations}
+\label{eq:common-tr-estimates}
+\begin{align}
+    q(d)
+    &\le
+    -\frac{\lambda}{2}r^2,
+    \label{eq:common-model-bound}
+    \\
+    F(x)-F(x+d)
+    &\ge
+    \frac{a-\xi}{2}r^2
+    +\frac{\lambda}{2}r^2
+    -\frac{M}{6}r^3
+    -\delta_0r,
+    \label{eq:common-function-bound}
+    \\
+    \|g^+\|
+    &\le
+    (a+\xi+\lambda)r
+    +\frac{M}{2}r^2
+    +\delta_0+\delta_+.
+    \label{eq:common-gradient-bound}
+\end{align}
+\end{subequations}
+\end{lemma}
+
+The proof is deferred to
+Appendix~\ref{app:common-tr-step}.

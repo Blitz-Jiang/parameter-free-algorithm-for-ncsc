@@ -1,0 +1,178 @@
+\begin{thebibliography}{24}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Ablin et~al.(2020)Ablin, Peyr{\'e}, and
+  Moreau]{ablin2020superefficiency}
+Pierre Ablin, Gabriel Peyr{\'e}, and Thomas Moreau.
+\newblock Super-efficiency of automatic differentiation for functions defined
+  as a minimum.
+\newblock In \emph{Proceedings of the 37th International Conference on Machine
+  Learning}, volume 119 of \emph{Proceedings of Machine Learning Research},
+  pages 32--41. PMLR, 2020.
+\newblock URL \url{https://proceedings.mlr.press/v119/ablin20a.html}.
+
+\bibitem[Cartis et~al.(2011)Cartis, Gould, and Toint]{cartis2011adaptive2}
+Coralia Cartis, Nicholas I.~M. Gould, and Philippe~L. Toint.
+\newblock Adaptive cubic regularisation methods for unconstrained optimization.
+  part ii: Worst-case function- and derivative-evaluation complexity.
+\newblock \emph{Mathematical Programming}, 130\penalty0 (2):\penalty0 295--319,
+  2011.
+
+\bibitem[Chen et~al.(2026)Chen, Xu, and Zhang]{chen2026hsda}
+Jia-Hao Chen, Zi~Xu, and Hui-Ling Zhang.
+\newblock A homogeneous second-order descent ascent algorithm for
+  nonconvex-strongly-concave minimax problems.
+\newblock \emph{arXiv preprint arXiv:2602.14058}, 2026.
+
+\bibitem[Chen et~al.(2023)Chen, Hu, Li, Wang, and Zhou]{chen2023cubic}
+Ziyi Chen, Zhengyang Hu, Qunwei Li, Zhe Wang, and Yi~Zhou.
+\newblock A cubic regularization approach for finding local minimax points in
+  nonconvex minimax optimization.
+\newblock \emph{Transactions on Machine Learning Research}, 2023.
+\newblock URL \url{https://openreview.net/forum?id=jVMMdg31De}.
+
+\bibitem[Fang et~al.(2026)Fang, Marumo, and Takeda]{fang2026parameter}
+Shaoying Fang, Naoki Marumo, and Akiko Takeda.
+\newblock Parameter-free cubic-regularized newton method: Sharp complexity and
+  generalized smoothness.
+\newblock \emph{arXiv preprint arXiv:2607.10741}, 2026.
+
+\bibitem[Hamad and Hinder(2022)]{hamad2022consistently}
+Fadi Hamad and Oliver Hinder.
+\newblock A consistently adaptive trust-region method.
+\newblock \emph{Advances in Neural Information Processing Systems},
+  35:\penalty0 6640--6653, 2022.
+
+\bibitem[Jiang and Mokhtari(2025)]{jiang2025generalized}
+Ruichen Jiang and Aryan Mokhtari.
+\newblock Generalized optimistic methods for convex-concave saddle point
+  problems.
+\newblock \emph{SIAM Journal on Optimization}, 35\penalty0 (3):\penalty0
+  2066--2097, 2025.
+\newblock \doi{10.1137/24M1630475}.
+
+\bibitem[Jiang et~al.(2024)Jiang, Kavis, Jin, Sanghavi, and
+  Mokhtari]{jiang2024adaptive}
+Ruichen Jiang, Ali Kavis, Qiujiang Jin, Sujay Sanghavi, and Aryan Mokhtari.
+\newblock Adaptive and optimal second-order optimistic methods for minimax
+  optimization.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~37, pages 94130--94162, 2024.
+
+\bibitem[Jiang et~al.(2026)Jiang, He, Zhang, Ge, Jiang, and Ye]{jiang2026utr}
+Yuntian Jiang, Chang He, Chuwen Zhang, Dongdong Ge, Bo~Jiang, and Yinyu Ye.
+\newblock Beyond nonconvexity: A universal trust-region method with new
+  analyses.
+\newblock \emph{Journal of Scientific Computing}, 2026.
+\newblock arXiv:2311.11489.
+
+\bibitem[Lan et~al.(2026)Lan, Ouyang, and Zhang]{lan2026optimal}
+Guanghui Lan, Yuyuan Ouyang, and Zhe Zhang.
+\newblock Optimal and parameter-free gradient minimization methods for convex
+  and nonconvex optimization.
+\newblock \emph{Mathematical Programming}, 2026.
+\newblock \doi{10.1007/s10107-026-02352-2}.
+
+\bibitem[Lin et~al.(2020{\natexlab{a}})Lin, Jin, and Jordan]{lin2020gradient}
+Tianyi Lin, Chi Jin, and Michael~I. Jordan.
+\newblock On gradient descent ascent for nonconvex-concave minimax problems.
+\newblock In \emph{Proceedings of the 37th International Conference on Machine
+  Learning}, volume 119 of \emph{Proceedings of Machine Learning Research},
+  pages 6083--6093. PMLR, 2020{\natexlab{a}}.
+
+\bibitem[Lin et~al.(2020{\natexlab{b}})Lin, Jin, and Jordan]{lin2020near}
+Tianyi Lin, Chi Jin, and Michael~I. Jordan.
+\newblock Near-optimal algorithms for minimax optimization.
+\newblock In \emph{Proceedings of the Thirty-Third Conference on Learning
+  Theory}, volume 125 of \emph{Proceedings of Machine Learning Research}, pages
+  2738--2779. PMLR, 2020{\natexlab{b}}.
+
+\bibitem[Luenberger and Ye(2021)]{luenberger2021linear}
+David~G. Luenberger and Yinyu Ye.
+\newblock \emph{Linear and Nonlinear Programming}.
+\newblock Springer, Cham, 5 edition, 2021.
+\newblock \doi{10.1007/978-3-030-85450-8}.
+
+\bibitem[Luo et~al.(2022)Luo, Li, and Chen]{luo2022finding}
+Luo Luo, Yujun Li, and Cheng Chen.
+\newblock Finding second-order stationary points in nonconvex-strongly-concave
+  minimax optimization.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~35, pages 36667--36679, 2022.
+
+\bibitem[Ma et~al.(2026{\natexlab{a}})Ma, Xiao, and Zhang]{ma2026linesearch}
+Bohao Ma, Nachuan Xiao, and Junyu Zhang.
+\newblock Line-search and adaptive step sizes for nonconvex-strongly-concave
+  minimax optimization.
+\newblock \emph{arXiv preprint arXiv:2601.10086}, 2026{\natexlab{a}}.
+
+\bibitem[Ma et~al.(2026{\natexlab{b}})Ma, Xiao, and Zhang]{ma2026singleloop}
+Bohao Ma, Nachuan Xiao, and Junyu Zhang.
+\newblock A single-loop regularized {Newton} method for
+  nonconvex-strongly-concave minimax optimization.
+\newblock \emph{arXiv preprint arXiv:2606.07003}, 2026{\natexlab{b}}.
+
+\bibitem[Nesterov(2004)]{nesterov2004introductory}
+Yurii Nesterov.
+\newblock \emph{Introductory Lectures on Convex Optimization: A Basic Course},
+  volume~87 of \emph{Applied Optimization}.
+\newblock Kluwer Academic Publishers, Boston, 2004.
+\newblock \doi{10.1007/978-1-4419-8853-9}.
+
+\bibitem[Nouiehed et~al.(2019)Nouiehed, Sanjabi, Huang, Lee, and
+  Razaviyayn]{nouiehed2019solving}
+Maher Nouiehed, Maziar Sanjabi, Tianjian Huang, Jason~D. Lee, and Meisam
+  Razaviyayn.
+\newblock Solving a class of non-convex min-max games using iterative first
+  order methods.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~32, pages 14934--14942, 2019.
+
+\bibitem[Wang et~al.(2026)Wang, Xu, and Zhang]{wang2026parameterfree}
+Jun-Lin Wang, Zi~Xu, and Hui-Ling Zhang.
+\newblock A fully parameter-free second-order algorithm for convex-concave
+  minimax problems.
+\newblock \emph{Journal of Machine Learning Research}, 27\penalty0
+  (76):\penalty0 1--32, 2026.
+
+\bibitem[Wang and Xu(2025)]{wang2025gradient}
+Junlin Wang and Zi~Xu.
+\newblock Gradient norm regularization second-order algorithms for solving
+  nonconvex-strongly concave minimax problems.
+\newblock \emph{Journal of Scientific Computing}, 105\penalty0 (2):\penalty0
+  41, 2025.
+\newblock \doi{10.1007/s10915-025-03069-8}.
+
+\bibitem[Wang and Li(2020)]{wang2020improved}
+Yuanhao Wang and Jian Li.
+\newblock Improved algorithms for convex-concave minimax optimization.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~33, pages 4800--4810, 2020.
+
+\bibitem[Yao and Xu(2026)]{yao2025trust}
+Tongliang Yao and Zi~Xu.
+\newblock Two trust region type algorithms for solving nonconvex-strongly
+  concave minimax problems.
+\newblock \emph{Scientia Sinica Mathematica}, 56\penalty0 (2):\penalty0
+  437--454, 2026.
+\newblock \doi{10.1360/SCM-2024-0063}.
+
+\bibitem[Zhang et~al.(2020)Zhang, Wu, Poupart, and Yu]{zhang2020newton}
+Guojun Zhang, Kaiwen Wu, Pascal Poupart, and Yaoliang Yu.
+\newblock {Newton}-type methods for minimax optimization.
+\newblock \emph{arXiv preprint arXiv:2006.14592}, 2020.
+\newblock URL \url{https://arxiv.org/abs/2006.14592}.
+
+\bibitem[Zhang et~al.(2021)Zhang, Yang, Guzm{\'a}n, Kiyavash, and
+  He]{zhang2021complexity}
+Siqi Zhang, Junchi Yang, Crist{\'o}bal Guzm{\'a}n, Negar Kiyavash, and Niao He.
+\newblock The complexity of nonconvex-strongly-concave minimax optimization.
+\newblock In \emph{Proceedings of the Thirty-Seventh Conference on Uncertainty
+  in Artificial Intelligence}, volume 161 of \emph{Proceedings of Machine
+  Learning Research}, pages 482--492. PMLR, 2021.
+
+\end{thebibliography}

@@ -1,0 +1,310 @@
+% !TeX root = ../main.tex
+\section{Introduction}
+\label{sec:introduction}
+
+We consider smooth nonconvex--strongly-concave (NC--SC) minimax
+optimization
+\begin{equation}
+    \min_{x\in\mathbb{R}^{d_x}}
+    \max_{y\in\mathbb{R}^{d_y}} f(x,y),
+    \label{eq:minimax-intro}
+\end{equation}
+where $f(x,\cdot)$ is strongly concave for every $x$, while
+$f(\cdot,y)$ may be nonconvex. Strong concavity makes the inner
+maximizer
+\[
+    y^*(x):=\arg\max_y f(x,y)
+\]
+well defined and gives rise to the primal function
+\[
+    P(x):=\max_y f(x,y).
+\]
+Under standard smoothness assumptions, $P$ is twice differentiable
+but generally nonconvex. An approximate first-order stationary point
+of $P$ therefore need not capture local optimality, which motivates
+the search for approximate second-order stationary points.
+
+Second-order algorithms for NC--SC minimax optimization have been
+developed using cubic regularization, trust-region methods, and other
+Newton-type updates
+\citep{luo2022finding,chen2023cubic,yao2025trust,
+wang2025gradient,chen2026hsda}.
+A representative method is Minimax Cubic Newton (MCN)
+\citep{luo2022finding}, which approximates the gradient and Hessian of
+$P$ through inner maximization and achieves the characteristic
+$O(\epsilon^{-3/2})$ second-order oracle complexity. Several subsequent
+methods attain the same $\epsilon^{-3/2}$-type outer dependence under
+related second-order stationarity criteria. More recently,
+joint-minimization reformulations have led to methods that avoid
+repeatedly solving the inner maximization
+\citep{ma2026linesearch,ma2026singleloop}.
+
+For methods that construct approximate derivatives of $P$ through
+inner maximization, however, the outer iteration complexity alone does
+not describe the total computational work. At each outer iterate
+$x_k$, one must approximate $y^*(x_k)$ accurately enough that the
+resulting first- and second-order information of $P$ can be used
+reliably. In MCN, for example, accelerated gradient ascent is used for
+this purpose. Its first-order oracle complexity is stated in
+$\widetilde O(\epsilon^{-3/2})$ form, and the explicit bound contains a
+logarithmic dependence on the target accuracy multiplying the leading
+outer-order term. This raises a natural question: can one retain the
+$O(\epsilon^{-3/2})$ second-order iteration dependence while removing
+the multiplicative logarithmic factor from the total inner-gradient
+complexity?
+
+We answer this question affirmatively by combining existing
+primal-function estimators with an analysis of the accumulated inner
+work. The implicit gradient estimator studied by
+\citet{ablin2020superefficiency} has known quadratic accuracy with
+respect to the inner solution error; see their Proposition~2.3.
+The same total-gradient and Schur-complement expressions also appear
+in Newton-type minimax methods \citep{zhang2020newton}.
+We use these quantities, together with a Newton correction of the
+value, as oracle ingredients and derive the explicit error bounds
+needed under our NC--SC assumptions.
+The complexity improvement comes from combining these bounds with
+warm starts and a cumulative cubic bound on the outer steps.
+This path estimate controls the total cost of restoring inner
+accuracy across successive maximization problems.
+
+Our outer constructions build on the universal trust-region (UTR)
+framework of \citet{jiang2026utr}. For the approximate
+primal-function oracles required here, we also establish a
+certified-inexact UTR complexity result with additive search overhead;
+the generic result is deferred to the appendix so that the main text
+can focus on the minimax problem. In the known-parameter setting, we
+combine a fixed-scale UTR update with an abstract residual-based inner
+solver. The inner-work analysis applies to any solver satisfying an
+accelerated residual-reduction bound, with accelerated gradient descent
+providing a concrete realization. The resulting method has
+$O(\epsilon^{-3/2})$ leading total inner-gradient dependence, without
+a multiplicative $\log(1/\epsilon)$ factor.
+
+We then remove prior knowledge of the problem regularity constants
+from both the outer and inner components. An adaptive UTR construction
+combined with the parameter-free SCAR solver yields a fully
+parameter-free method, but requiring uniformly accurate inner solves
+reintroduces a multiplicative $\log(1/\epsilon)$ factor in the total
+inner-gradient complexity. Our final method instead uses a
+gradient-scaled adaptive trust-region scheme together with persistent
+SCAR calls across successive inner maximization problems. By retaining
+the curvature information learned by the inner solver and adapting the
+inner accuracy to the current outer scale, it recovers the
+$O(\epsilon^{-3/2})$ leading dependence in both outer and total
+inner-gradient complexity.
+
+
+\subsection{Main Contributions}
+\label{sec:contributions}
+
+Our main contributions are summarized as follows.
+
+\paragraph{Sharper total inner-gradient complexity.}
+Let $\ell$ and $\rho$ denote the Lipschitz constants of the gradient
+and Hessian of $f$, respectively, let $\mu$ be the strong concavity
+constant, and set
+\[
+    \kappa=\ell/\mu,
+    \qquad
+    \Delta_P=P(x_0)-\inf_xP(x).
+\]
+Algorithm~1 combines the existing implicit gradient and
+Schur-complement Hessian with a fixed-scale inexact UTR scheme and
+accesses the inner maximization through an observable
+gradient-residual condition. The key estimate is a cumulative cubic
+bound on the outer steps, which amortizes the logarithmic costs of
+successive warm-started inner calls. The analysis is stated for a
+general accelerated residual solver; accelerated gradient descent is
+one concrete realization. The number of outer trust-region subproblems has
+leading complexity
+\[
+    O\!\left(
+        \Delta_P\kappa^{3/2}\sqrt{\rho}\,
+        \epsilon^{-3/2}
+    \right),
+\]
+while the accelerated-gradient realization has leading total
+inner-gradient complexity
+\[
+    O\!\left(
+        (1+\log\kappa)\Delta_P\kappa^2\sqrt{\rho}\,
+        \epsilon^{-3/2}
+    \right).
+\]
+All dependence on $\log(1/\epsilon)$ in the full bound is additive
+rather than multiplicative in the leading $\epsilon^{-3/2}$ term.
+In particular, this sharpens the explicit first-order oracle bound of
+MCN with respect to the target accuracy. To our knowledge, this is the
+first explicit total inner-gradient bound for a second-order NC--SC
+method that approximates derivatives of the primal function through
+inner maximization whose leading $O(\epsilon^{-3/2})$ term is not
+multiplied by a logarithmic factor in $1/\epsilon$.
+As a technical ingredient, we also establish a certified-inexact UTR
+complexity result with additive search overhead; its generic statement
+and proof are deferred to the appendix.
+
+\paragraph{Fully parameter-free second-order methods.}
+We further remove the regularity constants from the executable
+algorithms. Algorithm~2 combines an adaptive UTR outer scheme with
+SCAR and requires no knowledge of $\ell$, $\mu$, or $\rho$. It retains
+the leading $O(\epsilon^{-3/2})$ outer complexity, but uniformly
+accurate SCAR solves introduce a multiplicative $\log(1/\epsilon)$
+factor in the total inner-gradient complexity. Algorithm~3 replaces
+these independent high-accuracy solves by persistent SCAR tracking
+within a gradient-scaled adaptive trust-region scheme. For every fixed
+set of regularity constants and all sufficiently small $\epsilon$, it
+reaches an
+$O(\epsilon,\sqrt{\kappa^3\rho\epsilon})$ second-order stationary
+point using
+\[
+    O\!\left(
+        \Delta_P\kappa^{3/2}\sqrt{\rho}\,
+        \epsilon^{-3/2}
+    \right)
+\]
+trust-region subproblems and
+\[
+    O\!\left(
+        \Delta_P\kappa^2\sqrt{\rho}\,
+        \epsilon^{-3/2}
+    \right)
+\]
+inner-gradient evaluations in their leading terms. The remaining
+dependence on $1/\epsilon$ is additive and polylogarithmic. The
+executable algorithm uses only the target tolerance and universal
+numerical constants. The guarantee is class-uniform: for fixed
+regularity constants, one sufficiently small accuracy threshold
+applies to every admissible objective and initialization, although
+this threshold is not known to the algorithm.
+
+
+\input{\JMLRRoot tables/ncsc-complexity.tex}
+
+Table~\ref{tab:ncsc-complexity} is intentionally restricted to methods
+whose stated second-order guarantees and oracle counts are directly
+comparable to the quantities considered here.
+Cubic-LocalMinimax \citep{chen2023cubic}, whose complexity is stated
+using a different local-minimax stationarity measure, is discussed
+below but is not reparameterized for the table.
+Likewise, the recent single-loop regularized Newton method of
+\citet{ma2026singleloop} does not use an inner maximization loop of the
+form measured by the third column and is therefore not included in
+that comparison.
+
+
+\subsection{Related Work}
+
+\paragraph{Implicit differentiation and primal-function estimators.}
+\citet{ablin2020superefficiency} analyze the implicit gradient
+estimator for functions defined through optimization and establish
+its quadratic error in Proposition~2.3.
+In minimax optimization, \citet{zhang2020newton} use the corresponding
+total gradient and Schur-complement Hessian; see their
+equations~(1.1)--(1.2).
+These estimators are ingredients of the present work.
+Our contributions concern their integration into inexact UTR methods,
+the accumulated inner-gradient complexity, and parameter-free
+tracking across changing inner objectives.
+
+\paragraph{First-order methods for NC--SC minimax optimization.}
+First-order methods for NC--SC minimax problems have been studied
+extensively. Representative approaches include gradient
+descent-ascent, multi-step ascent, proximal schemes, and accelerated
+methods
+\citep{nouiehed2019solving,lin2020gradient,lin2020near}.
+Their complexity for finding first-order stationary points of the
+primal function has also been studied from both upper- and lower-bound
+perspectives; see, for example, \citet{zhang2021complexity} and the
+references therein. These results form the first-order counterpart to
+the second-order stationarity problem considered in this paper.
+
+\paragraph{Second-order methods for NC--SC minimax optimization.}
+\citet{luo2022finding} proposed MCN, which alternates accelerated
+gradient ascent for approximating $y^*(x)$ with a cubic-regularized
+update based on approximate first- and second-order information of the
+primal function. They established
+$O(\kappa^{3/2}\sqrt{\rho}\,\epsilon^{-3/2})$ second-order oracle
+complexity and
+$\widetilde O(\kappa^2\sqrt{\rho}\,\epsilon^{-3/2})$ first-order oracle
+complexity.
+\citet{chen2023cubic} proposed Cubic-LocalMinimax and developed
+inexact and stochastic variants, using cubic regularization to obtain
+global convergence toward local minimax points. Their complexity is
+formulated using a different stationarity measure, so we do not
+convert it to the accuracy parameterization used in
+Table~\ref{tab:ncsc-complexity}.
+
+Trust-region approaches were developed by \citet{yao2025trust}, who
+proposed MINIMAX-TR and MINIMAX-TRACE.
+\citet{wang2025gradient} subsequently proposed gradient-norm
+regularized trust-region and Levenberg--Marquardt methods, together
+with inexact variants, and established
+$\widetilde O(\kappa^{3/2}\sqrt{\rho}\,\epsilon^{-3/2})$ outer
+complexity and
+$\widetilde O(\kappa^2\sqrt{\rho}\,\epsilon^{-3/2})$ total
+gradient-ascent complexity.
+More recently, \citet{chen2026hsda} proposed homogeneous second-order
+descent-ascent methods and developed an inexact Lanczos implementation
+for large-scale problems.
+
+A recent alternative is to avoid repeated inner maximization
+altogether. \citet{ma2026linesearch} introduced an equivalent
+joint-minimization reformulation that preserves first- and
+second-order stationarity and used it to develop a parameter-free
+line-search framework. Building on this reformulation,
+\citet{ma2026singleloop} proposed a single-loop regularized Newton
+method with $O(\epsilon^{-3/2})$ global iteration complexity and local
+superlinear convergence. This line of work addresses the cost of the
+inner loop by changing the formulation, whereas the present paper
+studies the total inner-gradient complexity when approximate
+derivatives of the primal function are constructed through inner
+maximization.
+
+\paragraph{Adaptive and parameter-free optimization.}
+Adaptive optimization methods aim to reduce or eliminate prior
+knowledge of problem regularity constants. In smooth nonconvex
+optimization, the universal trust-region (UTR) framework
+\citep{jiang2026utr} uses gradient-scaled trust-region updates together
+with adaptive scale adjustment, and provides the outer optimization
+framework on which our methods are built. On the inner side,
+\citet{lan2026optimal} developed SCAR, a parameter-free accelerated
+method for smooth strongly convex optimization that adapts to unknown
+smoothness and strong-convexity parameters while retaining accelerated
+gradient complexity. These two ingredients play different roles in
+our development: UTR provides the outer second-order mechanism, whereas
+SCAR provides a parameter-free realization of the strongly concave
+inner maximization.
+
+Related adaptive and parameter-free methods have also been developed
+for minimax optimization and monotone variational inequalities
+\citep{jiang2024adaptive,jiang2025generalized}.
+More recently, \citet{wang2026parameterfree} proposed a fully
+parameter-free second-order method for convex--concave minimax
+optimization, requiring neither the Hessian-Lipschitz constant nor an
+a priori distance bound to a solution. For NC--SC minimax problems,
+\citet{ma2026linesearch} developed a parameter-free line-search
+framework based on a joint-minimization reformulation.
+In contrast, our constructions retain the primal-function formulation:
+Algorithm~2 combines adaptive UTR with SCAR, while Algorithm~3 couples
+a gradient-scaled adaptive trust-region scheme with persistent SCAR
+tracking across successive inner maximization problems.
+
+
+\subsection{Organization}
+
+The remainder of the paper is organized as follows.
+Section~\ref{sec:preliminaries} presents the problem setting,
+properties of the primal function, the inner residual interface, and
+the Newton-corrected estimators.
+Section~\ref{sec:known-parameter} develops Algorithm~1, a
+known-parameter UTR method with a general accelerated inner residual
+solver, and establishes its outer and total inner-gradient
+complexity.
+Section~\ref{sec:parameter-free} first combines adaptive UTR with SCAR
+in Algorithm~2 and then develops the persistent-SCAR
+gradient-scaled trust-region method, Algorithm~3.
+Section~\ref{sec:experiments} presents the numerical experiments, and
+Section~\ref{sec:conclusion} concludes the paper.
+The generic certified-inexact UTR results and deferred technical
+proofs are collected in the appendices.

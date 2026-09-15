@@ -1,0 +1,1082 @@
+\section{Parameter-Free Second-Order Methods}
+\label{sec:parameter-free}
+
+Algorithm~\ref{alg:ncsc-utr} achieves the desired
+$\epsilon^{-3/2}$ leading outer dependence and a sharper total
+inner-gradient bound, but its outer scale $M_P$ and residual target
+$\tau_{\rm out}$ depend on the unknown regularity constants
+$\ell$, $\mu$, and $\rho$. We now remove these quantities from the
+executable method.
+
+We give two parameter-free constructions. The first combines an
+adaptive UTR scheme with uniformly accurate inner solves. It retains
+the $\epsilon^{-3/2}$ leading outer dependence, but its total
+inner-gradient complexity contains a multiplicative
+$\log(1/\epsilon)$. The second construction instead tracks the
+sequence of inner maximizers through persistent SCAR calls and adapts
+the inner accuracy to the current outer scale. This removes the
+target-accuracy logarithm from the leading inner-gradient term.
+
+Both results below are class-uniform asymptotic statements. After
+fixing common constants $(\ell,\mu,\rho)$, there exists an unknown
+threshold $\epsilon_0(\ell,\mu,\rho)>0$ such that the conclusions hold
+simultaneously for every payoff satisfying
+Assumption~\ref{ass:ncsc} with these constants and every
+initialization. The algorithms themselves do not use these constants
+and cannot determine whether a requested tolerance lies below the
+corresponding threshold.
+
+
+\subsection{A Uniform-Accuracy Parameter-Free Method}
+\label{sec:uniform-parameter-free}
+
+We first recall the parameter-free strongly convex solver used for
+the inner maximization. For fixed $x$, define
+\[
+    q_x(y):=-f(x,y).
+\]
+Under Assumption~\ref{ass:ncsc}, $q_x$ is $\mu$-strongly convex and
+has an $\ell$-Lipschitz gradient.
+
+
+\paragraph{SCAR as an inner residual solver.}
+
+We use the following result of \citet{lan2026optimal}.
+
+\begin{theorem}[SCAR; \citet{lan2026optimal}]
+\label{thm:scar-blackbox}
+Let $\phi:\mathbb{R}^m\to\mathbb{R}$ be differentiable,
+$\mu$-strongly convex, and have an $L$-Lipschitz gradient, with
+$0<\mu<L$. Let $\tau>0$ and $u_0\in\mathbb{R}^m$.
+If $\|\nabla\phi(u_0)\|\le\tau$, return $u_0$.
+Otherwise, initialize SCAR with
+\[
+    \mu_0\ge\mu,
+    \qquad
+    0<M_0\le4L.
+\]
+Then SCAR returns $\widehat u$ satisfying
+\begin{equation}
+    \|\nabla\phi(\widehat u)\|\le\tau
+    \label{eq:scar-residual}
+\end{equation}
+using at most
+\begin{equation}
+    (4+8\sqrt5\,C_1)
+    \sqrt{\frac{L}{\mu}}
+    \left[
+        \left\lceil
+            \log_4\frac{\mu_0}{\mu}
+        \right\rceil
+        +
+        \left\lceil
+            \log_2
+            \frac{\|\nabla\phi(u_0)\|}{\tau}
+        \right\rceil
+    \right]
+    \label{eq:scar-original-complexity}
+\end{equation}
+gradient evaluations, where $C_1$ is the universal constant in
+Theorem~4.1 of \citet{lan2026optimal}. The line-search estimate
+returned by SCAR is at most $2L$.
+\end{theorem}
+
+The cited theorem is stated for the strict case $\mu<L$.
+The endpoint $L=\mu$ can be handled separately by the same AR
+estimate and contributes only a numerical constant; see
+Appendix~\ref{app:uniform-parameter-free-proofs}.
+
+SCAR can be initialized without knowing either curvature parameter.
+Given $x$, an initial point $y^{\rm in}$, and any
+$z\ne y^{\rm in}$, define the observable secant
+\begin{equation}
+    a_x
+    :=
+    \frac{
+        \|\nabla_yf(x,z)-\nabla_yf(x,y^{\rm in})\|
+    }{
+        \|z-y^{\rm in}\|
+    }.
+    \label{eq:scar-secant}
+\end{equation}
+
+\begin{corollary}[Parameter-free SCAR residual module]
+\label{cor:scar-inner}
+Under Assumption~\ref{ass:ncsc}, run SCAR on
+$q_x=-f(x,\cdot)$ with
+\[
+    \mu_0=M_0=a_x
+\]
+and residual tolerance $\tau$.
+No value of $\ell$, $\mu$, or $\kappa$ is supplied to the inner
+solver, and the returned point $\widehat y$ satisfies
+\[
+    \|\nabla_yf(x,\widehat y)\|\le\tau.
+\]
+Including the secant initialization, the number of inner-gradient
+evaluations is
+\begin{equation}
+    O\!\left(
+        \sqrt\kappa
+        \left[
+            1+\log\kappa
+            +
+            \log_+
+            \frac{
+                \|\nabla_yf(x,y^{\rm in})\|
+            }{
+                \tau
+            }
+        \right]
+    \right).
+    \label{eq:scar-inner-complexity}
+\end{equation}
+Hence secant-initialized SCAR realizes the residual interface in
+Definition~\ref{def:inner-residual-module} without using the problem
+regularity constants.
+\end{corollary}
+
+The proof is deferred to
+Appendix~\ref{app:uniform-parameter-free-proofs}.
+
+
+\paragraph{Uniform inner accuracy.}
+
+The first parameter-free construction uses the same absolute residual
+target at every inner call:
+\begin{equation}
+    \tau_{\rm pf}:=\epsilon^2,
+    \qquad
+    0<\epsilon<1.
+    \label{eq:pf-uniform-residual}
+\end{equation}
+The nonmonotone value allowance used below is $\epsilon^3$.
+
+Although these quantities do not involve unknown regularity
+parameters, sufficiently small $\epsilon$ is still required in the
+analysis to convert the observable residual into the desired
+primal-function oracle accuracy.
+
+\begin{lemma}[Class-uniform asymptotic oracle accuracy]
+\label{lem:pf-asymptotic-oracle}
+Fix $\ell\ge\mu>0$ and $\rho>0$, and define
+\[
+    \kappa:=\frac{\ell}{\mu},
+    \qquad
+    M_P:=4\sqrt2\,\kappa^3\rho.
+\]
+There exists
+$\epsilon_{\rm or}=\epsilon_{\rm or}(\ell,\mu,\rho)>0$
+such that, simultaneously for every payoff satisfying
+Assumption~\ref{ass:ncsc} with these common constants and every
+$0<\epsilon\le\epsilon_{\rm or}$, any point satisfying
+\[
+    \|\nabla_yf(x,y)\|\le\epsilon^2
+\]
+also satisfies
+\begin{subequations}
+\label{eq:pf-oracle-bounds}
+\begin{align}
+    \|\widehat g(x,y)-\nabla P(x)\|
+    &\le
+    \frac{\epsilon}{256},
+    \label{eq:pf-gradient-error}
+    \\
+    \|\widehat H(x,y)-\nabla^2P(x)\|
+    &\le
+    \frac1{64}
+    \sqrt{\frac{M_P\epsilon}{6}},
+    \label{eq:pf-hessian-error}
+    \\
+    |\widehat P(x,y)-P(x)|
+    &\le
+    \frac{\epsilon^3}{8}.
+    \label{eq:pf-value-error}
+\end{align}
+\end{subequations}
+\end{lemma}
+
+The threshold is used only in the analysis and is not supplied to the
+algorithm.
+
+
+\paragraph{Algorithm 2.}
+
+At a current stored tuple $(x,y)$ satisfying
+\eqref{eq:pf-uniform-residual}, let
+\[
+    (\widehat P,g,H)
+    :=
+    \bigl(
+        \widehat P(x,y),
+        \widehat g(x,y),
+        \widehat H(x,y)
+    \bigr),
+    \qquad
+    h:=\max\{\|g\|,\epsilon\}.
+\]
+For a trial scale $\sigma\ge\epsilon$, consider
+\begin{equation}
+\begin{aligned}
+    \min_{\|d\|\le\sqrt h/(4\sigma)}
+    \quad
+    g^\top d
+    +
+    \frac12d^\top
+    \left(
+        H
+        +
+        \frac{\sigma\sqrt\epsilon}{64}I
+        +
+        \sigma\sqrt h\,I
+    \right)d.
+\end{aligned}
+\label{eq:pf-robust-subproblem}
+\end{equation}
+
+\begin{algorithm}[t]
+\DontPrintSemicolon
+\caption{Uniform-accuracy parameter-free NC--SC UTR}
+\label{alg:pf-residual-utr}
+\KwIn{
+$x_0,y_{-1}$, $0<\epsilon<1$, and a parameter-free inner residual
+module $\mathcal S$ satisfying \eqref{eq:maxres-interface}
+}
+$x\leftarrow x_0$,
+$\sigma\leftarrow\epsilon$,
+$\eta\leftarrow1/256$\;
+
+$y\leftarrow
+\operatorname{MaxRes}_{\mathcal S}
+(x_0,y_{-1},\epsilon^2)$\;
+
+compute
+$(\widehat P,g,H)$ from
+\eqref{eq:corrected-value} and
+\eqref{eq:corrected-derivatives}\;
+
+\While{true}{
+    $h\leftarrow\max\{\|g\|,\epsilon\}$\;
+
+    \If{
+        $\|g\|\le\epsilon$ and
+        $\lambda_{\min}(H)
+        \ge-(9/8)\sigma\sqrt\epsilon$
+    }{
+        \Return{$x$}\;
+    }
+
+    solve \eqref{eq:pf-robust-subproblem} globally and obtain
+    $(d,\lambda)$;
+    $r\leftarrow\|d\|$\;
+
+    \If{$r=0$}{
+        \Return{$x$}\;
+    }
+
+    $x^+\leftarrow x+d$\;
+
+    $y^+\leftarrow
+    \operatorname{MaxRes}_{\mathcal S}
+    (x^+,y,\epsilon^2)$\;
+
+    compute
+    $(\widehat P^+,g^+,H^+)$ at $(x^+,y^+)$\;
+
+    \eIf{
+        $r<\sqrt h/(4\sigma)$,
+        $\widehat P^+\le\widehat P+\epsilon^3$, and
+        $\|g^+\|\le h/2$
+    }{
+        accept the trial\;
+    }{
+        \eIf{
+            $r=\sqrt h/(4\sigma)$,
+            $\widehat P-\widehat P^+
+            \ge
+            \eta\bigl(h^{3/2}/\sigma+\lambda r^2\bigr)
+            +\epsilon^3$,
+            and
+            $\|g^+\|\le h/2+\lambda r$
+        }{
+            accept the trial\;
+        }{
+            reject the trial\;
+        }
+    }
+
+    \eIf{the trial is accepted}{
+        $(x,y,\widehat P,g,H)
+        \leftarrow
+        (x^+,y^+,\widehat P^+,g^+,H^+)$\;
+        $\sigma\leftarrow\max\{\epsilon,\sigma/2\}$\;
+    }{
+        discard the candidate tuple\;
+        $\sigma\leftarrow2\sigma$\;
+    }
+}
+\end{algorithm}
+
+Every quantity tested by Algorithm~\ref{alg:pf-residual-utr} is
+observable. In particular, if $\mathcal S$ is chosen as the
+secant-initialized SCAR module in Corollary~\ref{cor:scar-inner},
+the executable method uses none of
+\[
+    \ell,\quad
+    \mu,\quad
+    \rho,\quad
+    \kappa,\quad
+    M_P,\quad
+    \Delta_P.
+\]
+The fixed inner target $\epsilon^2$ is independent of the trial scale,
+so rejection changes only the outer trust-region model; the corrected
+tuple at the current point remains unchanged.
+
+The proof uses the fact that once
+\[
+    \sigma^2\ge\frac{M_P}{6},
+\]
+the Hessian padding is large enough for the inexact trust-region
+estimate of Lemma~\ref{lem:common-inexact-tr-step}. A finite-prefix
+counting argument then controls accepted and rejected trials.
+The detailed safe-scale and counting lemmas are deferred to
+Appendix~\ref{app:uniform-parameter-free-proofs}.
+
+\begin{theorem}[Uniform-accuracy parameter-free complexity]
+\label{thm:pf-scar-utr}
+Fix $\ell\ge\mu>0$ and $\rho>0$.
+There exists
+\[
+    \epsilon_0
+    =
+    \epsilon_0(\ell,\mu,\rho)
+    \in(0,1)
+\]
+such that the following statement holds simultaneously for every
+payoff satisfying Assumption~\ref{ass:ncsc} with these common
+constants and every initialization $(x_0,y_{-1})$.
+
+Define, only for the purpose of stating the bound,
+\[
+    \kappa:=\frac{\ell}{\mu},
+    \qquad
+    M_P:=4\sqrt2\,\kappa^3\rho,
+    \qquad
+    \Delta_P:=P(x_0)-P^*.
+\]
+For every $0<\epsilon\le\epsilon_0$,
+Algorithm~\ref{alg:pf-residual-utr} terminates and returns
+$\widehat x$ satisfying
+\begin{equation}
+    \|\nabla P(\widehat x)\|
+    \le
+    \frac{257}{256}\epsilon,
+    \qquad
+    \lambda_{\min}(\nabla^2P(\widehat x))
+    \ge
+    -\sqrt{M_P\epsilon}.
+    \label{eq:pf-return}
+\end{equation}
+Consequently, using internal tolerance $256\epsilon/257$ gives the
+standard
+$(\epsilon,\sqrt{M_P\epsilon})$ guarantee.
+
+If $Q$ denotes the total number of solved robust trust-region
+subproblems, then
+\begin{equation}
+    Q
+    =
+    O\!\left(
+        \Delta_P\sqrt{M_P}\,
+        \epsilon^{-3/2}
+        +
+        \log_+
+        \frac{\|\nabla P(x_0)\|}{\epsilon}
+        +
+        \log_+
+        \frac{\sqrt{M_P}}{\epsilon}
+        +1
+    \right).
+    \label{eq:pf-outer-complexity}
+\end{equation}
+Thus its leading outer dependence is
+\begin{equation}
+    O\!\left(
+        \Delta_P
+        \kappa^{3/2}\sqrt\rho\,
+        \epsilon^{-3/2}
+    \right).
+    \label{eq:pf-outer-leading}
+\end{equation}
+\end{theorem}
+
+This theorem is an asymptotic parameter-free result in the precise
+class-uniform sense stated above: the algorithm does not use the
+regularity constants, but the theorem does not provide an observable
+certificate that a given $\epsilon$ lies below
+$\epsilon_0(\ell,\mu,\rho)$.
+
+We next count the work of the concrete SCAR implementation.
+
+\begin{corollary}[Uniform-accuracy SCAR complexity]
+\label{cor:pf-scar-inner-complexity}
+Under the hypotheses of
+Theorem~\ref{thm:pf-scar-utr}, choose
+$\mathcal S$ to be the secant-initialized SCAR module in
+Corollary~\ref{cor:scar-inner}.
+Let $Q$ be the number of robust trust-region subproblems and define
+\begin{equation}
+    G_Q
+    :=
+    1+
+    \sqrt{
+        2(1+\kappa)\ell
+        \left(
+            \Delta_P+\frac54Q\epsilon^3
+        \right)
+    }.
+    \label{eq:pf-gradient-level}
+\end{equation}
+Then the total number $N_y$ of inner-gradient evaluations satisfies
+\begin{align}
+    N_y
+    &=
+    O\!\left(
+        \sqrt\kappa\,(Q+1)
+        \left[
+            1+\log\kappa
+            +
+            \log\!\left(
+                1+
+                \frac{
+                    \ell\sqrt{G_Q}
+                }{
+                    4\epsilon^3
+                }
+            \right)
+        \right]
+    \right)
+    \notag\\
+    &\quad+
+    O\!\left(
+        \sqrt\kappa
+        \left[
+            1+\log\kappa
+            +
+            \log_+
+            \frac{
+                \|\nabla_yf(x_0,y_{-1})\|
+            }{
+                \epsilon^2
+            }
+        \right]
+    \right).
+    \label{eq:pf-inner-complexity}
+\end{align}
+In particular, the uniformly accurate SCAR calls introduce a
+multiplicative $\log(1/\epsilon)$ in the leading target-accuracy
+dependence of the total inner-gradient count.
+\end{corollary}
+
+Thus Algorithm~\ref{alg:pf-residual-utr} already removes all unknown
+regularity constants from the executable method while retaining the
+desired leading outer rate. Its remaining weakness is not outer
+adaptivity, but the decision to solve every candidate inner problem
+to the same absolute residual $\epsilon^2$.
+
+
+\subsection{Persistent Inner Tracking}
+\label{sec:persistent-inner-tracking}
+
+We now replace independent high-accuracy inner solves by tracking the
+sequence of inner maximizers. The central idea is to retain the
+curvature calibration learned by SCAR across successive objectives
+\[
+    q_x(y)=-f(x,y),
+\]
+while restarting accelerated momentum whenever the outer point
+changes.
+
+Rather than solving every inner problem independently to a prescribed
+absolute accuracy, the method maintains only the accuracy required by
+the current outer scale.
+
+
+\paragraph{Persistent SCAR.}
+
+We first record the sequential SCAR property used by the algorithm.
+
+\begin{lemma}[Persistent SCAR halving]
+\label{lem:scar-persistent-half}
+Let $\{\phi_j\}_{j\ge1}$ be any sequence of differentiable functions
+that are all $\mu$-strongly convex and have $L$-Lipschitz gradients.
+Set $\kappa:=L/\mu$.
+
+Suppose the retained strong-convexity guess $\nu_0$ and line-search
+estimate $\mathcal M_0$ satisfy
+\[
+    \mu\le\nu_0\le L,
+    \qquad
+    0<\mathcal M_0\le4L.
+\]
+A persistent halving call at $(\phi_j,u)$ freezes
+\[
+    R:=\|\nabla\phi_j(u)\|
+\]
+and repeatedly applies the AR call used by SCAR until it obtains
+$v$ satisfying
+\[
+    \|\nabla\phi_j(v)\|\le\frac R2.
+\]
+A failed curvature guess replaces $\nu$ by $\nu/4$ while retaining
+the updated line-search estimate.
+
+Across any $N$ successful halving calls, the total number of failed
+curvature guesses is at most
+\begin{equation}
+    \left\lceil
+        \log_4\frac{\nu_0}{\mu}
+    \right\rceil
+    \le
+    \lceil\log_4\kappa\rceil,
+    \label{eq:persistent-scar-failures}
+\end{equation}
+and the total number of gradient evaluations is at most
+\begin{equation}
+    (4+2\sqrt{10}\,C_1)
+    \sqrt\kappa
+    \left(
+        N+
+        \left\lceil
+            \log_4\frac{\nu_0}{\mu}
+        \right\rceil
+    \right).
+    \label{eq:persistent-scar-count}
+\end{equation}
+After any nontrivial AR call, the retained line-search estimate is at
+most $2L$.
+\end{lemma}
+
+The crucial distinction from restarted SCAR is that the
+$\log\kappa$ curvature-calibration cost in
+\eqref{eq:persistent-scar-failures} is paid across the complete
+sequence, rather than independently at every outer call.
+
+
+\paragraph{Working accuracy and tracking.}
+
+Define
+\begin{equation}
+    \mathcal A_\epsilon
+    :=
+    \log(e/\epsilon),
+    \qquad
+    \sigma_0
+    :=
+    \mathcal A_\epsilon^{-1},
+    \qquad
+    c_0:=2^{-12},
+    \qquad
+    r_\epsilon(\sigma)
+    :=
+    \frac{\sqrt\epsilon}{4\sigma}.
+    \label{eq:gs-parameters}
+\end{equation}
+The quantity $r_\epsilon(\sigma)$ is an inner accuracy scale and
+should not be confused with the trust-region step length.
+
+A stored tuple $(x,y)$ is called \emph{working-accurate} at scale
+$\sigma$ if
+\begin{equation}
+    \|\nabla_yf(x,y)\|
+    \le
+    c_0\ell r_\epsilon(\sigma).
+    \label{eq:gs-working-invariant}
+\end{equation}
+The constant $\ell$ appears only in the analysis; the executable
+method maintains this invariant through observable residual halvings.
+
+\begin{lemma}[Variable-step tracking]
+\label{lem:gs-tracking}
+Suppose \eqref{eq:gs-working-invariant} holds at $(x,y)$, and let
+$d$ be an outer step with $r:=\|d\|$.
+Starting from $y$ at $x+d$, apply
+\begin{equation}
+    N_{\rm tr}(r,\sigma)
+    :=
+    \left\lceil
+        \log_2\left(
+            1+
+            \frac{r}{
+                c_0r_\epsilon(\sigma)
+            }
+        \right)
+    \right\rceil
+    \label{eq:gs-tracking-count}
+\end{equation}
+successful persistent SCAR halvings.
+The resulting point satisfies
+\eqref{eq:gs-working-invariant} at $x+d$ with the same scale.
+At an unchanged outer point, one successful halving restores the
+invariant after $\sigma$ is doubled.
+\end{lemma}
+
+For later use, set
+\begin{equation}
+    C_g
+    :=
+    \frac{
+        c_0^2(1+\kappa)\rho\kappa^2
+    }{32},
+    \qquad
+    C_v
+    :=
+    \frac{
+        7c_0^3\rho\kappa^3
+    }{1536}.
+    \label{eq:gs-error-constants}
+\end{equation}
+
+\begin{lemma}[Working-oracle accuracy]
+\label{lem:gs-working-errors}
+Fix common constants $(\ell,\mu,\rho)$.
+For all sufficiently small $\epsilon$, with a threshold depending
+only on these constants, every working-accurate tuple at
+$\sigma\ge\sigma_0$ satisfies
+\begin{equation}
+    \|\widehat g-\nabla P(x)\|
+    \le
+    C_g\frac{\epsilon}{\sigma^2},
+    \qquad
+    |\widehat P-P(x)|
+    \le
+    C_v\frac{\epsilon^{3/2}}{\sigma^3}.
+    \label{eq:gs-working-errors}
+\end{equation}
+If additionally
+\[
+    \sigma^2\ge\frac{M_P}{6},
+\]
+then
+\begin{equation}
+\begin{aligned}
+    \|\widehat g-\nabla P(x)\|
+    &\le
+    \epsilon/1024,
+    \\
+    \|\widehat H-\nabla^2P(x)\|
+    &\le
+    \sigma\sqrt\epsilon/64,
+    \\
+    |\widehat P-P(x)|
+    &\le
+    \epsilon^{3/2}/(4096\sigma).
+\end{aligned}
+\label{eq:working-safe-errors}
+\end{equation}
+
+Furthermore, for any secant $a_x$ of the form
+\eqref{eq:scar-secant}, any validation point satisfying
+\begin{equation}
+    \|\nabla_yf(x,y_{\rm v})\|
+    \le
+    c_0a_x\epsilon^{3/2}
+    \label{eq:validator-residual}
+\end{equation}
+obeys
+\begin{equation}
+\begin{aligned}
+    \|\widehat g(x,y_{\rm v})-\nabla P(x)\|
+    &\le
+    \epsilon/1024,
+    \\
+    \|\widehat H(x,y_{\rm v})-\nabla^2P(x)\|
+    &\le
+    \sigma\sqrt\epsilon/32
+\end{aligned}
+\label{eq:validator-errors}
+\end{equation}
+for every $\sigma\ge\sigma_0$.
+\end{lemma}
+
+All three preceding lemmas are proved in
+Appendix~\ref{app:persistent-scar-proofs}.
+
+
+\paragraph{Algorithm 3.}
+
+Given a working-accurate tuple, define
+\begin{equation}
+    h:=\max\{\|\widehat g\|,\epsilon\},
+    \qquad
+    R(h,\sigma)
+    :=
+    \frac{\sqrt h}{4\sigma},
+    \label{eq:gs-radius}
+\end{equation}
+and solve
+\begin{equation}
+    \min_{\|d\|\le R(h,\sigma)}
+    \quad
+    \widehat g^\top d
+    +
+    \frac12d^\top
+    \left(
+        \widehat H
+        +
+        \frac{\sigma\sqrt\epsilon}{64}I
+        +
+        \sigma\sqrt h\,I
+    \right)d.
+    \label{eq:gs-subproblem}
+\end{equation}
+For a global solution $d$ and its multiplier $\lambda\ge0$, write
+\begin{equation}
+    r:=\|d\|,
+    \qquad
+    W:=\sigma\sqrt h\,r^2,
+    \qquad
+    U:=\lambda r^2,
+    \qquad
+    T:=\frac{\epsilon^{3/2}}{\sigma}.
+    \label{eq:gs-step-quantities}
+\end{equation}
+
+\begin{algorithm}[t]
+\DontPrintSemicolon
+\caption{Parameter-free gradient-scaled TR with persistent SCAR}
+\label{alg:gradient-scaled-scar}
+\KwIn{$x_0,y_{-1}$ and $0<\epsilon<1$}
+
+$\mathcal A_\epsilon\leftarrow\log(e/\epsilon)$,
+$\sigma\leftarrow\mathcal A_\epsilon^{-1}$,
+$c_0\leftarrow2^{-12}$,
+$x\leftarrow x_0$\;
+
+choose $z_0\ne y_{-1}$ and compute $a_0$ from
+\eqref{eq:scar-secant}\;
+
+initialize the persistent SCAR state with
+$\nu_0=\mathcal M_0=a_0$\;
+
+at $x_0$, apply persistent SCAR halving from $y_{-1}$ until
+\[
+    \|\nabla_yf(x_0,y)\|
+    \le
+    c_0a_0r_\epsilon(\sigma);
+\]
+compute $(\widehat P,\widehat g,\widehat H)$\;
+
+\While{true}{
+    $h\leftarrow\max\{\|\widehat g\|,\epsilon\}$\;
+
+    solve \eqref{eq:gs-subproblem} globally and obtain
+    $(d,\lambda)$\;
+
+    $x^+\leftarrow x+d$,
+    $r\leftarrow\|d\|$\;
+
+    form $(W,U,T)$ from \eqref{eq:gs-step-quantities}\;
+
+    starting from $y$, apply
+    $N_{\rm tr}(r,\sigma)$ successful persistent SCAR halvings
+    to $q_{x^+}$ and denote the result by $y^+$\;
+
+    \eIf{$h=\epsilon$ and $r<R(h,\sigma)$}{
+        choose $z^+\ne y^+$ and compute the secant $a^+$ at $x^+$\;
+
+        continue persistent SCAR halving at $x^+$ until
+        \[
+            \|\nabla_yf(x^+,y_{\rm v})\|
+            \le
+            c_0a^+\epsilon^{3/2};
+        \]
+
+        compute
+        $(\widehat g_{\rm v},\widehat H_{\rm v})$\;
+
+        \eIf{
+            $\|\widehat g_{\rm v}\|\le\epsilon/2$
+            and
+            $\lambda_{\min}(\widehat H_{\rm v})
+            \ge-(21/8)\sigma\sqrt\epsilon$
+        }{
+            \Return{$x^+$}\;
+        }{
+            discard the candidate and validator tuples\;
+            $\sigma\leftarrow2\sigma$\;
+            apply one successful persistent halving at the unchanged $x$\;
+            replace $y$ by the returned point and recompute
+            $(\widehat P,\widehat g,\widehat H)$\;
+        }
+    }{
+        compute
+        $(\widehat P^+,\widehat g^+,\widehat H^+)$
+        at $(x^+,y^+)$\;
+
+        \eIf{
+            $\widehat P-\widehat P^+
+            \ge
+            W/8+U/4-T/1024$
+            and
+            $\|\widehat g^+\|\le h/2+\lambda r$
+        }{
+            $(x,y,\widehat P,\widehat g,\widehat H)
+            \leftarrow
+            (x^+,y^+,\widehat P^+,\widehat g^+,\widehat H^+)$\;
+        }{
+            discard the candidate tuple\;
+            $\sigma\leftarrow2\sigma$\;
+            apply one successful persistent halving at the unchanged $x$\;
+            replace $y$ by the returned point and recompute
+            $(\widehat P,\widehat g,\widehat H)$\;
+        }
+    }
+}
+\end{algorithm}
+
+The scale in Algorithm~\ref{alg:gradient-scaled-scar} is
+nondecreasing. An accepted candidate tuple is stored without further
+inner refinement. The persistent SCAR state $(\nu,\mathcal M)$ is
+retained after accepted trials, rejected trials, and failed
+validations, while accelerated momentum is restarted whenever the
+inner objective changes.
+
+
+\paragraph{Safe scale and accumulated work.}
+
+At every sufficiently small target tolerance, once
+\[
+    \sigma^2\ge\frac{M_P}{6},
+\]
+the working-oracle errors are small enough for every ordinary trial
+to satisfy the two acceptance tests. Interior trials with
+$h=\epsilon$ also pass the high-accuracy validator.
+
+\begin{lemma}[Safe scale]
+\label{lem:gs-safe}
+For fixed common constants $(\ell,\mu,\rho)$ and all sufficiently
+small $\epsilon$, if
+\[
+    \sigma^2\ge\frac{M_P}{6},
+\]
+then every ordinary trial of
+Algorithm~\ref{alg:gradient-scaled-scar} is accepted, and every
+trial with
+\[
+    h=\epsilon,
+    \qquad
+    r<R(h,\sigma)
+\]
+passes validation.
+
+At any generated scale $\sigma\ge\sigma_0$, successful validation
+implies
+\begin{equation}
+    \|\nabla P(x^+)\|<\epsilon,
+    \qquad
+    \lambda_{\min}(\nabla^2P(x^+))
+    \ge
+    -\frac{85}{32}\sigma\sqrt\epsilon.
+    \label{eq:gs-validator-return}
+\end{equation}
+\end{lemma}
+
+The total-work argument uses a gradient-level potential. Define
+\begin{equation}
+    \mathcal L_\epsilon(h)
+    :=
+    \left\lceil
+        \log_2(h/\epsilon)
+    \right\rceil,
+    \qquad
+    \Phi
+    :=
+    \widehat P
+    +
+    \frac{\epsilon^{3/2}}{512\sigma}
+    \mathcal L_\epsilon(h).
+    \label{eq:gs-potential}
+\end{equation}
+For every ordinary accepted step, the analysis in
+Appendix~\ref{app:persistent-scar-proofs} proves
+\begin{equation}
+    \Phi-\Phi^+
+    \ge
+    \frac{W}{32}
+    +
+    \frac{T}{1024}
+    +
+    \frac{U}{16}.
+    \label{eq:gs-potential-decrease}
+\end{equation}
+Interior acceptance reduces the gradient level, whereas the
+multiplier term $U$ pays for a possible increase after a boundary
+step.
+
+After accounting for the positive jumps caused by scale refreshes,
+the same argument yields an explicit budget $B_\epsilon$ satisfying
+\begin{equation}
+    B_\epsilon
+    =
+    \Delta_P
+    +
+    O_{\rm fixed}
+    \bigl(
+        \epsilon^{3/2}\mathcal A_\epsilon^3
+    \bigr)
+    \label{eq:gs-budget-asymptotic}
+\end{equation}
+and
+\begin{equation}
+    \sum_{\rm accepted}
+    \sigma_k^2\|d_k\|^3
+    \le
+    8B_\epsilon.
+    \label{eq:gs-path-budget-main}
+\end{equation}
+This is the path budget that amortizes the variable tracking work.
+Indeed, with
+\[
+    z_k:=\frac{\sigma_k\|d_k\|}{\sqrt\epsilon},
+\]
+the tracking rule satisfies
+\[
+    N_{{\rm tr},k}
+    =
+    \left\lceil
+        \log_2(1+2^{14}z_k)
+    \right\rceil
+    \le
+    16+z_k^3.
+\]
+Thus the accumulated tracking cost on accepted steps is controlled by
+\eqref{eq:gs-path-budget-main}, rather than by multiplying the number
+of outer iterations by an independent logarithmic inner cost.
+
+
+\begin{theorem}[Persistent-SCAR parameter-free complexity]
+\label{thm:gradient-scaled-scar}
+Fix $\ell\ge\mu>0$ and $\rho>0$.
+There exists
+\[
+    \epsilon_0
+    =
+    \epsilon_0(\ell,\mu,\rho)
+    \in(0,1)
+\]
+such that the following holds simultaneously for every payoff
+satisfying Assumption~\ref{ass:ncsc} with these common constants and
+every initialization $(x_0,y_{-1})$.
+
+Set, only for the purpose of stating the bound,
+\[
+    \kappa:=\frac{\ell}{\mu},
+    \qquad
+    M_P:=4\sqrt2\,\kappa^3\rho,
+    \qquad
+    \Delta_P:=P(x_0)-P^*.
+\]
+For every $0<\epsilon\le\epsilon_0$,
+Algorithm~\ref{alg:gradient-scaled-scar} terminates while using only
+$\epsilon$ and universal numerical constants.
+Its output $x_{\rm out}$ satisfies
+\begin{equation}
+    \|\nabla P(x_{\rm out})\|<\epsilon,
+    \qquad
+    \lambda_{\min}(\nabla^2P(x_{\rm out}))
+    \ge
+    -\frac{85}{16\sqrt6}
+    \sqrt{M_P\epsilon}.
+    \label{eq:gs-return}
+\end{equation}
+
+If $Q$ denotes the total number of solved trust-region subproblems
+and $N_y$ the total number of inner-gradient evaluations, including
+the secant evaluations, then
+\begin{subequations}
+\label{eq:gs-complexities}
+\begin{align}
+    Q
+    &=
+    O\!\left(
+        \Delta_P\sqrt{M_P}\,
+        \epsilon^{-3/2}
+    \right)
+    +
+    O_{\rm fixed}
+    (\mathcal A_\epsilon^3),
+    \label{eq:gs-outer-complexity}
+    \\
+    N_y
+    &=
+    O\!\left(
+        \Delta_P\sqrt{\kappa M_P}\,
+        \epsilon^{-3/2}
+    \right)
+    +
+    O_{\rm fixed}
+    (
+        \sqrt\kappa\,
+        \mathcal A_\epsilon^3
+    ).
+    \label{eq:gs-inner-complexity}
+\end{align}
+\end{subequations}
+Here $O_{\rm fixed}$ may depend on the fixed payoff,
+regularity constants, and initialization, but not on $\epsilon$.
+Equivalently, the leading outer and inner terms are
+\begin{equation}
+    O\!\left(
+        \Delta_P\kappa^{3/2}\sqrt\rho\,
+        \epsilon^{-3/2}
+    \right),
+    \qquad
+    O\!\left(
+        \Delta_P\kappa^2\sqrt\rho\,
+        \epsilon^{-3/2}
+    \right).
+    \label{eq:gs-leading-complexities}
+\end{equation}
+
+Using internal tolerance $(1536/7225)\epsilon$ gives the standard
+$(\epsilon,\sqrt{M_P\epsilon})$ guarantee whenever the internal
+tolerance lies in the stated regime.
+\end{theorem}
+
+The theorem removes the multiplicative target-accuracy logarithm from
+the leading inner-gradient term. In contrast with
+Corollary~\ref{cor:pf-scar-inner-complexity}, the persistent
+curvature calibration is shared across the entire sequence of inner
+objectives, and the variable residual reductions are charged to the
+path budget \eqref{eq:gs-path-budget-main}.
+
+\begin{remark}[Scope of the parameter-free guarantee]
+\label{rem:pf-scope}
+The threshold in
+Theorem~\ref{thm:gradient-scaled-scar} is uniform over the class with
+fixed common constants $(\ell,\mu,\rho)$ and over all
+initializations, but it is not observable to the algorithm.
+The theorem therefore does not provide an a posteriori
+finite-accuracy certificate.
+The distinction between this class-uniform statement and a guarantee
+uniform over vanishing strong-concavity moduli is discussed in
+Appendix~\ref{app:parameter-free-scope}.
+\end{remark}
+
+\begin{remark}[Oracle accounting]
+\label{rem:pf-oracle-accounting}
+The quantity $N_y$ counts evaluations of the inner gradient
+$\nabla_yf$, which is the oracle counted in the SCAR complexity
+result. SCAR's line search also evaluates the inner objective.
+Under the standard implementation considered by
+\citet{lan2026optimal}, these function-value evaluations have the
+same leading order as the gradient count, up to an additive
+line-search logarithm.
+
+The corrected-gradient and Schur-complement constructions, including
+the inverse actions involving $\nabla^2_{yy}f$, are not included in
+$N_y$. If these inverse actions are implemented iteratively, their
+accuracy and oracle complexity must be accounted for separately.
+\end{remark}

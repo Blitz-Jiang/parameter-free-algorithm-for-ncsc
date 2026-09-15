@@ -1,0 +1,878 @@
+\section{Proofs for Section~\ref{sec:known-parameter}}
+\label{app:known-parameter}
+
+
+\subsection{Fixed-Scale Inexact UTR}
+\label{app:fixed-scale-proofs}
+
+Let $K\in\mathbb{N}_0\cup\{\infty\}$ denote the first return index of
+the procedure
+\eqref{eq:fixed-scale-stopping}--\eqref{eq:fixed-scale-subproblem},
+with $K=\infty$ if the procedure never returns.
+For $k<K$, set
+\[
+    r_k:=\|d_k\|,
+\]
+and let $\lambda_k$ be the trust-region multiplier associated with
+\eqref{eq:fixed-scale-subproblem}.
+Thus Lemma~\ref{lem:tr-global-optimality} is applied with
+\[
+    B
+    =
+    H_k+\xi_kI
+    +2\sqrt{\frac M6}\sqrt{h_k}\,I,
+    \qquad
+    R
+    =
+    \frac{\sqrt{h_k}}{4\sqrt{M/6}}.
+\]
+
+
+\begin{lemma}[Decrease and clipped-gradient recurrence]
+\label{lem:fixed-one-step}
+Under the assumptions of Theorem~\ref{thm:fixed-scale-utr},
+every nonterminal step $k<K$ satisfies
+\begin{equation}
+    F(x_k)-F(x_{k+1})
+    \ge
+    \frac34
+    \sqrt{\frac M6}\sqrt{h_k}\,r_k^2
+    +
+    \frac12\lambda_kr_k^2
+    -
+    \frac{\epsilon r_k}{8192}.
+    \label{eq:fixed-basic-decrease}
+\end{equation}
+Consequently,
+\begin{subequations}
+\label{eq:fixed-step-type-decrease}
+\begin{align}
+    \lambda_k=0:\qquad
+    F(x_k)-F(x_{k+1})
+    &\ge
+    -
+    \frac{
+        \epsilon^{3/2}
+    }{
+        201\,326\,592\sqrt{M/6}
+    },
+    \label{eq:fixed-interior-increase}
+    \\
+    \lambda_k>0:\qquad
+    F(x_k)-F(x_{k+1})
+    &\ge
+    \frac{1535}{32768}
+    \frac{h_k^{3/2}}{\sqrt{M/6}}
+    +
+    \frac12\lambda_kr_k^2.
+    \label{eq:fixed-boundary-decrease}
+\end{align}
+\end{subequations}
+Moreover,
+\begin{equation}
+    h_{k+1}
+    \le
+    \max\left\{
+        \frac{2849}{4096}h_k
+        +
+        \lambda_kr_k,
+        \epsilon
+    \right\}.
+    \label{eq:fixed-gradient-recurrence}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Apply Lemma~\ref{lem:common-inexact-tr-step} with
+\[
+    a
+    =
+    \xi_k
+    +
+    2\sqrt{\frac M6}\sqrt{h_k},
+    \qquad
+    R
+    =
+    \frac{\sqrt{h_k}}{4\sqrt{M/6}},
+\]
+and
+\[
+    \xi=\xi_k,
+    \qquad
+    \delta_0=\delta_+
+    =
+    \frac{\epsilon}{8192}.
+\]
+Since $r_k\le R$,
+\[
+    \frac M6 r_k^3
+    \le
+    \frac14
+    \sqrt{\frac M6}\sqrt{h_k}\,r_k^2.
+\]
+The certificate padding cancels the Hessian-error term in
+\eqref{eq:common-function-bound}, giving
+\[
+    F(x_k)-F(x_{k+1})
+    \ge
+    \frac34
+    \sqrt{\frac M6}\sqrt{h_k}\,r_k^2
+    +
+    \frac12\lambda_kr_k^2
+    -
+    \frac{\epsilon r_k}{8192},
+\]
+which proves \eqref{eq:fixed-basic-decrease}.
+
+If $\lambda_k=0$, minimizing
+\[
+    \frac34\sqrt{\frac M6}\sqrt\epsilon\,r^2
+    -
+    \frac{\epsilon}{8192}r
+\]
+over $r\ge0$ gives the minimizer
+\[
+    r
+    =
+    \frac{\sqrt\epsilon}
+         {12288\sqrt{M/6}}
+\]
+and minimum
+\[
+    -
+    \frac{
+        \epsilon^{3/2}
+    }{
+        201\,326\,592\sqrt{M/6}
+    },
+\]
+which proves \eqref{eq:fixed-interior-increase}.
+
+If $\lambda_k>0$, complementarity gives
+\[
+    r_k
+    =
+    \frac{\sqrt{h_k}}
+         {4\sqrt{M/6}}.
+\]
+Hence
+\begin{align*}
+    &
+    \frac34
+    \sqrt{\frac M6}\sqrt{h_k}\,r_k^2
+    -
+    \frac{\epsilon r_k}{8192}
+    \\
+    &\qquad\ge
+    \left(
+        \frac3{64}
+        -
+        \frac1{32768}
+    \right)
+    \frac{h_k^{3/2}}{\sqrt{M/6}}
+    =
+    \frac{1535}{32768}
+    \frac{h_k^{3/2}}{\sqrt{M/6}},
+\end{align*}
+which, together with the multiplier term, proves
+\eqref{eq:fixed-boundary-decrease}.
+
+Finally, the gradient estimate
+\eqref{eq:common-gradient-bound} gives
+\begin{align*}
+    \|g_{k+1}\|
+    &\le
+    2\sqrt{\frac M6}\sqrt{h_k}\,r_k
+    +
+    2\xi_kr_k
+    +
+    \lambda_kr_k
+    +
+    \frac M2r_k^2
+    +
+    \frac{\epsilon}{4096}
+    \\
+    &\le
+    \left(
+        \frac12
+        +
+        \frac1{128}
+        +
+        \frac3{16}
+        +
+        \frac1{4096}
+    \right)h_k
+    +
+    \lambda_kr_k
+    \\
+    &=
+    \frac{2849}{4096}h_k+\lambda_kr_k.
+\end{align*}
+Here we used
+\[
+    2\sqrt{\frac M6}\sqrt{h_k}\,r_k
+    \le
+    \frac12h_k,
+    \qquad
+    2\xi_kr_k
+    \le
+    \frac1{128}h_k,
+\]
+\[
+    \frac M2r_k^2
+    \le
+    \frac3{16}h_k,
+    \qquad
+    \frac{\epsilon}{4096}
+    \le
+    \frac{h_k}{4096}.
+\]
+Clipping below at $\epsilon$ proves
+\eqref{eq:fixed-gradient-recurrence}.
+\end{proof}
+
+The negative right-hand side in
+\eqref{eq:fixed-interior-increase} reflects the fact that an inexact
+interior step need not decrease $F$. We next account for these small
+possible increases over a finite prefix.
+
+For any finite prefix of $N\le K$ nonterminal iterations, define
+\[
+    \mathcal B_N
+    :=
+    \{0\le k<N:\lambda_k>0\},
+    \qquad
+    \mathcal I_N
+    :=
+    \{0\le k<N:\lambda_k=0\},
+\]
+and, for $k\in\mathcal B_N$, set
+\begin{equation}
+    z_k
+    :=
+    \frac{\lambda_kr_k}{h_k}.
+    \label{eq:fixed-z-definition}
+\end{equation}
+
+\begin{lemma}[Boundary and interior budgets]
+\label{lem:fixed-budgets}
+Every finite nonterminal prefix satisfies
+\begin{subequations}
+\label{eq:fixed-boundary-budgets}
+\begin{align}
+    |\mathcal B_N|
+    &\le
+    \frac{32768}{1535}
+    \sqrt{\frac M6}
+    \Delta_F\epsilon^{-3/2}
+    +
+    \frac1{9\,431\,040}
+    |\mathcal I_N|,
+    \label{eq:fixed-boundary-count}
+    \\
+    \sum_{k\in\mathcal B_N}z_k
+    &\le
+    8\sqrt{\frac M6}
+    \Delta_F\epsilon^{-3/2}
+    +
+    \frac1{25\,165\,824}
+    |\mathcal I_N|.
+    \label{eq:fixed-z-budget}
+\end{align}
+\end{subequations}
+Moreover,
+\begin{equation}
+    |\mathcal I_N|
+    \le
+    |\mathcal B_N|+1
+    +
+    \frac{
+        \log_+(h_0/\epsilon)
+        +
+        \sum_{k\in\mathcal B_N}z_k
+    }{
+        \log(4096/2849)
+    }.
+    \label{eq:fixed-interior-budget}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Summing \eqref{eq:fixed-step-type-decrease} and using
+$F(x_N)\ge F^*$ gives
+\begin{align*}
+    \Delta_F
+    &\ge
+    \frac{
+        1535\epsilon^{3/2}
+    }{
+        32768\sqrt{M/6}
+    }
+    |\mathcal B_N|
+    +
+    \frac12
+    \sum_{k\in\mathcal B_N}\lambda_kr_k^2
+    \\
+    &\qquad
+    -
+    \frac{
+        \epsilon^{3/2}
+    }{
+        201\,326\,592\sqrt{M/6}
+    }
+    |\mathcal I_N|.
+\end{align*}
+This directly gives
+\eqref{eq:fixed-boundary-count}. For
+$k\in\mathcal B_N$,
+\[
+    \lambda_kr_k^2
+    =
+    \frac{
+        z_k h_k^{3/2}
+    }{
+        4\sqrt{M/6}
+    }
+    \ge
+    \frac{
+        z_k\epsilon^{3/2}
+    }{
+        4\sqrt{M/6}
+    },
+\]
+which gives \eqref{eq:fixed-z-budget}.
+
+For $k\in\mathcal B_N$,
+\eqref{eq:fixed-gradient-recurrence} implies
+\[
+    \left[
+        \log\frac{h_{k+1}}{h_k}
+    \right]_+
+    \le
+    \left[
+        \log\left(
+            \frac{2849}{4096}+z_k
+        \right)
+    \right]_+
+    \le
+    z_k.
+\]
+Indeed, the left-hand side vanishes when
+$z_k\le1247/4096$; above this threshold,
+\[
+    z-\log\left(\frac{2849}{4096}+z\right)
+\]
+is increasing and positive.
+
+For an index $k\in\mathcal I_N$ with
+$h_{k+1}>\epsilon$, the quantity $\log h_k$ decreases by at least
+$\log(4096/2849)$.
+Now suppose
+$k\in\mathcal I_N$ satisfies
+$h_{k+1}=\epsilon$ and $k+1<N$.
+At iteration $k+1$ the gradient part of the stopping test holds, while
+the procedure has not terminated. Hence
+\[
+    \lambda_{\min}(H_{k+1})
+    <
+    -\sqrt{M\epsilon}
+    +
+    \xi_{k+1}.
+\]
+Consequently,
+\begin{align*}
+    &
+    \lambda_{\min}\!\left(
+        H_{k+1}
+        +
+        \xi_{k+1}I
+        +
+        2\sqrt{\frac M6}\sqrt\epsilon\,I
+    \right)
+    \\
+    &\qquad<
+    -\sqrt{M\epsilon}
+    +
+    2\xi_{k+1}
+    +
+    2\sqrt{\frac M6}\sqrt\epsilon
+    \\
+    &\qquad\le
+    \left(
+        2+\frac1{32}-\sqrt6
+    \right)
+    \sqrt{\frac M6}\sqrt\epsilon
+    <0.
+\end{align*}
+The positive-semidefiniteness condition in
+Lemma~\ref{lem:tr-global-optimality} therefore forces
+$\lambda_{k+1}>0$.
+Thus every such floor-hitting index is followed by an index in
+$\mathcal B_N$, except possibly the last prefix index. Hence
+\[
+    \left|
+        \{k\in\mathcal I_N:h_{k+1}=\epsilon\}
+    \right|
+    \le
+    |\mathcal B_N|+1.
+\]
+
+For the remaining indices in $\mathcal I_N$, telescoping
+$\log h_k$, using $h_N\ge\epsilon$, and charging every positive
+increase on $\mathcal B_N$ to $z_k$ gives
+\[
+    \left|
+        \{k\in\mathcal I_N:h_{k+1}>\epsilon\}
+    \right|
+    \log(4096/2849)
+    \le
+    \log_+\frac{h_0}{\epsilon}
+    +
+    \sum_{k\in\mathcal B_N}z_k.
+\]
+Adding the two interior counts proves
+\eqref{eq:fixed-interior-budget}.
+\end{proof}
+
+
+\begin{proof}[Proof of Theorem~\ref{thm:fixed-scale-utr}]
+Substituting
+\eqref{eq:fixed-boundary-budgets} into
+\eqref{eq:fixed-interior-budget} gives
+\begin{align*}
+    &
+    \left[
+        1
+        -
+        \frac1{9\,431\,040}
+        -
+        \frac{
+            1
+        }{
+            25\,165\,824\log(4096/2849)
+        }
+    \right]
+    |\mathcal I_N|
+    \\
+    &\quad\le
+    \left(
+        \frac{32768}{1535}
+        +
+        \frac8{\log(4096/2849)}
+    \right)
+    \sqrt{\frac M6}
+    \Delta_F\epsilon^{-3/2}
+    \\
+    &\qquad+
+    1+
+    \frac{
+        \log_+(h_0/\epsilon)
+    }{
+        \log(4096/2849)
+    }.
+\end{align*}
+Using
+\[
+    \log(4096/2849)>\frac{363}{1000}
+\]
+and
+\[
+    1
+    -
+    \frac1{9\,431\,040}
+    -
+    \frac{
+        1
+    }{
+        25\,165\,824\log(4096/2849)
+    }
+    >
+    \frac{9\,999\,997}{10\,000\,000},
+\]
+together with
+\eqref{eq:fixed-boundary-count}, gives
+\begin{equation}
+    N
+    =
+    |\mathcal I_N|+|\mathcal B_N|
+    \le
+    65\sqrt{\frac M6}
+    \Delta_F\epsilon^{-3/2}
+    +
+    3\log_+\frac{h_0}{\epsilon}
+    +2.
+    \label{eq:fixed-prefix-bound}
+\end{equation}
+This estimate is uniform over every finite nonterminal prefix.
+
+If $K=\infty$, then
+\eqref{eq:fixed-prefix-bound} would bound every finite
+$N\le K$ by the same constant, which is impossible for arbitrarily
+large $N$. Therefore $K<\infty$.
+Taking $N=K$ proves
+\eqref{eq:fixed-scale-complexity}.
+
+At termination,
+\eqref{eq:fixed-oracle-errors} gives
+\[
+    \|\nabla F(\widehat x)\|
+    \le
+    \frac{8193}{8192}\epsilon.
+\]
+By Weyl's inequality and
+\eqref{eq:fixed-scale-stopping},
+\[
+    \lambda_{\min}(\nabla^2F(\widehat x))
+    \ge
+    \lambda_{\min}(H_K)-\xi_K
+    \ge
+    -\sqrt{M\epsilon}.
+\]
+This proves \eqref{eq:fixed-scale-return}.
+\end{proof}
+
+
+\begin{proof}[Proof of Lemma~\ref{lem:cubic-path}]
+Since
+\[
+    r_k
+    \le
+    \frac{\sqrt{h_k}}
+         {4\sqrt{M/6}},
+\]
+we have
+\[
+    \sqrt{h_k}
+    \ge
+    4\sqrt{\frac M6}\,r_k.
+\]
+Equation~\eqref{eq:fixed-basic-decrease} therefore implies
+\[
+    F(x_k)-F(x_{k+1})
+    \ge
+    \frac M2 r_k^3
+    -
+    \frac{\epsilon r_k}{8192}.
+\]
+Split the cubic term equally and maximize
+\[
+    \frac{\epsilon r}{8192}
+    -
+    \frac M4r^3
+\]
+over $r\ge0$. Its maximum is
+\[
+    \frac{
+        \epsilon^{3/2}
+    }{
+        393\,216\sqrt{6M}
+    }.
+\]
+Hence
+\[
+    F(x_k)-F(x_{k+1})
+    \ge
+    \frac M4r_k^3
+    -
+    \frac{
+        \epsilon^{3/2}
+    }{
+        393\,216\sqrt{6M}
+    }.
+\]
+Summing from $k=0$ to $K-1$ and using
+$F(x_K)\ge F^*$ gives
+\[
+    M\sum_{k=0}^{K-1}r_k^3
+    \le
+    4\Delta_F
+    +
+    \frac{K}{98\,304\sqrt6}
+    \frac{\epsilon^{3/2}}{\sqrt M},
+\]
+which is \eqref{eq:cubic-path}.
+\end{proof}
+
+
+\subsection{Oracle Calibration for the NC--SC Method}
+\label{app:ncsc-oracle-calibration}
+
+\begin{proof}[Proof of Corollary~\ref{cor:ncsc-fixed-oracle}]
+Lemma~\ref{lem:inner-residual-certificate} gives
+\[
+    \|y-y^*(x)\|
+    \le
+    \frac{
+        \|\nabla_yf(x,y)\|
+    }{
+        \mu
+    }.
+\]
+Hence
+\eqref{eq:corrected-hessian-error} gives
+\[
+    \|\widehat H(x,y)-\nabla^2P(x)\|
+    \le
+    \xi(x,y).
+\]
+Using
+$\|\nabla_yf(x,y)\|\le\tau_{\rm out}$ and
+\eqref{eq:outer-residual-target},
+\[
+    \|y-y^*(x)\|
+    \le
+    \frac{
+        \sqrt{M_P\epsilon/6}
+    }{
+        64(1+\kappa)^2\rho
+    }.
+\]
+Substitution into
+\eqref{eq:corrected-hessian-error} gives
+\[
+    \xi(x,y)
+    \le
+    \frac1{64}
+    \sqrt{\frac{M_P}{6}}\sqrt\epsilon.
+\]
+
+Similarly,
+\eqref{eq:corrected-gradient-error} yields
+\begin{align*}
+    \|\widehat g(x,y)-\nabla P(x)\|
+    &\le
+    \frac{
+        M_P\epsilon
+    }{
+        49152(1+\kappa)^3\rho
+    }
+    \\
+    &=
+    \frac{\sqrt2}{12288}
+    \left(
+        \frac{\kappa}{1+\kappa}
+    \right)^3
+    \epsilon
+    <
+    \frac{\epsilon}{8192}.
+\end{align*}
+This proves \eqref{eq:ncsc-fixed-oracle-errors}.
+\end{proof}
+
+
+\subsection{Inner Solver and Complexity of Algorithm~\ref{alg:ncsc-utr}}
+\label{app:ncsc-complexity}
+
+
+\subsubsection*{AGD realization}
+\label{app:agd-realization}
+
+\begin{proof}[Proof of Proposition~\ref{prop:agd-implementation}]
+Apply the standard accelerated-gradient estimate to the
+$\ell$-smooth and $\mu$-strongly convex function
+\[
+    \phi_x(y):=-f(x,y).
+\]
+The estimate
+\eqref{eq:agd-contraction} follows, for example, from
+\citet[Lemma~2]{wang2020improved} or
+\citet[Lemma~5]{luo2022finding}.
+
+By Lemma~\ref{lem:inner-residual-certificate},
+\[
+    \|y^{(0)}-y^*(x)\|
+    \le
+    \frac{R_{\rm in}}{\mu}.
+\]
+It is sufficient to obtain
+\[
+    \|y^{(N)}-y^*(x)\|
+    \le
+    \frac{\tau}{\ell},
+\]
+because $\ell$-smoothness then gives
+\[
+    \|\nabla_yf(x,y^{(N)})\|
+    \le
+    \tau.
+\]
+Combining these inequalities with
+\[
+    1-\frac1{\sqrt\kappa}
+    \le
+    \exp\!\left(-\frac1{\sqrt\kappa}\right)
+\]
+gives
+\eqref{eq:agd-iteration-count} and
+\eqref{eq:agd-module-work}.
+For $\kappa=1$, one gradient step is sufficient.
+\end{proof}
+
+
+\subsubsection*{Complexity theorem}
+
+\begin{proof}[Proof of Theorem~\ref{thm:ncsc-complexity}]
+Let $K$ denote the number of nonterminal outer iterations and set
+\[
+    r_k:=\|d_k\|.
+\]
+By the residual contract and
+Corollary~\ref{cor:ncsc-fixed-oracle},
+\[
+    \|g_k-\nabla P(x_k)\|
+    \le
+    \frac{\epsilon}{8192},
+\]
+and
+\[
+    \|H_k-\nabla^2P(x_k)\|
+    \le
+    \xi_k
+    \le
+    \frac1{64}
+    \sqrt{\frac{M_P}{6}}\sqrt\epsilon.
+\]
+Hence the outer sequence generated by
+Algorithm~\ref{alg:ncsc-utr} satisfies the fixed-scale procedure of
+Section~\ref{sec:fixed-scale-utr} with
+\[
+    F=P,
+    \qquad
+    M=M_P.
+\]
+Theorem~\ref{thm:fixed-scale-utr} therefore gives
+\eqref{eq:ncsc-return} and
+\eqref{eq:ncsc-outer-explicit}.
+
+The logarithmic term in
+\eqref{eq:ncsc-outer-explicit} contains
+\[
+    h_0
+    =
+    \max\{\|g_0\|,\epsilon\}.
+\]
+Since
+\[
+    \|g_0\|
+    \le
+    \|\nabla P(x_0)\|
+    +
+    \frac{\epsilon}{8192},
+\]
+we have
+\[
+    \log_+\frac{h_0}{\epsilon}
+    =
+    O\!\left(
+        \log_+
+        \frac{\|\nabla P(x_0)\|}{\epsilon}
+        +1
+    \right).
+\]
+Together with
+\[
+    \sqrt{M_P}
+    =
+    \sqrt{4\sqrt2}\,
+    \kappa^{3/2}\sqrt\rho,
+\]
+this proves
+\eqref{eq:ncsc-outer-complexity}.
+
+It remains to bound the total work of the inner module.
+At the start of the inner call for $x_{k+1}$, joint
+$\ell$-smoothness and the previous residual guarantee give
+\[
+    \|\nabla_yf(x_{k+1},y_k)\|
+    \le
+    \|\nabla_yf(x_k,y_k)\|
+    +
+    \ell\|x_{k+1}-x_k\|
+    \le
+    \tau_{\rm out}+\ell r_k.
+\]
+Therefore, apart from the initial call, the logarithmic term in
+\eqref{eq:inner-module-work} is at most
+\[
+    1+
+    \log_2\!\left(
+        1+\frac{\ell r_k}{\tau_{\rm out}}
+    \right).
+\]
+By \eqref{eq:outer-residual-lower},
+\[
+    \frac{\ell r_k}{\tau_{\rm out}}
+    \le
+    64\sqrt3\,
+    r_k
+    \sqrt{\frac{M_P}{\epsilon}}.
+\]
+Since
+\[
+    \log_2(1+t)
+    =
+    O(1+t^3),
+    \qquad t\ge0,
+\]
+the logarithmic contribution of each noninitial call is
+\[
+    O\!\left(
+        1+
+        \left(
+            r_k\sqrt{\frac{M_P}{\epsilon}}
+        \right)^3
+    \right).
+\]
+
+Applying Lemma~\ref{lem:cubic-path} with
+$F=P$ and $M=M_P$ gives
+\begin{align*}
+    \sum_{k=0}^{K-1}
+    \left(
+        r_k\sqrt{\frac{M_P}{\epsilon}}
+    \right)^3
+    &=
+    \frac{M_P^{3/2}}{\epsilon^{3/2}}
+    \sum_{k=0}^{K-1}r_k^3
+    \\
+    &\le
+    4\Delta_P\sqrt{M_P}\,
+    \epsilon^{-3/2}
+    +
+    \frac{K}{98\,304\sqrt6}.
+\end{align*}
+Summing the module work bounds over all calls, adding the initial
+call
+\[
+    O\!\left(
+        C_{\mathcal S}\sqrt\kappa
+        \left[
+            b_{\mathcal S}
+            +
+            \log_+
+            \frac{
+                \|\nabla_yf(x_0,y_{-1})\|
+            }{
+                \tau_{\rm out}
+            }
+        \right]
+    \right),
+\]
+and substituting the outer bound for $K$ gives
+\eqref{eq:ncsc-gradient-complexity}.
+
+Finally, if
+\[
+    C_{\mathcal S}=O(1),
+    \qquad
+    b_{\mathcal S}=O(1+\log\kappa),
+\]
+then
+\[
+    \sqrt\kappa\,\sqrt{M_P}
+    =
+    \Theta(\kappa^2\sqrt\rho),
+\]
+which gives
+\eqref{eq:ncsc-gradient-leading}.
+\end{proof}

@@ -1,0 +1,749 @@
+% !TeX root = ../main.tex
+\section{A Trust-Region Method with Sharper Inner-Gradient Complexity}
+\label{sec:known-parameter}
+
+We first consider the setting in which the regularity constants
+$\ell$, $\mu$, and $\rho$ are available to the outer method.
+The analysis has two ingredients. We begin with a fixed-scale
+inexact estimate for additive universal trust-region (UTR) steps.
+We then apply this estimate to the primal function using the
+primal-function estimators from Section~\ref{sec:preliminaries}.
+The resulting outer complexity is standard in its
+$\epsilon^{-3/2}$ dependence; the main point of this section is that
+the total work of the inner maximization can be accumulated without
+multiplying this leading term by $\log(1/\epsilon)$.
+
+We use
+\[
+    \log_+(t):=\max\{\log t,0\},
+    \qquad t>0,
+\]
+and set $\log_+(0):=0$.
+
+
+\subsection{A Fixed-Scale Inexact UTR Estimate}
+\label{sec:fixed-scale-utr}
+
+We first record the generic outer estimate used below.
+Let $F:\mathbb{R}^n\to\mathbb{R}$ be twice continuously
+differentiable, bounded below by
+\[
+    F^*:=\inf_x F(x)>-\infty,
+\]
+and suppose that its Hessian is $M$-Lipschitz, as in
+\eqref{eq:generic-hessian-lipschitz}.
+
+The following procedure is a certified-inexact extension of the
+fixed-scale additive UTR update of \citet{jiang2026utr}. We use it
+only as an outer analytical interface for the minimax method below.
+
+\begin{assumption}[Fixed-scale inexact oracle]
+\label{ass:fixed-inexact-oracle}
+Fix $\epsilon>0$. At every iterate $x_k$, the oracle returns
+$g_k\in\mathbb{R}^n$, a symmetric matrix
+$H_k\in\mathbb{R}^{n\times n}$, and an observable certificate
+$\xi_k\ge0$ satisfying
+\begin{equation}
+    \|g_k-\nabla F(x_k)\|
+    \le
+    \frac{\epsilon}{8192},
+    \qquad
+    \|H_k-\nabla^2F(x_k)\|
+    \le
+    \xi_k
+    \le
+    \frac{1}{64}
+    \sqrt{\frac{M}{6}}\sqrt{\epsilon}.
+    \label{eq:fixed-oracle-errors}
+\end{equation}
+\end{assumption}
+
+Set
+\begin{equation}
+    h_k:=\max\{\|g_k\|,\epsilon\}.
+    \label{eq:fixed-scale-h}
+\end{equation}
+At $x_k$, terminate if
+\begin{equation}
+    \|g_k\|\le\epsilon,
+    \qquad
+    \lambda_{\min}(H_k)
+    \ge
+    -\sqrt{M\epsilon}+\xi_k.
+    \label{eq:fixed-scale-stopping}
+\end{equation}
+Otherwise, compute a global solution $d_k$ of
+\begin{equation}
+\begin{aligned}
+    \min_{d\in\mathbb{R}^n}\quad
+    &g_k^\top d
+    +
+    \frac12
+    d^\top
+    \left(
+        H_k+\xi_kI
+        +2\sqrt{\frac{M}{6}}\sqrt{h_k}\,I
+    \right)d,
+    \\
+    \operatorname{s.t.}\quad
+    &\|d\|
+    \le
+    \frac{\sqrt{h_k}}{4\sqrt{M/6}},
+\end{aligned}
+\label{eq:fixed-scale-subproblem}
+\end{equation}
+and set $x_{k+1}=x_k+d_k$.
+
+The shift $\xi_kI$ compensates for the certified Hessian error in
+both the model and the stopping test. The subproblem
+\eqref{eq:fixed-scale-subproblem} retains the gradient-scaled
+regularization and radius of additive UTR, while allowing inexact
+first- and second-order information.
+
+\begin{theorem}[Fixed-scale inexact UTR estimate]
+\label{thm:fixed-scale-utr}
+Fix $x_0$ and $\epsilon>0$, define
+\[
+    \Delta_F:=F(x_0)-F^*,
+    \qquad
+    h_0:=\max\{\|g_0\|,\epsilon\},
+\]
+and suppose Assumption~\ref{ass:fixed-inexact-oracle} holds.
+Repeated application of
+\eqref{eq:fixed-scale-stopping}--\eqref{eq:fixed-scale-subproblem}
+terminates after at most
+\begin{equation}
+    K
+    \le
+    65\sqrt{\frac{M}{6}}\,
+    \Delta_F\epsilon^{-3/2}
+    +
+    3\log_+\frac{h_0}{\epsilon}
+    +2
+    \label{eq:fixed-scale-complexity}
+\end{equation}
+nonterminal iterations, equivalently trust-region subproblem solves.
+In particular,
+\[
+    K
+    =
+    O\!\left(
+        \Delta_F\sqrt M\,\epsilon^{-3/2}
+        +
+        \log_+\frac{h_0}{\epsilon}
+        +1
+    \right).
+\]
+The returned point $\widehat x$ satisfies
+\begin{equation}
+    \|\nabla F(\widehat x)\|
+    \le
+    \frac{8193}{8192}\epsilon,
+    \qquad
+    \lambda_{\min}(\nabla^2F(\widehat x))
+    \ge
+    -\sqrt{M\epsilon}.
+    \label{eq:fixed-scale-return}
+\end{equation}
+Consequently, replacing the internal gradient tolerance by
+$8192\epsilon/8193$ gives the standard
+$(\epsilon,\sqrt{M\epsilon})$ guarantee without changing the
+complexity order.
+\end{theorem}
+
+The proof is given in Appendix~\ref{app:fixed-scale-proofs}.
+Unlike the exact-oracle case, an inexact interior step need not
+decrease $F$ monotonically. The proof controls this possible increase
+through a finite-prefix argument; we defer this technical accounting
+to the appendix.
+
+For the inner-work analysis below, we need one additional consequence
+of the same fixed-scale argument.
+
+\begin{lemma}[Cubic path budget]
+\label{lem:cubic-path}
+Under the assumptions of Theorem~\ref{thm:fixed-scale-utr}, let
+$r_k:=\|d_k\|$, and let $K$ denote the return index. Then
+\begin{equation}
+    M\sum_{k=0}^{K-1}r_k^3
+    \le
+    4\Delta_F
+    +
+    \frac{K}{98\,304\sqrt6}
+    \frac{\epsilon^{3/2}}{\sqrt M}.
+    \label{eq:cubic-path}
+\end{equation}
+\end{lemma}
+
+Theorem~\ref{thm:fixed-scale-utr} controls the number of outer
+subproblems. Lemma~\ref{lem:cubic-path} provides a different type of
+information: it controls the cumulative motion of the outer iterates.
+This path estimate is what allows the logarithmic costs of the inner
+maximization to be amortized over the full trajectory rather than
+bounded independently at every iteration.
+
+
+\subsection{A Known-Parameter NC--SC Trust-Region Method}
+\label{sec:known-parameter-method}
+
+We now specialize the fixed-scale estimate to
+\[
+    P(x)=\max_y f(x,y).
+\]
+Recall from Lemma~\ref{lem:primal-geometry} that
+\[
+    M_P=4\sqrt2\,\kappa^3\rho
+\]
+is a valid Hessian-Lipschitz constant for $P$.
+We choose the inner residual tolerance so that the corrected
+estimators satisfy Assumption~\ref{ass:fixed-inexact-oracle} with
+$F=P$ and $M=M_P$.
+
+Set
+\begin{equation}
+    \tau_{\rm out}
+    :=
+    \frac{
+        \mu\sqrt{M_P\epsilon/6}
+    }{
+        64(1+\kappa)^2\rho
+    }.
+    \label{eq:outer-residual-target}
+\end{equation}
+
+This target is expressed in terms of the observable residual
+$\|\nabla_yf(x,y)\|$. In contrast, the MCN analysis of
+\citet{luo2022finding} specifies the number of AGD iterations required
+to obtain the prescribed inner accuracy.
+
+\begin{corollary}[Residual-to-oracle certificate]
+\label{cor:ncsc-fixed-oracle}
+Suppose Assumption~\ref{ass:ncsc} holds and let
+$M_P=4\sqrt2\,\kappa^3\rho$.
+If
+\begin{equation}
+    \|\nabla_yf(x,y)\|
+    \le
+    \tau_{\rm out},
+    \label{eq:outer-residual-condition}
+\end{equation}
+define
+\begin{equation}
+    \xi(x,y)
+    :=
+    \frac{(1+\kappa)^2\rho}{\mu}
+    \|\nabla_yf(x,y)\|.
+    \label{eq:ncsc-hessian-certificate}
+\end{equation}
+Then
+\begin{equation}
+    \|\widehat g(x,y)-\nabla P(x)\|
+    <
+    \frac{\epsilon}{8192},
+    \qquad
+    \|\widehat H(x,y)-\nabla^2P(x)\|
+    \le
+    \xi(x,y)
+    \le
+    \frac{1}{64}
+    \sqrt{\frac{M_P}{6}}\sqrt\epsilon.
+    \label{eq:ncsc-fixed-oracle-errors}
+\end{equation}
+Hence the fixed-scale inexact-oracle conditions
+\eqref{eq:fixed-oracle-errors} hold for
+$F=P$ and $M=M_P$.
+\end{corollary}
+
+The proof is deferred to Appendix~\ref{app:ncsc-oracle-calibration}.
+The residual target also satisfies
+\begin{subequations}
+\label{eq:outer-residual-scale}
+\begin{align}
+    \frac{\tau_{\rm out}}{\mu}
+    &=
+    \Theta\!\left(
+        \sqrt{\frac{\epsilon}{\kappa\rho}}
+    \right)
+    =
+    \Theta\!\left(
+        \kappa\sqrt{\frac{\epsilon}{M_P}}
+    \right),
+    \label{eq:outer-residual-distance-scale}
+    \\
+    \tau_{\rm out}
+    &\ge
+    \frac{\ell}{64\sqrt3}
+    \sqrt{\frac{\epsilon}{M_P}}.
+    \label{eq:outer-residual-lower}
+\end{align}
+\end{subequations}
+The second relation follows directly by substituting
+$M_P=4\sqrt2\,\kappa^3\rho$ and using
+$4\kappa^2/(1+\kappa)^2\ge1$.
+
+We can now state the first minimax method.
+
+\begin{algorithm}[t]
+\DontPrintSemicolon
+\caption{Known-parameter NC--SC UTR with Newton-corrected derivatives}
+\label{alg:ncsc-utr}
+\KwIn{
+$x_0,y_{-1}$, $\epsilon>0$, $\ell,\mu,\rho$, and an inner residual
+module $\mathcal S$ satisfying \eqref{eq:maxres-interface}
+}
+$\kappa\leftarrow\ell/\mu$\;
+$M_P\leftarrow4\sqrt2\,\kappa^3\rho$\;
+compute $\tau_{\rm out}$ from \eqref{eq:outer-residual-target}\;
+$y_0\leftarrow
+\operatorname{MaxRes}_{\mathcal S}
+(x_0,y_{-1},\tau_{\rm out})$\;
+\For{$k=0,1,\ldots$}{
+    $g_k\leftarrow\widehat g(x_k,y_k)$,
+    $H_k\leftarrow\widehat H(x_k,y_k)$\;
+    $\xi_k\leftarrow
+    (1+\kappa)^2\rho
+    \|\nabla_yf(x_k,y_k)\|/\mu$\;
+    $h_k\leftarrow\max\{\|g_k\|,\epsilon\}$\;
+
+    \If{
+        $\|g_k\|\le\epsilon$ and
+        $\lambda_{\min}(H_k)
+        \ge-\sqrt{M_P\epsilon}+\xi_k$
+    }{
+        \Return{$x_k$}\;
+    }
+
+    compute a global solution $d_k$ of
+    \[
+    \begin{aligned}
+        \min_{\|d\|\le
+              \sqrt{h_k}/(4\sqrt{M_P/6})}
+        \quad
+        g_k^\top d
+        +
+        \frac12d^\top
+        \left(
+            H_k+\xi_k I
+            +2\sqrt{\frac{M_P}{6}}\sqrt{h_k}\,I
+        \right)d;
+    \end{aligned}
+    \]
+    $x_{k+1}\leftarrow x_k+d_k$\;
+    $y_{k+1}\leftarrow
+    \operatorname{MaxRes}_{\mathcal S}
+    (x_{k+1},y_k,\tau_{\rm out})$\;
+}
+\end{algorithm}
+
+The residual used in the inner stopping condition is also used in
+$\xi_k$, so no additional inner-gradient evaluation is required for
+the Hessian certificate. If the inner solver happens to return a
+residual smaller than $\tau_{\rm out}$, the curvature test uses the
+correspondingly smaller certificate.
+
+Algorithm~\ref{alg:ncsc-utr} does not evaluate the primal function
+$P$ and does not require access to $y^*(x)$. Its outer parameters
+$\tau_{\rm out}$ and $M_P$, however, depend on
+$\ell$, $\mu$, and $\rho$; hence the method in this section is a
+known-parameter construction even if the particular implementation of
+$\mathcal S$ is itself parameter free.
+
+\begin{theorem}[Complexity under an inner residual module]
+\label{thm:ncsc-complexity}
+Suppose Assumption~\ref{ass:ncsc} holds.
+Fix $(x_0,y_{-1})$ and $\epsilon>0$, and define
+\[
+    \kappa:=\frac{\ell}{\mu},
+    \qquad
+    M_P:=4\sqrt2\,\kappa^3\rho,
+    \qquad
+    \Delta_P:=P(x_0)-P^*.
+\]
+Run Algorithm~\ref{alg:ncsc-utr} with any inner module satisfying
+\eqref{eq:maxres-interface}. Then the algorithm returns
+$\widehat x$ such that
+\begin{equation}
+    \|\nabla P(\widehat x)\|
+    \le
+    \frac{8193}{8192}\epsilon,
+    \qquad
+    \lambda_{\min}(\nabla^2P(\widehat x))
+    \ge
+    -\sqrt{M_P\epsilon}.
+    \label{eq:ncsc-return}
+\end{equation}
+
+If $K$ denotes the number of nonterminal outer iterations, then
+Algorithm~\ref{alg:ncsc-utr} solves exactly $K$ trust-region
+subproblems and forms $K+1$ corrected-gradient and
+Schur-complement Hessian estimators. Moreover,
+\begin{equation}
+    K
+    \le
+    65\sqrt{\frac{M_P}{6}}\,
+    \Delta_P\epsilon^{-3/2}
+    +
+    3\log_+\frac{h_0}{\epsilon}
+    +2,
+    \label{eq:ncsc-outer-explicit}
+\end{equation}
+where
+\[
+    y_0
+    :=
+    \operatorname{MaxRes}_{\mathcal S}
+    (x_0,y_{-1},\tau_{\rm out}),
+    \qquad
+    h_0
+    :=
+    \max\{\|\widehat g(x_0,y_0)\|,\epsilon\}.
+\]
+Consequently,
+\begin{equation}
+    K
+    =
+    O\!\left(
+        \Delta_P
+        \kappa^{3/2}\sqrt\rho\,
+        \epsilon^{-3/2}
+        +
+        \log_+
+        \frac{\|\nabla P(x_0)\|}{\epsilon}
+        +1
+    \right).
+    \label{eq:ncsc-outer-complexity}
+\end{equation}
+
+Suppose in addition that $\mathcal S$ satisfies the accelerated
+work bound \eqref{eq:inner-module-work}. Then the total number
+$N_y$ of inner-gradient evaluations satisfies
+\begin{align}
+    N_y
+    &=
+    O\!\left(
+        C_{\mathcal S}\sqrt\kappa\,b_{\mathcal S}
+        \left[
+            \Delta_P\sqrt{M_P}\,
+            \epsilon^{-3/2}
+            +
+            \log_+
+            \frac{\|\nabla P(x_0)\|}{\epsilon}
+            +1
+        \right]
+    \right)
+    \notag\\
+    &\quad+
+    O\!\left(
+        C_{\mathcal S}\sqrt\kappa
+        \log_+
+        \frac{
+            \|\nabla_yf(x_0,y_{-1})\|
+        }{
+            \tau_{\rm out}
+        }
+    \right).
+    \label{eq:ncsc-gradient-complexity}
+\end{align}
+In particular, if
+\[
+    C_{\mathcal S}=O(1),
+    \qquad
+    b_{\mathcal S}=O(1+\log\kappa),
+\]
+then, for fixed problem data and initialization, the leading term in
+$N_y$ is
+\begin{equation}
+    O\!\left(
+        (1+\log\kappa)
+        \Delta_P\kappa^2\sqrt\rho\,
+        \epsilon^{-3/2}
+    \right),
+    \label{eq:ncsc-gradient-leading}
+\end{equation}
+and no $\log(1/\epsilon)$ factor multiplies this leading term.
+Replacing the internal tolerance by $8192\epsilon/8193$ gives the
+standard
+$(\epsilon,\sqrt{M_P\epsilon})$ guarantee without changing these
+orders.
+\end{theorem}
+
+The proof is given in Appendix~\ref{app:ncsc-complexity}.
+The outer part follows immediately by combining
+Corollary~\ref{cor:ncsc-fixed-oracle} with
+Theorem~\ref{thm:fixed-scale-utr}. The nontrivial additional point is
+the summation of the per-call logarithmic inner costs, which we
+describe next.
+
+
+\subsection{Total Inner-Gradient Complexity}
+\label{sec:known-parameter-inner}
+
+A direct worst-case estimate of every inner call would obscure the
+benefit of warm starts. The proof of
+Theorem~\ref{thm:ncsc-complexity} instead bounds the total logarithmic
+work along the trajectory.
+
+Suppose $y_k$ satisfies
+\[
+    \|\nabla_yf(x_k,y_k)\|
+    \le
+    \tau_{\rm out}.
+\]
+After the outer step $x_{k+1}=x_k+d_k$, joint
+$\ell$-smoothness of $f$ gives
+\begin{equation}
+    \|\nabla_yf(x_{k+1},y_k)\|
+    \le
+    \tau_{\rm out}
+    +
+    \ell\|d_k\|.
+    \label{eq:warm-start-residual}
+\end{equation}
+Hence, apart from the initial call, the logarithmic term in
+\eqref{eq:inner-module-work} is bounded by
+\begin{equation}
+    1+
+    \log_2\!\left(
+        1+
+        \frac{\ell\|d_k\|}{\tau_{\rm out}}
+    \right).
+    \label{eq:inner-log-per-call}
+\end{equation}
+By \eqref{eq:outer-residual-lower},
+\begin{equation}
+    \frac{\ell\|d_k\|}{\tau_{\rm out}}
+    \le
+    64\sqrt3\,
+    \|d_k\|
+    \sqrt{\frac{M_P}{\epsilon}}.
+    \label{eq:inner-log-scale}
+\end{equation}
+Using
+\[
+    \log_2(1+t)=O(1+t^3),
+    \qquad t\ge0,
+\]
+we obtain
+\begin{equation}
+    \log_2\!\left(
+        1+
+        \frac{\ell\|d_k\|}{\tau_{\rm out}}
+    \right)
+    =
+    O\!\left(
+        1+
+        \left(
+            \|d_k\|
+            \sqrt{\frac{M_P}{\epsilon}}
+        \right)^3
+    \right).
+    \label{eq:inner-log-cubic}
+\end{equation}
+Lemma~\ref{lem:cubic-path}, applied with $F=P$ and $M=M_P$,
+therefore gives
+\begin{align}
+    \sum_{k=0}^{K-1}
+    \left(
+        \|d_k\|
+        \sqrt{\frac{M_P}{\epsilon}}
+    \right)^3
+    &=
+    \frac{M_P^{3/2}}{\epsilon^{3/2}}
+    \sum_{k=0}^{K-1}\|d_k\|^3
+    \notag\\
+    &\le
+    4\Delta_P\sqrt{M_P}\,
+    \epsilon^{-3/2}
+    +
+    \frac{K}{98\,304\sqrt6}.
+    \label{eq:inner-log-sum}
+\end{align}
+Thus the per-call logarithms are paid for by the same
+$\epsilon^{-3/2}$-scale outer budget, rather than by multiplying the
+number of outer iterations by a worst-case
+$\log(1/\epsilon)$ factor.
+
+We next verify that a standard accelerated method realizes the
+abstract work condition.
+
+For fixed $x$, consider accelerated gradient descent applied to
+\[
+    \phi_x(y):=-f(x,y).
+\]
+Starting from $y^{(0)}$, set $v^{(0)}=y^{(0)}$ and
+\begin{equation}
+\begin{aligned}
+    y^{(j+1)}
+    &=
+    v^{(j)}
+    +
+    \frac1\ell
+    \nabla_yf(x,v^{(j)}),
+    \\
+    v^{(j+1)}
+    &=
+    y^{(j+1)}
+    +
+    \frac{\sqrt\kappa-1}{\sqrt\kappa+1}
+    \bigl(y^{(j+1)}-y^{(j)}\bigr).
+\end{aligned}
+\label{eq:agd-recursion}
+\end{equation}
+
+\begin{proposition}[AGD realization of the residual module]
+\label{prop:agd-implementation}
+Suppose Assumption~\ref{ass:ncsc} holds.
+Fix $x$, an initial point $y^{(0)}$, and $\tau>0$, and define
+\[
+    R_{\rm in}
+    :=
+    \|\nabla_yf(x,y^{(0)})\|.
+\]
+For $\kappa>1$, the iterates in \eqref{eq:agd-recursion} satisfy
+\begin{equation}
+    \|y^{(N)}-y^*(x)\|
+    \le
+    \sqrt{\kappa+1}
+    \left(
+        1-\frac1{\sqrt\kappa}
+    \right)^{N/2}
+    \|y^{(0)}-y^*(x)\|.
+    \label{eq:agd-contraction}
+\end{equation}
+If $R_{\rm in}\le\tau$, return $y^{(0)}$.
+Otherwise, it is sufficient to take
+\begin{equation}
+    N
+    :=
+    \left\lceil
+        2\sqrt\kappa
+        \log_+\!\left(
+            \frac{
+                \sqrt{\kappa+1}\,\kappa R_{\rm in}
+            }{
+                \tau
+            }
+        \right)
+    \right\rceil
+    \label{eq:agd-iteration-count}
+\end{equation}
+and verify the residual at the terminal iterate.
+Counting the initial gradient once and reusing it in the first AGD
+step, this requires at most
+\begin{equation}
+    1+
+    \left\lceil
+        2\sqrt\kappa
+        \log_+\!\left(
+            \frac{
+                \sqrt{\kappa+1}\,\kappa R_{\rm in}
+            }{
+                \tau
+            }
+        \right)
+    \right\rceil
+    \label{eq:agd-module-work}
+\end{equation}
+inner-gradient evaluations.
+Consequently, AGD satisfies
+\eqref{eq:inner-module-work} with
+\[
+    C_{\mathcal S}=O(1),
+    \qquad
+    b_{\mathcal S}=O(1+\log\kappa).
+\]
+When $\kappa=1$, one gradient step is sufficient.
+\end{proposition}
+
+The contraction in
+\eqref{eq:agd-contraction} is the standard accelerated estimate for a
+smooth strongly convex objective; the short verification of the
+residual complexity is given in
+Appendix~\ref{app:agd-realization}.
+
+\begin{corollary}[AGD implementation of Algorithm~\ref{alg:ncsc-utr}]
+\label{cor:ncsc-agd-realization}
+Choose the inner module in Algorithm~\ref{alg:ncsc-utr} to be the AGD
+implementation in Proposition~\ref{prop:agd-implementation}.
+Then Algorithm~\ref{alg:ncsc-utr} has the outer complexity
+\eqref{eq:ncsc-outer-complexity} and, in its leading term, uses
+\begin{equation}
+    O\!\left(
+        (1+\log\kappa)
+        \Delta_P\kappa^2\sqrt\rho\,
+        \epsilon^{-3/2}
+    \right)
+    \label{eq:agd-leading-inner}
+\end{equation}
+inner-gradient evaluations.
+No $\log(1/\epsilon)$ multiplies this leading term.
+\end{corollary}
+
+\begin{remark}[Oracle accounting]
+\label{rem:known-parameter-oracle-accounting}
+If Algorithm~\ref{alg:ncsc-utr} solves $K$ trust-region subproblems,
+it performs $K$ nonterminal outer iterations and constructs
+$K+1$ corrected gradients and Schur-complement Hessians, including
+the terminal test.
+The linear algebra required to apply
+$(\nabla^2_{yy}f)^{-1}$ is not counted as an inner-gradient
+evaluation. If these inverse actions are implemented iteratively using
+Hessian-vector products, their complexity must be accounted for
+separately.
+The terminal evaluation of $\nabla_yf$ used to verify the residual
+may be reused when forming the corrected gradient.
+\end{remark}
+
+\begin{remark}[Comparison with the raw-gradient analysis]
+\label{rem:comparison-mcn}
+MCN \citep{luo2022finding} uses the raw plug-in gradient
+$\nabla_xf(x,y)$, for which
+\begin{equation}
+    \|\nabla_xf(x,y)-\nabla P(x)\|
+    \le
+    \ell\|y-y^*(x)\|.
+    \label{eq:mcn-raw-gradient-error}
+\end{equation}
+Under this bound, an inner distance of order $O(\epsilon/\ell)$
+is sufficient for an $O(\epsilon)$ gradient-estimation error.
+
+More explicitly, after the summation in
+\citet[Theorem~2]{luo2022finding}, the target-accuracy-dependent
+logarithm in their bound involves
+\begin{equation}
+    \log\!\left(
+        \kappa^{3/2}
+        +
+        \frac{\epsilon^{3/2}}
+        {\rho^{3/2}\widetilde\epsilon^3}
+    \right),
+    \qquad
+    \widetilde\epsilon
+    =
+    \min\left\{
+        \frac{\epsilon}{192\ell},
+        \frac{\sqrt{M_P\epsilon}}{48\rho}
+    \right\}.
+    \label{eq:mcn-explicit-log}
+\end{equation}
+In the small-$\epsilon$ regime, this logarithm scales as
+\begin{equation}
+    \log\!\left(
+        \kappa^{3/2}
+        +
+        \left(
+            \frac{\ell}{\sqrt{\rho\epsilon}}
+        \right)^3
+    \right).
+    \label{eq:mcn-small-epsilon-log}
+\end{equation}
+The known quadratic accuracy of the implicit gradient
+\citep{ablin2020superefficiency} instead permits an inner distance of
+order $\sqrt\epsilon$.
+The improvement in our total-work bound combines this accuracy with
+the cumulative cubic path estimate and the summation of warm-started
+inner costs. At the level of these two explicit worst-case upper
+bounds, the multiplicative target-accuracy logarithm is removed
+while retaining the $1+\log\kappa$ dependence of the accelerated
+inner realization.
+\end{remark}
