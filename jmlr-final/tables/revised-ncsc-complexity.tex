@@ -1,0 +1,61 @@
+% !TeX root = ../revised_main.tex
+\begin{table}[t]
+\centering
+\caption{Complexity comparison of deterministic second-order methods
+for smooth NC--SC minimax optimization. Initial optimality gaps and
+universal numerical constants are suppressed. For cited methods,
+regularity-parameter dependence is shown when reported in a directly
+comparable form; entries without such factors report only dependence
+on $\epsilon$. For our method the
+entries are leading terms, valid in the class-uniform small-accuracy
+regime of \Cref{thm:gradient-scaled-scar}.}
+\label{tab:ncsc-complexity}
+\small
+\renewcommand{\arraystretch}{1.18}
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\textwidth}{@{}
+ >{\raggedright\arraybackslash}X
+ >{\centering\arraybackslash}p{0.24\textwidth}
+ >{\centering\arraybackslash}p{0.31\textwidth}
+ >{\centering\arraybackslash}p{0.11\textwidth}@{}}
+\toprule
+Method & Outer complexity
+ & \shortstack[c]{Total inner-gradient\\evaluations}
+ & \shortstack[c]{Parameter-\\free}\\
+\midrule
+MCN \citep{luo2022finding}
+ & $O(\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2})$
+ & $\widetilde O(\kappa^2\sqrt\rho\,\epsilon^{-3/2})$
+ & No\\[1mm]
+MINIMAX-TR / MINIMAX-TRACE\newline \citep{yao2025trust}
+ & $O(\epsilon^{-3/2})$
+ & Not reported & No\\[1mm]
+GRTR / LMNegCur\newline \citep{wang2025gradient}
+ & $\widetilde O(\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2})$
+ & $\widetilde O(\kappa^2\sqrt\rho\,\epsilon^{-3/2})$
+ & No\\[1mm]
+HSDA / IHSDA\newline \citep{chen2026hsda}
+ & $\widetilde O(\epsilon^{-3/2})$
+ & Not reported & No\\
+\midrule
+\Cref{alg:gradient-scaled-scar} (ours)
+ & $O(\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2})$
+ & $O(\kappa^2\sqrt\rho\,\epsilon^{-3/2})$
+ & Yes\\
+\bottomrule
+\end{tabularx}
+
+\vspace{1mm}
+\begin{minipage}{0.97\textwidth}
+\footnotesize
+Here $\kappa=\ell/\mu$ and $\rho$ is the Hessian-Lipschitz constant
+of $f$. The notation $\widetilde O(\cdot)$ is retained when used
+in the cited reference. \emph{Not reported} means that the cited work
+does not state a separate comparable total inner-gradient bound.
+The complete bounds for \Cref{alg:gradient-scaled-scar} include
+additive $O_{\rm fixed}(\log^3(e/\epsilon))$ and
+$O_{\rm fixed}(\sqrt\kappa\,\log^3(e/\epsilon))$ terms for the outer
+and inner counts, respectively. Its executable steps use no problem
+parameters; the accuracy threshold in its guarantee is unknown.
+\end{minipage}
+\end{table}
