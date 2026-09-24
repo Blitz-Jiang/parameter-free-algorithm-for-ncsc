@@ -60,43 +60,11 @@ def main():
         inner_solver=inner_solver,
         cubic_solver=cubic_solver,
         epsilon=args.epsilon,
-        K0=0,  # Set below using the algorithm's inner_distance_tol.
+        K0=None,  # Calibrate from residual/mu inside the counted run.
         max_iterations=args.max_iterations,
     )
 
-    print("Estimating y*(x0) with gradient tolerance 1e-12 (excluded from complexity):")
-    initial_solution = inner_solver.run(
-        problem,
-        x0,
-        y0,
-        stop_rule="gradient_norm",
-        target=1e-12,
-    )
-    if not initial_solution.converged or not (
-        math.isfinite(initial_solution.residual)
-        and initial_solution.residual <= 1e-12
-    ):
-        raise RuntimeError(
-            "Initial y*(x0) solve did not reach gradient tolerance 1e-12: "
-            f"residual={initial_solution.residual:.6e}. "
-            "Use --dtype float64 if running in float32."
-        )
-
-    y_star_norm = torch.linalg.vector_norm(initial_solution.y).item()
-    if not math.isfinite(y_star_norm):
-        raise RuntimeError("Initial y*(x0) solve returned a non-finite norm.")
-    if y_star_norm == 0.0:
-        algo.K0 = 0
-    else:
-        log_ratio = (
-            0.5 * math.log1p(algo.kappa)
-            + math.log(y_star_norm)
-            - math.log(algo.inner_distance_tol)
-        )
-        algo.K0 = max(0, math.ceil(2.0 * math.sqrt(algo.kappa) * log_ratio))
-
-    print(f"  residual={initial_solution.residual:.6e}, ||y*(x0)||={y_star_norm:.6e}")
-    print(f"  tilde_epsilon={algo.inner_distance_tol:.6e}, K0={algo.K0}")
+    print("K0 is calibrated from residual/mu inside the counted run.")
     print("Running MCN:")
     print(f"  d={args.d}, mu_y={args.mu_y}, omega={args.omega}, beta={args.beta}")
     print(f"  ell={problem.ell}, mu={problem.mu}, rho={problem.rho}, kappa={problem.kappa}")
@@ -121,7 +89,7 @@ def main():
         print(f"  grad_norm[-1]: {result.history['grad_norm'][-1]:.6e}")
         print(f"  step_norm[-1]: {result.history['step_norm'][-1]:.6e}")
         print(f"  lambda_min_H[-1]: {result.history['lambda_min_H'][-1]:.6e}")
-        print(f"  inner_residual[-1]: {result.history['inner_residual'][-1]:.6e}")
+        print(f"  inner_residual[-1]: {result.history['inner_residual'][-1]}")
 
 
 if __name__ == "__main__":

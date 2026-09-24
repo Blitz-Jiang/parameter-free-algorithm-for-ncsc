@@ -5,8 +5,12 @@ import math
 
 
 class SCAR(InnerSolver):
-    def __init__(self):
-        pass
+    def __init__(self, max_halving_attempts=None):
+        if max_halving_attempts is not None and (
+            int(max_halving_attempts) != max_halving_attempts or max_halving_attempts < 1
+        ):
+            raise ValueError("max_halving_attempts must be a positive integer or None")
+        self.max_halving_attempts = max_halving_attempts
 
     def _solve_ar_subproblem(
             self,
@@ -265,7 +269,16 @@ class SCAR(InnerSolver):
             return y.detach(), grad_y.detach(), state, 0
 
         n_grad_evals = 0
+        attempts = 0
         while True:
+            attempt_budget = getattr(self, "max_halving_attempts", None)
+            if attempt_budget is not None and attempts >= attempt_budget:
+                raise RuntimeError(
+                    f"SCAR halving attempt budget exhausted: attempts={attempts}, "
+                    f"entry_residual={old_residual:.17g}, last_residual={residual:.17g}, "
+                    f"nu={state['nu']:.17g}. No successful halving is claimed."
+                )
+            attempts += 1
             y_candidate, M_new, grad_phi_candidate, ar_evals = self._ar(
                 problem=problem,
                 x=x,

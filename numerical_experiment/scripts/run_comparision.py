@@ -16,6 +16,9 @@ from algorithms.utr2 import UTR2
 from algorithms.utr3 import UTR3
 from algorithms.utr4 import UTR4
 from algorithms.utr5 import UTR5
+from algorithms.hsda import HSDA
+from algorithms.grtr import GRTR
+from subproblem_solvers.homogeneous import HomogeneousSubproblemSolver
 from inner_solvers.nesterov import NesterovAGD
 from inner_solvers.scar import SCAR
 from inner_solvers.scar_early import SCAREarly
@@ -41,7 +44,7 @@ class CountedCosLogCosh(CosLogCosh):
 
 
 def parse_args(default_algorithms=None):
-    names = ("mcn", "utr2", "utr3", "utr3-early", "utr4", "utr4-early", "utr5", "utr5-early")
+    names = ("mcn", "utr2", "utr3", "utr3-early", "utr4", "utr4-early", "utr5", "utr5-early", "utr5-fixed", "utr5-fix", "utr5-fixed-float64", "hsda", "grtr")
     defaults = ("mcn", "utr2", "utr3-early", "utr4-early", "utr5", "utr5-early")
     p = argparse.ArgumentParser(description="Compare MCN and UTR methods on the same CosLogCosh instance")
     p.add_argument("--algorithms", nargs="+", choices=names, default=list(default_algorithms or defaults))
@@ -57,6 +60,11 @@ def parse_args(default_algorithms=None):
     p.add_argument("--device", default="cpu")
     p.add_argument("--subproblem-tol", type=float, default=1e-14)
     p.add_argument("--subproblem-max-iter", type=int, default=1000)
+    p.add_argument("--hsda-omega", type=float, default=0.25)
+    p.add_argument("--hsda-max-inner-steps", type=int, default=100_000)
+    p.add_argument("--grtr-max-inner-steps", type=int, default=100_000)
+    p.add_argument("--fixed-max-halving-attempts", type=int, default=8)
+    p.add_argument("--mp-dps", type=int, default=80)
     p.add_argument("--order", choices=["mcn-first", "utr2-first"], default="mcn-first")
     p.add_argument("--output", type=Path)
     args = p.parse_args()
@@ -87,20 +95,10 @@ def solve_y(problem, x, y0):
 
 
 def prepare_K0(algo, problem, x0, y0):
-    solution = solve_y(problem, x0, y0)
-    y_norm = torch.linalg.vector_norm(solution.y).item()
-    if not math.isfinite(y_norm):
-        raise RuntimeError("Reference inner solution has a non-finite norm.")
-    if y_norm == 0.0:
-        algo.K0 = 0
-    else:
-        log_ratio = (
-            0.5 * math.log1p(algo.kappa)
-            + math.log(y_norm)
-            - math.log(algo.inner_distance_tol)
-        )
-        algo.K0 = max(0, math.ceil(2.0 * math.sqrt(algo.kappa) * log_ratio))
-    return solution
+    """Compatibility helper: defer residual-based calibration to the timed run."""
+    from types import SimpleNamespace
+    algo.K0 = None
+    return SimpleNamespace(n_grad_evals=0)
 
 
 def evaluate(problem, x, y0, epsilon, M, epsilon_h=None):
@@ -156,7 +154,8 @@ def run_algorithm(name, algo, problem, x0, y0, device, epsilon, M, epsilon_h=Non
             "passed": False,
         }
 
-    actual_grad_calls = problem.grad_calls - grad_before
+    mp_oracle = getattr(algo, "oracle", None)
+    actual_grad_calls = mp_oracle.grad_calls if mp_oracle is not None else problem.grad_calls - grad_before
     history = result.history
     record = {
         "seconds": seconds,
@@ -168,7 +167,10 @@ def run_algorithm(name, algo, problem, x0, y0, device, epsilon, M, epsilon_h=Non
         "actual_inner_grad_calls": actual_grad_calls,
         "count_matches": result.n_inner_grad_evals == actual_grad_calls
         == sum(history["inner_grad_evals"]),
-        "function_calls_including_autograd": problem.function_calls - function_before,
+        "function_calls_including_autograd": mp_oracle.function_calls if mp_oracle is not None else problem.function_calls - function_before,
+        "arithmetic": history.get("arithmetic", str(x0.dtype)),
+        "decimal_digits": history.get("decimal_digits"),
+        "oracle_backend": history.get("oracle_backend", "torch/autograd"),
         "n_subproblem_solves": result.n_subproblem_solves,
         "n_oracle_builds": history.get("n_oracle_builds", len(history.get("grad_norm", []))),
         "termination_reason": history.get("termination_reason"),
@@ -236,13 +238,35 @@ def main(default_algorithms=None):
             tol=args.subproblem_tol, max_iter=args.subproblem_max_iter,
         ),
         epsilon=args.epsilon,
-        K0=0,
+        K0=None,
         max_iterations=args.max_iterations,
     )
     algorithms = {}
     for name in names:
         if name == "mcn":
             algorithms[name] = mcn
+        elif name in ("utr5-fixed", "utr5-fix"):
+            from algorithms.utr5_fixed_mp import UTR5FixedMP
+            from problems.coslogcosh_mp import CosLogCoshMP
+            algorithms[name] = UTR5FixedMP(
+                problem, lambda ctx: CosLogCoshMP(problem, ctx), args.epsilon,
+                max_iterations=args.max_iterations, dps=args.mp_dps,
+                max_halving_attempts=args.fixed_max_halving_attempts,
+            )
+        elif name == "grtr":
+            algorithms[name] = GRTR(
+                problem, NesterovAGD(problem.ell, problem.mu),
+                TRSubproblemSolver(tol=args.subproblem_tol, max_iter=args.subproblem_max_iter),
+                args.epsilon, max_iterations=args.max_iterations,
+                max_inner_steps=args.grtr_max_inner_steps,
+            )
+        elif name == "hsda":
+            algorithms[name] = HSDA(
+                problem, NesterovAGD(problem.ell, problem.mu),
+                HomogeneousSubproblemSolver(tol=args.subproblem_tol),
+                args.epsilon, max_iterations=args.max_iterations,
+                omega=args.hsda_omega, max_inner_steps=args.hsda_max_inner_steps,
+            )
         else:
             base_name = name.split("-", 1)[0]
             cls = {"utr2": UTR2, "utr3": UTR3, "utr4": UTR4, "utr5": UTR5}[base_name]
@@ -252,8 +276,11 @@ def main(default_algorithms=None):
                 inner = SCAREarly()
             elif name.endswith("-early"):
                 inner = SCARPersistentEarly()
+            elif name == "utr5-fixed-float64":
+                inner = SCAR(max_halving_attempts=args.fixed_max_halving_attempts)
             else:
                 inner = SCAR()
+            extra = {"tracking_mode": "fixed_count"} if name == "utr5-fixed-float64" else {}
             algorithms[name] = cls(
                 problem=problem,
                 inner_solver=inner,
@@ -262,6 +289,7 @@ def main(default_algorithms=None):
                 ),
                 epsilon=args.epsilon,
                 max_iterations=args.max_iterations,
+                **extra,
             )
 
     print("Shared instance and settings:")
@@ -274,22 +302,13 @@ def main(default_algorithms=None):
     print(f"  algorithms={', '.join(labels[name] for name in names)}")
     print("  UTR3-early uses SCAREarly; UTR4/5-early share SCARPersistentEarly.")
     print("  UTR5 uses ordinary SCAR with the original AR termination rule.")
+    for name, algo in algorithms.items():
+        if name in ("utr5-fixed", "utr5-fix"):
+            print(f"  {name}: full mpmath arithmetic, {algo.c.dps} decimal digits, fixed-count ordinary SCAR.")
 
     preparation = {}
     if "mcn" in names:
-        print("\nPreparing MCN K0 (excluded from main-run time and complexity)...", flush=True)
-        synchronize(device)
-        start = time.perf_counter()
-        initial_solution = prepare_K0(mcn, problem, x0, y0)
-        synchronize(device)
-        preparation = {
-            "seconds": time.perf_counter() - start,
-            "grad_evals": initial_solution.n_grad_evals,
-            "K0": mcn.K0,
-            "tilde_epsilon": mcn.inner_distance_tol,
-        }
-        print(f"  K0={mcn.K0}, tilde_epsilon={mcn.inner_distance_tol:.6e}")
-        print(f"  seconds={preparation['seconds']:.6f}, grad_evals={initial_solution.n_grad_evals}")
+        print("MCN K0 uses one residual query inside the timed, counted run.")
     if "utr2" in algorithms:
         print(f"  UTR2 tau_out={algorithms['utr2'].tau_out:.6e}")
 
@@ -302,7 +321,7 @@ def main(default_algorithms=None):
     print("\nComparison:")
     print(f"{'metric':<30}" + "".join(f" {name:>20}" for name in records))
     for key in (
-        "seconds", "epsilon", "converged", "n_iterations", "n_inner_grad_evals",
+        "arithmetic", "decimal_digits", "seconds", "epsilon", "converged", "n_iterations", "n_inner_grad_evals",
         "actual_inner_grad_calls", "count_matches",
         "n_subproblem_solves", "n_accepted", "n_rejected", "n_validators",
         "n_successful_halvings", "n_tr_refinements", "n_oracle_builds",
@@ -348,7 +367,7 @@ def main(default_algorithms=None):
     print("passed requires convergence, matching gradient counts, and the shared error-aware SOSP test.")
     print("n_subproblem_solves counts trial subproblems; n_accepted excludes terminal validation.")
     print("Reference metrics use an approximate y*(x) with gradient tolerance 1e-12.")
-    print("MCN K0 preparation and reference evaluation are excluded from main-run time and complexity.")
+    print("MCN K0 initialization is included in main-run time and complexity; reference evaluation is excluded.")
     print("Timing is a single run; change --algorithms order to check order effects.")
     print(f"Results and histories: {output}")
 

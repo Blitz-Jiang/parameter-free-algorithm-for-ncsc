@@ -8,11 +8,13 @@ class InnerSolverResult:
     y:torch.Tensor
     n_steps:int
     n_grad_evals:int
-    grad_y: torch.Tensor
+    grad_y: torch.Tensor | None
     converged:bool
 
     @property
-    def residual(self) -> float:
+    def residual(self) -> float | None:
+        if self.grad_y is None:
+            return None  # Fixed-step solvers need not measure a terminal residual.
         return torch.linalg.vector_norm(self.grad_y).item()
 
 

@@ -7,6 +7,12 @@ import torch
 
 
 class UTR5(UTR4):
+    def __init__(self, *args, tracking_mode="target", **kwargs):
+        super().__init__(*args, **kwargs)
+        if tracking_mode not in ("target", "fixed_count"):
+            raise ValueError("tracking_mode must be target or fixed_count")
+        self.tracking_mode = tracking_mode
+
     def run(self, x0, y0) -> AlgorithmResult:
         epsilon = self.epsilon
         sqrt_epsilon = math.sqrt(epsilon)
@@ -33,6 +39,7 @@ class UTR5(UTR4):
             "inner_grad_evals": [], "inner_residual": [], "inner_nu": [], "inner_M": [],
             "inner_step_unit": "successful_persistent_halving",
             "initial_sigma": sigma,
+            "tracking_mode": self.tracking_mode,
         }
 
         def finish(converged, reason):
@@ -196,7 +203,7 @@ class UTR5(UTR4):
                     torch.linalg.vector_norm(grad_plus).item(), -tracking_halvings,
                 )
                 for _ in range(tracking_halvings):
-                    if torch.linalg.vector_norm(grad_plus).item() <= tracking_target:
+                    if self.tracking_mode == "target" and torch.linalg.vector_norm(grad_plus).item() <= tracking_target:
                         break
                     y_plus, grad_plus = halve(x_plus, y_plus, grad_plus, "working_halving")
 

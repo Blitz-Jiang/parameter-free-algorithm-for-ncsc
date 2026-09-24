@@ -57,19 +57,11 @@ class NesterovAGD(InnerSolver):
             n_grad_evals += 1
             n_steps += 1
 
-        grad_y = problem.grad_y(x, y)
-        residual = torch.linalg.vector_norm(grad_y)
-        n_grad_evals += 1
-
-        ##检查一下是否真的收敛了
-        if residual > 1e-6:
-            print(f"Warning: NesterovAGD did not converge. Residual: {residual.item()}")
-        
         return InnerSolverResult(
             y=y,
             n_steps=n_steps,
             n_grad_evals=n_grad_evals,
-            grad_y=grad_y.detach(),
+            grad_y=None,  # No diagnostic query in fixed-count mode.
             converged=True,
         )
 

@@ -11,7 +11,7 @@ class MCN(NCSCAlgorithm):
             inner_solver,
             cubic_solver,
             epsilon: float,
-            K0: int,
+            K0: int | None = None,
             max_iterations: int = 10_000,
     ):
         super().__init__(problem)
@@ -20,7 +20,7 @@ class MCN(NCSCAlgorithm):
         self.cubic_solver = cubic_solver
 
         self.epsilon = float(epsilon)
-        self.K0 = int(K0)
+        self.K0 = None if K0 is None else int(K0)
         self.max_iterations = int(max_iterations)
 
         self.ell = float(problem.ell)
@@ -49,7 +49,7 @@ class MCN(NCSCAlgorithm):
             s_prev: torch.Tensor,
     ) -> int:
         if k == 0:
-            return self.K0
+            return self._run_K0
 
         s_norm = torch.linalg.vector_norm(s_prev).item()
 
@@ -101,6 +101,24 @@ class MCN(NCSCAlgorithm):
             "step_norm": [],
             "model_value": [],
         }
+
+        if self.K0 is None:
+            initial_residual = torch.linalg.vector_norm(self.problem.grad_y(x, y_prev)).item()
+            if not math.isfinite(initial_residual):
+                raise RuntimeError("Non-finite MCN initialization residual")
+            distance_bound = initial_residual / self.mu
+            self._run_K0 = (0 if distance_bound == 0 else max(0, math.ceil(
+                2 * math.sqrt(self.kappa) * (
+                    .5 * math.log1p(self.kappa) + math.log(distance_bound)
+                    - math.log(self.inner_distance_tol)))))
+            total_inner_grad_evals += 1
+            history["inner_grad_evals"].append(1)
+            history["initialization_grad_evals"] = 1
+            history["initial_distance_bound"] = distance_bound
+        else:
+            self._run_K0 = self.K0
+            history["initialization_grad_evals"] = 0
+        history["K0"] = self._run_K0
 
         for k in range(self.max_iterations):
             Kt = self._compute_Kt(k, s_prev=s_prev)
