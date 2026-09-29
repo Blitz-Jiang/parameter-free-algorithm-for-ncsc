@@ -81,25 +81,7 @@ In MCN, accelerated gradient ascent is used for this purpose.
 Its first-order oracle complexity is stated in
 $\widetilde O(\epsilon^{-3/2})$ form, and the explicit bound contains a
 logarithmic dependence on the target accuracy multiplying the leading
-outer-order term. This raises a natural question: can one retain the
-$O(\epsilon^{-3/2})$ second-order iteration dependence while removing
-the multiplicative logarithmic factor from the total inner-gradient
-complexity?
-
-We answer this question affirmatively by combining existing
-primal-function estimators with an analysis of the accumulated inner
-work. The implicit gradient estimator studied by
-\citet{ablin2020superefficiency} has known quadratic accuracy with
-respect to the inner solution error; see their Proposition~2.3.
-The same total-gradient and Schur-complement expressions also appear
-in Newton-type minimax methods \citep{zhang2020newton}.
-We use these quantities, together with a Newton correction of the
-value, as oracle ingredients and derive the explicit error bounds
-needed under our NC--SC assumptions.
-The complexity improvement comes from combining these bounds with
-warm starts and a cumulative cubic bound on the outer steps.
-This path estimate controls the total cost of restoring inner
-accuracy across successive maximization problems.
+outer-order term. 
 
 Our method builds on the universal trust-region (UTR) framework of
 \citet{jiang2026utr}. We first formulate a general inexact UTR
@@ -197,7 +179,7 @@ measured by the table's third column.
 
 \subsection{Related Work}
 \label{sec:related-work}
-
+{\color{red} should add \cite{ma2026linesearch,ma2026singleloop} to lit, say that it is a new formulation, however its complexity has a different dependence of the initial point and its function value $\phi_\beta(x_0)$}
 \paragraph{Implicit differentiation and primal-function estimators.}
 \citet{ablin2020superefficiency} analyze the implicit gradient
 estimator for functions defined through optimization and establish
@@ -298,8 +280,6 @@ minimax complexity theorem. \Cref{sec:ncsc-analysis} proves that
 the minimax oracles satisfy the UTR interface and bounds their total
 inner work. \Cref{sec:parameter-free-scope} discusses the scope of
 the guarantee, and \Cref{sec:conclusion} concludes the paper.
-Only the proofs for the general UTR and SCAR tools are deferred to
-\Cref{app:adaptive-utr-proofs,app:scar-tool-proof}.
 
 \section{Notations and preliminaries}
 \label{sec:preliminaries}
@@ -318,7 +298,8 @@ $0<\epsilon\le\epsilon'$.  These constants need not be uniform over
 problem instances.  The notation $\widetilde O(\cdot)$ suppresses
 logarithmic factors.
 \begin{assumption}[Hessian regularity]\label{ass:generic}
-The function $F$ is twice continuously differentiable and, for some
+{\color{red} make the notion of Lipschitz continuous a definition, and refer to the definition in the assm}
+      The function $F$ is twice continuously differentiable and, for some
 $M>0$,
 \begin{equation}\label{eq:hessian-lipschitz}
  \|\nabla^2F(x)-\nabla^2F(z)\|
@@ -356,15 +337,13 @@ $\epsilon$-second-order stationary point ($\epsilon$-SOSP) if
 All trust-region subproblems are solved globally.  For the quadratic
 model $g^Td+d^TBd/2$ on $\|d\|\le R$, a solution is accompanied by
 a multiplier $\lambda\ge0$ satisfying
+{\color{red} make the optimality condition a lemma and give proper reference}
 \begin{equation}\label{eq:tr-global-optimality}
  (B+\lambda I)d=-g,\quad B+\lambda I\succeq0,\quad
  \|d\|\le R,\quad \lambda(\|d\|-R)=0.
 \end{equation}
 These conditions are necessary and sufficient
-\citep[Section~8.7]{luenberger2021linear}.  We use exact arithmetic
-for these solves, eigenvalue tests, and applications of inverse
-Hessian blocks; the reported oracle counts do not include their
-arithmetic cost.
+\citep[Section~8.7]{luenberger2021linear}.
 
 
 \subsection{Parameter-free UTR with inexact oracles}
@@ -413,7 +392,7 @@ a symmetric $H_{\rm v}$ and satisfies
  \|g_{\rm v}-\nabla F(x)\|\le\frac{\epsilon}{1024},\qquad
  \|H_{\rm v}-\nabla^2F(x)\|\le\frac{\sigma\sqrt\epsilon}{32}.
 \end{equation}
-The constants $M,C_g,C_v$ are not supplied to the outer algorithm.
+{\color{red} move the following comment out of the assumption environment, and elaborate on how the exact oracle satisfy the assumption}
 The requirements hold for every actual query, including repeated
 queries at the same point and queries after a scale change.
 \end{assumption}
@@ -446,6 +425,7 @@ validation rather than the ordinary acceptance test.
 
 \begin{remark}[Why working and validation oracles?]
 \label{rem:utr-oracle-roles}
+{\color{red} should provide examples after you introduce abstract notations, it would be great if you can describe how ARC or some well-known derivative free optimization methods use working and validation oracles}
 The two roles separate the information needed to make progress from
 the information needed to return a solution.  Working tuples build the
 model \eqref{eq:adaptive-subproblem} and evaluate the acceptance tests
@@ -466,6 +446,7 @@ with SCAR, and validation refines the candidate's inner iterate.
 The stated error bounds are proved under the theorem's assumptions,
 not computed as certificates by the algorithm.
 \end{remark}
+{\color{red} should introduce notations like $\mathcal{W}_{\sigma,\hat{x}}(x)$, meaning the candidate working tuple at $x$ from data stored at $\hat{x}$ and at scale $\sigma$, then the algorithm can be largely simplified, i.e., many description in english can be replaced by mathematical noations, as in line 5, 17, 19, 20. e.g. $(g,H) = \mathcal{W}_{\hat{x},\sigma}(x)$. you can also introduce notation like $x_{\text{cand}}$ and update it, just make sure to remove all the description in english in the algorithm. also, if you can use the new notation like $\mathcal{W}_{\sigma,\hat{x}}(x)$ throughout the paper, which is more specific and easy to understand, you can rewrite the assumption of inexact working and validation oracles}
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
@@ -504,7 +485,7 @@ $x\leftarrow x_0$, $\sigma\leftarrow\sigma_0$;
  }
 }
 \end{algorithm}
-
+{\color{red} when you provide comment as follows, please make sure you cite the specific line of the algorithm to make it easier to track}
 An accepted tuple is kept unchanged until the next accepted step or
 scale refresh.  In particular, additional refinement of a stored
 oracle is not allowed without accounting for its change.
@@ -525,7 +506,7 @@ optimization.
 Suppose $F$ satisfies \Cref{ass:generic}, with
 $F^*:=\inf_xF(x)>-\infty$, and that the finite oracle routines satisfy
 \Cref{ass:inexact-oracle} for the chosen $\epsilon>0$ and $\sigma_0>0$.
-Run \Cref{alg:adaptive-utr} with globally solved subproblems.
+Run \Cref{alg:adaptive-utr} with exactly solved subproblems.
 Write
 \[
  \Delta_F:=F(x_0)-F^*,\qquad
@@ -551,6 +532,7 @@ $\bar\sigma$, and its output satisfies
  \lambda_{\min}(\nabla^2F(x_{\rm out}))
  \ge-\frac{85}{32}\bar\sigma\sqrt\epsilon.
 \end{equation}
+{\color{red} don't mention accepted or failed steps in the statement of the final theorem, it should only give the total number of subproblem solving. these should only appear in the appendix. also, you should avoid introduce new notations in the statement of theorems as much as possible}
 If $K$ is the number of accepted steps, $J$ the number of failed
 trials, and $Q$ the total number of subproblems, then
 \begin{equation}\label{eq:utr-counts}
@@ -609,7 +591,7 @@ $\sigma_0=O(\sqrt M)$, this becomes
 so the search logarithms remain additive and do not multiply the
 leading $\epsilon^{-3/2}$ term.  The sharper estimate is an
 exact-oracle specialization; the general inexact theorem above is the
-statement used by the NC--SC construction.
+statement used by the NC--SC construction. {\color{red} should cite \cite{fang2026parameter,hamad2022consistently} here, say that these are both sharp parameter free methods}
 \end{remark}
 
 
