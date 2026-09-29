@@ -1,4 +1,4 @@
-\begin{thebibliography}{24}
+\begin{thebibliography}{22}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -137,13 +137,6 @@ Jun-Lin Wang, Zi~Xu, and Hui-Ling Zhang.
 \newblock \emph{Journal of Machine Learning Research}, 27\penalty0
   (76):\penalty0 1--32, 2026.
 
-\bibitem[Nesterov(2004)]{nesterov2004introductory}
-Yurii Nesterov.
-\newblock \emph{Introductory Lectures on Convex Optimization: A Basic Course},
-  volume~87 of \emph{Applied Optimization}.
-\newblock Kluwer Academic Publishers, Boston, 2004.
-\newblock \doi{10.1007/978-1-4419-8853-9}.
-
 \bibitem[Luenberger and Ye(2021)]{luenberger2021linear}
 David~G. Luenberger and Yinyu Ye.
 \newblock \emph{Linear and Nonlinear Programming}.
@@ -167,16 +160,11 @@ Andrew~R. Conn, Katya Scheinberg, and Lu{\'i}s~N. Vicente.
   387--415, 2009.
 \newblock \doi{10.1137/060673424}.
 
-\bibitem[Hamad and Hinder(2022)]{hamad2022consistently}
-Fadi Hamad and Oliver Hinder.
-\newblock A consistently adaptive trust-region method.
-\newblock \emph{Advances in Neural Information Processing Systems},
-  35:\penalty0 6640--6653, 2022.
-
-\bibitem[Fang et~al.(2026)Fang, Marumo, and Takeda]{fang2026parameter}
-Shaoying Fang, Naoki Marumo, and Akiko Takeda.
-\newblock Parameter-free cubic-regularized newton method: Sharp complexity and
-  generalized smoothness.
-\newblock \emph{arXiv preprint arXiv:2607.10741}, 2026.
+\bibitem[Nesterov(2004)]{nesterov2004introductory}
+Yurii Nesterov.
+\newblock \emph{Introductory Lectures on Convex Optimization: A Basic Course},
+  volume~87 of \emph{Applied Optimization}.
+\newblock Kluwer Academic Publishers, Boston, 2004.
+\newblock \doi{10.1007/978-1-4419-8853-9}.
 
 \end{thebibliography}
