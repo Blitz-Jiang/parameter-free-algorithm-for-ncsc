@@ -1,4 +1,4 @@
-\begin{thebibliography}{20}
+\begin{thebibliography}{22}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -53,6 +53,20 @@ Bohao Ma, Nachuan Xiao, and Junyu Zhang.
   nonconvex-strongly-concave minimax optimization.
 \newblock \emph{arXiv preprint arXiv:2606.07003}, 2026{\natexlab{b}}.
 
+\bibitem[Jiang et~al.(2026)Jiang, He, Zhang, Ge, Jiang, and Ye]{jiang2026utr}
+Yuntian Jiang, Chang He, Chuwen Zhang, Dongdong Ge, Bo~Jiang, and Yinyu Ye.
+\newblock Beyond nonconvexity: A universal trust-region method with new
+  analyses.
+\newblock \emph{Journal of Scientific Computing}, 2026.
+\newblock arXiv:2311.11489.
+
+\bibitem[Lan et~al.(2026)Lan, Ouyang, and Zhang]{lan2026optimal}
+Guanghui Lan, Yuyuan Ouyang, and Zhe Zhang.
+\newblock Optimal and parameter-free gradient minimization methods for convex
+  and nonconvex optimization.
+\newblock \emph{Mathematical Programming}, 2026.
+\newblock \doi{10.1007/s10107-026-02352-2}.
+
 \bibitem[Ablin et~al.(2020)Ablin, Peyr{\'e}, and
   Moreau]{ablin2020superefficiency}
 Pierre Ablin, Gabriel Peyr{\'e}, and Thomas Moreau.
@@ -68,20 +82,6 @@ Guojun Zhang, Kaiwen Wu, Pascal Poupart, and Yaoliang Yu.
 \newblock {Newton}-type methods for minimax optimization.
 \newblock \emph{arXiv preprint arXiv:2006.14592}, 2020.
 \newblock URL \url{https://arxiv.org/abs/2006.14592}.
-
-\bibitem[Jiang et~al.(2026)Jiang, He, Zhang, Ge, Jiang, and Ye]{jiang2026utr}
-Yuntian Jiang, Chang He, Chuwen Zhang, Dongdong Ge, Bo~Jiang, and Yinyu Ye.
-\newblock Beyond nonconvexity: A universal trust-region method with new
-  analyses.
-\newblock \emph{Journal of Scientific Computing}, 2026.
-\newblock arXiv:2311.11489.
-
-\bibitem[Lan et~al.(2026)Lan, Ouyang, and Zhang]{lan2026optimal}
-Guanghui Lan, Yuyuan Ouyang, and Zhe Zhang.
-\newblock Optimal and parameter-free gradient minimization methods for convex
-  and nonconvex optimization.
-\newblock \emph{Mathematical Programming}, 2026.
-\newblock \doi{10.1007/s10107-026-02352-2}.
 
 \bibitem[Nouiehed et~al.(2019)Nouiehed, Sanjabi, Huang, Lee, and
   Razaviyayn]{nouiehed2019solving}
@@ -137,17 +137,34 @@ Jun-Lin Wang, Zi~Xu, and Hui-Ling Zhang.
 \newblock \emph{Journal of Machine Learning Research}, 27\penalty0
   (76):\penalty0 1--32, 2026.
 
+\bibitem[Luenberger and Ye(2021)]{luenberger2021linear}
+David~G. Luenberger and Yinyu Ye.
+\newblock \emph{Linear and Nonlinear Programming}.
+\newblock Springer, Cham, 5 edition, 2021.
+\newblock \doi{10.1007/978-3-030-85450-8}.
+
+\bibitem[Bellavia et~al.(2019)Bellavia, Gurioli, Morini, and
+  Toint]{bellavia2019adaptive}
+Stefania Bellavia, Gianmarco Gurioli, Benedetta Morini, and Philippe~L. Toint.
+\newblock Adaptive regularization algorithms with inexact evaluations for
+  nonconvex optimization.
+\newblock \emph{SIAM Journal on Optimization}, 29\penalty0 (4):\penalty0
+  2881--2915, 2019.
+\newblock \doi{10.1137/18M1226282}.
+
+\bibitem[Conn et~al.(2009)Conn, Scheinberg, and Vicente]{conn2009global}
+Andrew~R. Conn, Katya Scheinberg, and Lu{\'i}s~N. Vicente.
+\newblock Global convergence of general derivative-free trust-region algorithms
+  to first- and second-order critical points.
+\newblock \emph{SIAM Journal on Optimization}, 20\penalty0 (1):\penalty0
+  387--415, 2009.
+\newblock \doi{10.1137/060673424}.
+
 \bibitem[Nesterov(2004)]{nesterov2004introductory}
 Yurii Nesterov.
 \newblock \emph{Introductory Lectures on Convex Optimization: A Basic Course},
   volume~87 of \emph{Applied Optimization}.
 \newblock Kluwer Academic Publishers, Boston, 2004.
 \newblock \doi{10.1007/978-1-4419-8853-9}.
-
-\bibitem[Luenberger and Ye(2021)]{luenberger2021linear}
-David~G. Luenberger and Yinyu Ye.
-\newblock \emph{Linear and Nonlinear Programming}.
-\newblock Springer, Cham, 5 edition, 2021.
-\newblock \doi{10.1007/978-3-030-85450-8}.
 
 \end{thebibliography}

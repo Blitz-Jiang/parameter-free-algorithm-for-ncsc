@@ -82,25 +82,7 @@ In MCN, accelerated gradient ascent is used for this purpose.
 Its first-order oracle complexity is stated in
 $\widetilde O(\epsilon^{-3/2})$ form, and the explicit bound contains a
 logarithmic dependence on the target accuracy multiplying the leading
-outer-order term. This raises a natural question: can one retain the
-$O(\epsilon^{-3/2})$ second-order iteration dependence while removing
-the multiplicative logarithmic factor from the total inner-gradient
-complexity?
-
-We answer this question affirmatively by combining existing
-primal-function estimators with an analysis of the accumulated inner
-work. The implicit gradient estimator studied by
-\citet{ablin2020superefficiency} has known quadratic accuracy with
-respect to the inner solution error; see their Proposition~2.3.
-The same total-gradient and Schur-complement expressions also appear
-in Newton-type minimax methods \citep{zhang2020newton}.
-We use these quantities, together with a Newton correction of the
-value, as oracle ingredients and derive the explicit error bounds
-needed under our NC--SC assumptions.
-The complexity improvement comes from combining these bounds with
-warm starts and a cumulative cubic bound on the outer steps.
-This path estimate controls the total cost of restoring inner
-accuracy across successive maximization problems.
+outer-order term. 
 
 Our method builds on the universal trust-region (UTR) framework of
 \citet{jiang2026utr}. We first formulate a general inexact UTR
@@ -158,8 +140,9 @@ Neither $\log(1/\epsilon)$ nor $\log\kappa$ multiplies the displayed
 leading inner term. In particular, this removes the leading
 target-accuracy logarithm in the explicit inner-gradient bound of
 MCN. As a technical tool, \Cref{thm:total-complexity} gives a general
-inexact UTR complexity and path estimate; the minimax analysis invokes
-it after verifying the corrected-oracle error bounds.
+inexact UTR complexity bound, supplemented by the path estimates in
+\Cref{prop:utr-budgets}; the minimax analysis invokes these results
+after verifying the corrected-oracle error bounds.
 
 \paragraph{A fully parameter-free second-order method.}
 \Cref{alg:gradient-scaled-scar} uses only the initialization, target
@@ -198,7 +181,6 @@ measured by the table's third column.
 
 \subsection{Related Work}
 \label{sec:related-work}
-
 \paragraph{Implicit differentiation and primal-function estimators.}
 \citet{ablin2020superefficiency} analyze the implicit gradient
 estimator for functions defined through optimization and establish
@@ -260,9 +242,20 @@ line-search framework. Building on this reformulation,
 \citet{ma2026singleloop} proposed a single-loop regularized Newton
 method with $O(\epsilon^{-3/2})$ global iteration complexity and local
 superlinear convergence. This line of work addresses the cost of the
-inner loop by changing the formulation, whereas the present paper
-studies total inner-gradient complexity when approximate derivatives
-of the primal function are constructed through inner maximization.
+inner loop by changing the formulation.  Its analyses use the
+regularized joint objective
+\[
+ h_\beta(x,y)=f(x,y)+\frac\beta2\|\nabla_yf(x,y)\|^2.
+\]
+In particular, the deterministic single-loop bound depends on
+$h_\beta(x_0,y_0)-\inf_xP(x)$, rather than only on the primal gap
+$P(x_0)-\inf_xP(x)$, and measures finite-accuracy stationarity of
+$h_\beta$ \citep[Theorem~3.9]{ma2026singleloop}.
+The dependence on the joint initialization and regularization
+parameter should therefore be retained when comparing these bounds.
+The present paper instead studies total inner-gradient complexity
+when approximate derivatives of $P$ are constructed through inner
+maximization.
 
 \paragraph{Adaptive and parameter-free optimization.}
 Adaptive optimization methods aim to reduce or eliminate prior
@@ -299,16 +292,13 @@ minimax complexity theorem. \Cref{sec:ncsc-analysis} proves that
 the minimax oracles satisfy the UTR interface and bounds their total
 inner work. \Cref{sec:parameter-free-scope} discusses the scope of
 the guarantee, and \Cref{sec:conclusion} concludes the paper.
-Only the proofs for the general UTR and SCAR tools are deferred to
-\Cref{app:adaptive-utr-proofs,app:scar-tool-proof}.
 
 \section{Notations and preliminaries}
 \label{sec:preliminaries}
 
 The norm $\|\cdot\|$ is Euclidean for vectors and spectral for matrices.
 For a symmetric matrix $H$, $\lambda_{\min}(H)$ denotes its smallest
-eigenvalue.  We write $\log_+(t)=\max\{\log t,0\}$ for $t>0$ and set
-$\log_+(0)=0$.  Unsubscripted logarithms are natural.
+eigenvalue.  Unsubscripted logarithms are natural.
 Universal $O(\cdot)$ constants do not depend on problem parameters.
 For $b_\epsilon\ge0$, the relation
 $a_\epsilon=O_{\rm fixed}(b_\epsilon)$ as $\epsilon\downarrow0$
@@ -318,30 +308,16 @@ such that $|a_\epsilon|\le Cb_\epsilon$ for all
 $0<\epsilon\le\epsilon'$.  These constants need not be uniform over
 problem instances.  The notation $\widetilde O(\cdot)$ suppresses
 logarithmic factors.
-\begin{assumption}[Hessian regularity]\label{ass:generic}
-The function $F$ is twice continuously differentiable and, for some
-$M>0$,
-\begin{equation}\label{eq:hessian-lipschitz}
- \|\nabla^2F(x)-\nabla^2F(z)\|
- \le M\|x-z\|
- \qquad\forall x,z\in\R^n.
-\end{equation}
-\end{assumption}
-\begin{lemma}[Second-order Taylor bounds]\label{lem:taylor-bounds}
-If $\nabla^2F$ is $M$-Lipschitz, then, for all $x,d$,
-\begin{subequations}\label{eq:taylor-bounds}
-\begin{equation}\label{eq:gradient-taylor}
- \bigl\|\nabla F(x+d)-\nabla F(x)-\nabla^2F(x)d\bigr\|
- \le \frac M2\|d\|^2.
-\end{equation}
-\begin{equation}\label{eq:function-taylor}
- F(x+d)\le{}F(x)+\nabla F(x)^Td
- +\frac12d^T\nabla^2F(x)d+\frac M6\|d\|^3.
-\end{equation}
-\end{subequations}
-These estimates are standard; see
-\citet[Lemma~1.2.4]{nesterov2004introductory}.
-\end{lemma}
+
+\begin{definition}[Lipschitz continuity]\label{def:lipschitz}
+A map $G$ between normed spaces is $L$-Lipschitz on a set $D$ if
+\[
+ \|G(u)-G(v)\|\le L\|u-v\|\qquad(u,v\in D).
+\]
+For gradients we use the Euclidean norm, and for Hessians the
+spectral norm.  For a joint variable $(x,y)$, the domain norm is
+$\|(x,y)\|=(\|x\|^2+\|y\|^2)^{1/2}$.
+\end{definition}
 
 \begin{definition}[Approximate second-order stationarity]
 \label{def:stationarity}
@@ -354,18 +330,21 @@ $\epsilon$-second-order stationary point ($\epsilon$-SOSP) if
 \]
 \end{definition}
 
-All trust-region subproblems are solved globally.  For the quadratic
-model $g^Td+d^TBd/2$ on $\|d\|\le R$, a solution is accompanied by
-a multiplier $\lambda\ge0$ satisfying
+\begin{lemma}[Trust-region optimality conditions]
+\label{lem:tr-optimality}
+Let $B$ be symmetric, $g\in\R^n$, and $R>0$.  A vector $d$ is a
+global minimizer of $g^Td+d^TBd/2$ over $\|d\|\le R$ if and only if
+there exists $\lambda\ge0$ such that
 \begin{equation}\label{eq:tr-global-optimality}
  (B+\lambda I)d=-g,\quad B+\lambda I\succeq0,\quad
  \|d\|\le R,\quad \lambda(\|d\|-R)=0.
 \end{equation}
-These conditions are necessary and sufficient
-\citep[Section~8.7]{luenberger2021linear}.  We use exact arithmetic
-for these solves, eigenvalue tests, and applications of inverse
-Hessian blocks; the reported oracle counts do not include their
-arithmetic cost.
+This characterization is standard; see
+\citet[Section~8.7]{luenberger2021linear}.
+\end{lemma}
+
+All trust-region subproblems below are solved globally, and the solver
+returns a pair $(d,\lambda)$ satisfying \eqref{eq:tr-global-optimality}.
 
 
 \subsection{Parameter-free UTR with inexact oracles}
@@ -379,23 +358,40 @@ data, such as an inner iterate, and retain solver state between calls.
 Their accuracy requirements below are analytical assumptions, not
 error certificates that the algorithm is required to compute.
 
-A working query returns a tuple $(\widehat F,\widehat g,\widehat H)$
-at a point $x$ and scale $\sigma$, with $\widehat H$ symmetric.
-There are three types of query: initialization at $x_0$; a trial
-query at $x+d$, warm-started from the stored data at $x$; and a
-refresh at the unchanged $x$ after the scale is doubled.
-A validation query uses the working candidate's data to return
-$(g_{\rm v},H_{\rm v})$ at that same candidate point.
-All calls must finish in finite time.
-Numerical tuples and their auxiliary point data are distinct from
-any shared solver calibration: rejecting a candidate discards the
-former but need not roll back the latter.
+Write $w=(\widehat F,\widehat g,\widehat H;\xi)$ for the stored
+working data: the first three entries approximate the value, gradient,
+and Hessian, and $\xi$ contains auxiliary data such as an inner iterate.
+We distinguish three working operations:
+\begin{equation}\label{eq:utr-oracle-interface}
+\begin{aligned}
+ w_0&=\mathcal W^0_{\sigma_0}(x_0),
+ &&\text{initialization},\\
+ w^+&=\mathcal W_{\sigma,x}(x^+;w),
+ &&\text{trial at $x^+$ from data stored at $x$},\\
+ w_{\rm new}&=\mathcal W^{\rm r}_{2\sigma}(x;w),
+ &&\text{refresh at $x$ after doubling the scale}.
+\end{aligned}
+\end{equation}
+The validation call is
+\begin{equation}\label{eq:utr-validation-interface}
+ (g_{\rm v},H_{\rm v})=\mathcal V_\sigma(x^+;w^+).
+\end{equation}
+Here $\mathcal W$ collectively denotes its initialization, trial,
+and refresh operations.  Unadorned hats denote the components of $w$,
+and superscript $+$ denotes components of $w^+$.
+These are stateful calls, not necessarily fixed functions: shared
+solver calibration may change on any call, whereas the supplied
+point data $w$ are unchanged unless explicitly reassigned.
+This distinction also separates a zero-length trial from a refresh.
 
 \begin{assumption}[Inexact working and validation oracles]
 \label{ass:inexact-oracle}
-Fix $\epsilon>0$ and $\sigma_0>0$.  For constants $C_g,C_v\ge0$,
-every working tuple returned at a generated scale $\sigma\ge\sigma_0$
-satisfies
+Fix $\epsilon>0$ and $\sigma_0>0$.  All calls in
+\eqref{eq:utr-oracle-interface}--\eqref{eq:utr-validation-interface}
+terminate in finite time and return symmetric Hessian estimates.
+For constants $C_g,C_v\ge0$, the numerical components of every
+working output at a query point $x$ and generated scale
+$\sigma\ge\sigma_0$ satisfy
 \begin{equation}\label{eq:utr-working-errors}
  \|\widehat g-\nabla F(x)\|\le C_g\frac{\epsilon}{\sigma^2},
  \qquad
@@ -408,16 +404,23 @@ Whenever $\sigma^2\ge M/6$, it additionally satisfies
  \qquad
  |\widehat F-F(x)|\le\frac{\epsilon^{3/2}}{4096\sigma}.
 \end{equation}
-Every validation query, including those with $\sigma^2<M/6$, returns
-a symmetric $H_{\rm v}$ and satisfies
+Every output $(g_{\rm v},H_{\rm v})=\mathcal V_\sigma(x;w)$,
+including those with $\sigma^2<M/6$, satisfies
 \begin{equation}\label{eq:utr-validation-errors}
  \|g_{\rm v}-\nabla F(x)\|\le\frac{\epsilon}{1024},\qquad
  \|H_{\rm v}-\nabla^2F(x)\|\le\frac{\sigma\sqrt\epsilon}{32}.
 \end{equation}
-The constants $M,C_g,C_v$ are not supplied to the outer algorithm.
-The requirements hold for every actual query, including repeated
-queries at the same point and queries after a scale change.
 \end{assumption}
+
+The requirements apply to every actual call, including repeated
+queries and refreshes.  They are analytical accuracy conditions;
+$M,C_g,C_v$ are not algorithm inputs.  Exact information is a special
+case: each working operation returns
+$(F(x),\nabla F(x),\nabla^2F(x);\varnothing)$, independently of its
+scale and warm start, and validation returns
+$(\nabla F(x),\nabla^2F(x))$.  All errors are then zero, so the
+assumption holds with $C_g=C_v=0$ for every $\epsilon,\sigma_0>0$;
+no refinement or auxiliary data are needed.
 
 At a stored working tuple, set
 \begin{equation}\label{eq:clipped-scale}
@@ -444,6 +447,9 @@ An ordinary trial is accepted when
 \end{equation}
 The exception is an interior step at $h=\epsilon$, which invokes
 validation rather than the ordinary acceptance test.
+We denote by $\operatorname{TR}_\sigma(w)$ a globally optimal
+primal--multiplier pair for \eqref{eq:adaptive-subproblem}, with
+$h$ defined by \eqref{eq:clipped-scale}.
 
 \begin{remark}[Why working and validation oracles?]
 \label{rem:utr-oracle-roles}
@@ -466,165 +472,120 @@ in the minimax construction, both use corrected estimates computed
 with SCAR, and validation refines the candidate's inner iterate.
 The stated error bounds are proved under the theorem's assumptions,
 not computed as certificates by the algorithm.
+
+For a concrete example, in the minimax implementation
+$\mathcal W_{\sigma,z}(x;w)$ starts from the inner point stored at
+$z$ and performs enough residual halvings to track the move to $x$.
+The call $\mathcal V_\sigma(x;w^+)$ continues from that candidate
+inner point to a tighter residual target; see
+\Cref{alg:gradient-scaled-scar}.  With exact derivatives, by contrast,
+both roles can simply reuse the same exact information.
+
+Related safeguards occur in established model-based methods.
+Dynamic-accuracy adaptive regularization refines derivative
+approximations for its optimality test separately from the accuracy
+requirements for constructing a step
+\citep[Algorithms~3.1--3.3]{bellavia2019adaptive}.
+Derivative-free trust-region methods use a criticality step to
+improve model accuracy when the model's stationarity measure is
+small \citep[Algorithms~4.1--4.2 and~6.1--6.2]{conn2009global}.
+These are conceptual analogies, not instances of our precise
+two-oracle interface: a small model gradient prompts an accuracy
+check rather than immediate termination.
 \end{remark}
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
 \caption{Parameter-free inexact adaptive UTR}
 \label{alg:adaptive-utr}
-\KwIn{$x_0$, $\epsilon>0$, $\sigma_0>0$, working oracle $\mathcal W$,
- and validation oracle $\mathcal V$}
-$x\leftarrow x_0$, $\sigma\leftarrow\sigma_0$;
- initialize and store a working tuple using $\mathcal W$\;
+\KwIn{$x_0,\ \epsilon>0,\ \sigma_0>0,\ \mathcal W,\ \mathcal V$}
+$(x,\sigma)\leftarrow(x_0,\sigma_0)$;
+ $w\leftarrow\mathcal W^0_\sigma(x)$\nllabel{ln:utr-init}\;
 \While{true}{
- Set $(h,R)$ by \eqref{eq:clipped-scale}, solve
- \eqref{eq:adaptive-subproblem}, and obtain $(d,\lambda)$\;
- Set $x^+\leftarrow x+d$, form $(r,W,U,T)$ by
- \eqref{eq:utr-step-quantities}, and set $\mathrm{accepted}\leftarrow
- \mathrm{false}$\;
- Obtain a candidate working tuple at $x^+$ using a trial query of
- $\mathcal W$ from the stored data at $x$\;
- \eIf{$h=\epsilon$ and $r<R(h,\sigma)$}{
-  Obtain $(g_{\rm v},H_{\rm v})$ at $x^+$ using $\mathcal V$\;
+ $h\leftarrow\max\{\|\widehat g\|,\epsilon\}$;
+ $(d,\lambda)\leftarrow\operatorname{TR}_\sigma(w)$\nllabel{ln:utr-model}\;
+ $(x^+,r)\leftarrow(x+d,\|d\|)$;
+ $(W,U,T)\leftarrow(\sigma\sqrt h\,r^2,\lambda r^2,
+                         \epsilon^{3/2}/\sigma)$\;
+ $w^+\leftarrow\mathcal W_{\sigma,x}(x^+;w)$\nllabel{ln:utr-trial}\;
+ \eIf{$h=\epsilon$ and $r<\sqrt h/(4\sigma)$}{
+  $(g_{\rm v},H_{\rm v})\leftarrow
+       \mathcal V_\sigma(x^+;w^+)$\nllabel{ln:utr-validation}\;
   \If{$\|g_{\rm v}\|\le\epsilon/2$ and
    $\lambda_{\min}(H_{\rm v})\ge-(21/8)\sigma\sqrt\epsilon$}{
-   \Return{$x^+$}\;
+   \Return{$x^+$}\nllabel{ln:utr-return}\;
   }
  }{
   \If{\eqref{eq:acceptance} holds}{
-   $\mathrm{accepted}\leftarrow\mathrm{true}$\;
+   $(x,w)\leftarrow(x^+,w^+)$\nllabel{ln:utr-accept}\;
+   \textbf{continue}\;
   }
  }
- \eIf{$\mathrm{accepted}$}{
-  Replace $x$ and the stored tuple and auxiliary data by the
-  candidate; keep $\sigma$ unchanged\;
- }{
-  Discard candidate and validation data; set $\sigma\leftarrow2\sigma$\;
-  Refresh the working tuple at the unchanged $x$ using $\mathcal W$
-  from the old stored auxiliary data\;
- }
+ $\sigma\leftarrow2\sigma$\nllabel{ln:utr-double}\;
+ $w\leftarrow\mathcal W^{\rm r}_\sigma(x;w)$\nllabel{ln:utr-refresh}\;
 }
 \end{algorithm}
-
-An accepted tuple is kept unchanged until the next accepted step or
-scale refresh.  In particular, additional refinement of a stored
-oracle is not allowed without accounting for its change.
-A successful validation returns the candidate immediately.  Any
-failed trial, including a failed validation, instead doubles the scale
-and refreshes the working tuple at the old stored point.  The rejected
-candidate's point-dependent data are discarded; shared solver
-calibration may be retained.
-The scale is nondecreasing; this is essential for summing the changes
+In \Cref{alg:adaptive-utr}, line~\ref{ln:utr-trial} forms $w^+$
+without changing $w$.  Apart from initialization, $w$ changes only
+on acceptance (line~\ref{ln:utr-accept}) or refresh
+(line~\ref{ln:utr-refresh}); there is no unrecorded refinement of a
+stored value.  Successful validation exits at
+line~\ref{ln:utr-return}.  Otherwise, a trial that does not reach
+line~\ref{ln:utr-accept} doubles $\sigma$ at
+line~\ref{ln:utr-double} and refreshes from the old $w$.
+Neither $w^+$ nor the validation data replace $w$ on this branch,
+although shared solver calibration is retained.  The nondecreasing
+scale and these explicit assignments allow the proof to sum changes
 of the inexact function-value proxy.
 The outer method uses no regularity or error constants.  A fully
 parameter-free implementation also requires parameter-free oracle
 routines; \Cref{sec:pf-gradient-scaled} supplies them for minimax
 optimization.
 
-\begin{theorem}[Inexact UTR complexity and path budget]
+\begin{theorem}[Inexact UTR complexity]
 \label{thm:total-complexity}
-Suppose $F$ satisfies \Cref{ass:generic}, with
-$F^*:=\inf_xF(x)>-\infty$, and that the finite oracle routines satisfy
-\Cref{ass:inexact-oracle} for the chosen $\epsilon>0$ and $\sigma_0>0$.
-Run \Cref{alg:adaptive-utr} with globally solved subproblems.
-Write
-\[
- \Delta_F:=F(x_0)-F^*,\qquad
- h_0:=\max\{\|\widehat g_0\|,\epsilon\},\qquad
- \bar\sigma:=\max\{\sigma_0,2\sqrt{M/6}\},
-\]
-where $\widehat g_0$ is the initialized working gradient, and define
-\begin{equation}\label{eq:utr-budget}
-\begin{aligned}
- B_\epsilon:={}&\Delta_F+
- \frac{23C_v\epsilon^{3/2}}{7\sigma_0^3}\\
- &+\frac{\epsilon^{3/2}}{512\sigma_0}
- \left[
-  \left\lceil\log_2\frac{h_0}{\epsilon}\right\rceil
-  +1+\log_2\left(1+\frac{5C_g}{4\sigma_0^2}\right)
- \right].
-\end{aligned}
-\end{equation}
-The algorithm terminates, every generated scale is at most
-$\bar\sigma$, and its output satisfies
+Let $F:\R^n\to\R$ be bounded below and twice continuously
+differentiable with an $M$-Lipschitz Hessian, $M>0$.
+For $\epsilon,\sigma_0>0$, suppose the working and validation
+oracles satisfy \Cref{ass:inexact-oracle} with constants $C_g,C_v$.
+Then \Cref{alg:adaptive-utr}, with globally solved subproblems,
+terminates at a point satisfying
 \begin{equation}\label{eq:return-guarantee}
  \|\nabla F(x_{\rm out})\|<\epsilon,\qquad
  \lambda_{\min}(\nabla^2F(x_{\rm out}))
- \ge-\frac{85}{32}\bar\sigma\sqrt\epsilon.
+ \ge-\frac{85}{32}\max\{\sigma_0,2\sqrt{M/6}\}\sqrt\epsilon.
 \end{equation}
-If $K$ is the number of accepted steps, $J$ the number of failed
-trials, and $Q$ the total number of subproblems, then
-\begin{equation}\label{eq:utr-counts}
- K\le1024\bar\sigma B_\epsilon\epsilon^{-3/2},\qquad
- J\le\left\lceil\log_2\max\left\{1,
-          \frac{\sqrt{M/6}}{\sigma_0}\right\}\right\rceil,
- \qquad Q=K+J+1.
+Its total number of trust-region subproblem solves is
+\begin{equation}\label{eq:utr-total-count}
+\begin{aligned}
+ Q=O\!\Bigg(&\max\{\sigma_0,\sqrt M\}
+ \left[\frac{F(x_0)-\inf F}{\epsilon^{3/2}}
+       +\frac{C_v}{\sigma_0^3}
+       +\frac1{\sigma_0}\log\!\left(
+          e+\frac{\|\nabla F(x_0)\|}{\epsilon}
+            +\frac{C_g}{\sigma_0^2}\right)\right]\\
+ &+\log\!\left(1+\frac{\sqrt M}{\sigma_0}\right)\Bigg),
+\end{aligned}
 \end{equation}
-There are at most $J+1$ validation calls.  Moreover, every stored
-iterate and the accepted steps of every finite prefix satisfy
-\begin{equation}\label{eq:utr-path-budget}
- F(x)-F^*\le B_\epsilon,\qquad
- \sum_{\rm accepted}\sigma_k^2\|d_k\|^3\le8B_\epsilon.
-\end{equation}
-The bounds on $K$ and $J$ also apply to every finite prefix.
+with a universal hidden constant.  The algorithm does not require
+$M,C_g$, or $C_v$.
 \end{theorem}
 
 The theorem separates outer progress from the construction and cost
-of the oracles.  Exact values and derivatives satisfy its hypotheses
-with $C_g=C_v=0$.  In that case the displayed budget gives
-\[
- Q=O\!\left(
- \bar\sigma\Delta_F\epsilon^{-3/2}
- +\frac{\bar\sigma}{\sigma_0}
-     \left[1+\log_+\frac{h_0}{\epsilon}\right]
- +\log_+\frac{\sqrt M}{\sigma_0}+1\right).
-\]
-Thus the exact-oracle case remains included, with the dependence on
-the initial scale explicit.  We use the same nondecreasing-scale
-algorithm for exact and inexact oracles, rather than require a
-separate exact-oracle result.  The proof of the general theorem,
-including its path and stored-value bounds, is in
-\Cref{app:adaptive-utr-proofs}.
-
-\begin{remark}[Sharper exact-oracle additive overhead]
-The preceding display is the specialization of the unified
-inexact-oracle proof and deliberately retains the factors used to pay
-for possible value and gradient perturbations.  If every working and
-validation call returns the exact function value, gradient, and
-Hessian, those perturbation payments disappear.  A separate
-exact-oracle bookkeeping of the same scale updates then gives the
-sharper additive bound
-\begin{equation}\label{eq:exact-utr-sharper}
- Q=O\!\left(
- \bar\sigma\Delta_F\epsilon^{-3/2}
- +\log_+\frac{h_0}{\epsilon}
- +\log_+\frac{\sqrt M}{\sigma_0}+1\right).
-\end{equation}
-Here $h_0=\max\{\|\nabla F(x_0)\|,\epsilon\}$ and
-$\bar\sigma=\max\{\sigma_0,2\sqrt{M/6}\}$.  In particular, when
-$\sigma_0=O(\sqrt M)$, this becomes
-\[
- Q=O\!\left(\Delta_F\sqrt M\,\epsilon^{-3/2}
- +\log_+\frac{\|\nabla F(x_0)\|}{\epsilon}+1\right),
-\]
-so the search logarithms remain additive and do not multiply the
-leading $\epsilon^{-3/2}$ term.  The sharper estimate is an
-exact-oracle specialization; the general inexact theorem above is the
-statement used by the NC--SC construction.
-\end{remark}
-
+of the oracles.  Its proof is in \Cref{app:adaptive-utr-proofs}.
+The finer counting and path estimates used in the minimax analysis
+are recorded separately in \Cref{prop:utr-budgets}; they do not
+require any additional assumption or algorithmic input.
 
 \subsection{SCAR and persistent residual reduction}
 \label{sec:scar-tool}
 
-The inner maximization will use SCAR, the parameter-free strongly
-convex gradient-minimization method of \citet{lan2026optimal}.
-Its computational building block is accumulative regularization
-(AR).  We give the AR procedure and the residual-reduction loop
-explicitly, then distinguish the original SCAR guarantee from the
-persistent implementation used here.  All oracle counts in this
-subsection count gradient evaluations; line searches also use
-function values.
+The inner problems use the parameter-free SCAR method of
+\citet{lan2026optimal}.  We specify its accumulative regularization
+(AR) routine and two residual-reduction interfaces, importing only
+the guarantee needed for persistent use across changing objectives.
+All oracle counts below count gradient evaluations; line searches
+also use function values.
 
 \paragraph{The AR building block.}
 The procedure below is \citet[Algorithm~4.2]{lan2026optimal}, with
@@ -633,57 +594,90 @@ $\alpha_s$ for its regularization to distinguish it from the outer
 UTR scale $\sigma$.  Its accelerated subsolver $\mathcal A$ is the
 line-search implementation described after their Assumption~4.1,
 treating the quadratic regularizer as a proximable term.
-For
+For a convex objective $\phi$ with an $L$-Lipschitz gradient, define
 \[
  \phi_s(w):=\phi(w)+\frac{\alpha_s}{2}\|w-\bar u_s\|^2,
  \qquad u_s^*:=\arg\min_w\phi_s(w),
 \]
-the subsolver, started at $u_{s-1}$, supplies iterates $u_s^k$ and
+The subsolver, started at $u_{s-1}$, supplies iterates $u_s^k$ and
 computed estimates $L_s^k$ satisfying
 \begin{equation}\label{eq:scar-agd-interface}
  \phi_s(u_s^k)-\phi_s(u_s^*)
  \le\frac{L_s^k}{k^2}\|u_{s-1}-u_s^*\|^2,
  \qquad 0<L_s^k\le4L.
 \end{equation}
-It stops at the first $k\ge8\sqrt{2L_s^k/\alpha_s}$.
-Only this computable stopping test is used; $L$ and $u_s^*$ occur
-in the guarantee, not in the input.  This specifies the imported
-accelerated subsolver required by the AR theorem.
+We write this stopped solver as
+\[
+ \mathcal A(\phi,\alpha_s,\bar u_s,u_{s-1}):=u_s^{k_s},
+ \qquad
+ k_s:=\min\left\{k\ge1:
+       k\ge8\sqrt{2L_s^k/\alpha_s}\right\}.
+\]
+The index $k_s$ is determined along the generated trajectory, not
+specified in advance.  Each call starts with fresh accelerated
+momentum.  Only the displayed computable stopping test is used;
+$L$ and $u_s^*$ occur in the guarantee, not in the input.
 
 \begin{procedure}[H]
 \DontPrintSemicolon
 \caption{AR($\phi,u,\alpha,\mathcal M$)}
 \label{proc:scar-ar}
-\KwIn{Objective $\phi$, point $u$, regularization $\alpha>0$,
- and line-search estimate $\mathcal M>0$}
-\KwOut{Point $v$ and updated estimate $\mathcal M^+$}
-Set $u_0=\bar u_0=u$, $\alpha_0=0$, and $\mathcal M_0=\mathcal M$\;
+\KwIn{$\phi:\R^m\to\R$, $u\in\R^m$, $\alpha,\mathcal M>0$}
+\KwOut{$(v,\mathcal M^+)\in\R^m\times(0,\infty)$}
+$u_0\leftarrow u$, $\bar u_0\leftarrow u$,
+ $\alpha_0\leftarrow0$, $\mathcal M_0\leftarrow\mathcal M$\;
 \For{$s=1,2,\ldots$}{
- Set $\alpha_s=4^{s-1}\alpha$ and
- $\bar u_s=(\alpha_{s-1}/\alpha_s)\bar u_{s-1}
+ $\alpha_s\leftarrow4^{s-1}\alpha$,\quad
+ $\bar u_s\leftarrow(\alpha_{s-1}/\alpha_s)\bar u_{s-1}
              +(1-\alpha_{s-1}/\alpha_s)u_{s-1}$\;
- Obtain $u_s$ by applying $\mathcal A$ to $\phi_s$ from $u_{s-1}$,
- with the stopping test following \eqref{eq:scar-agd-interface}\;
- Set $\mathcal M_s=\mathcal M_{s-1}/2$ and
- $p_s=\nabla\phi_s(u_s)$\;
- \While{true}{
-  Set $w_s=u_s-p_s/[2(\mathcal M_s+\alpha_s)]$\;
-  \eIf{$\phi_s(w_s)-\phi_s(u_s)-p_s^T(w_s-u_s)
-          \le\frac{\mathcal M_s+\alpha_s}{2}\|w_s-u_s\|^2$}{
-   \textbf{break}\;
-  }{
-   Set $\mathcal M_s\leftarrow2\mathcal M_s$\;
-  }
+ $u_s\leftarrow\mathcal A(\phi,\alpha_s,\bar u_s,u_{s-1})$
+ \label{line:scar-ar-solve}\;
+ $\mathcal M_s\leftarrow\mathcal M_{s-1}/2$,\quad
+ $p_s\leftarrow\nabla\phi_s(u_s)$\;
+ $w_s\leftarrow u_s-p_s/[2(\mathcal M_s+\alpha_s)]$\;
+ \While{$\phi_s(w_s)-\phi_s(u_s)-p_s^T(w_s-u_s)
+          >\frac{\mathcal M_s+\alpha_s}{2}\|w_s-u_s\|^2$}{
+  $\mathcal M_s\leftarrow2\mathcal M_s$,\quad
+  $w_s\leftarrow u_s-p_s/[2(\mathcal M_s+\alpha_s)]$
+  \label{line:scar-ar-backtrack}\;
  }
  \If{$\alpha_s\ge\mathcal M_s$}{
-  \Return{$(v,\mathcal M^+)=(u_s,\mathcal M_s)$}\;
+  \Return{$(u_s,\mathcal M_s)$}\label{line:scar-ar-return}\;
  }
 }
 \end{procedure}
 
-The backtracking point $w_s$ is used only to test a local inequality;
-the AR output is $u_s$, not $w_s$.  The returned $\mathcal M^+$
-is not a certified global upper bound on $L$.
+In \hyperref[proc:scar-ar]{AR}, line~\ref{line:scar-ar-solve}
+calls the stopped accelerated solver, and
+line~\ref{line:scar-ar-backtrack} doubles the trial estimate until
+the local Taylor inequality holds.  The point $w_s$ is used only
+for that test: line~\ref{line:scar-ar-return} returns $u_s$, not
+$w_s$.  The returned $\mathcal M^+$ is not a certified global
+upper bound on $L$.
+
+\begin{samepage}
+\begin{fact}[AR guarantee; {\citet[Theorem~4.1 and Algorithm~4.2]{lan2026optimal}}]
+\label{thm:scar-blackbox}
+Let $\phi:\R^m\to\R$ be differentiable and $\mu$-strongly convex
+with an $L$-Lipschitz gradient, where $0<\mu\le L$.
+For any $u\in\R^m$, $\nu>0$, and $0<\mathcal M\le4L$, the call
+\[
+ (v,\mathcal M^+)=\operatorname{AR}(\phi,u,\nu/10,\mathcal M)
+\]
+uses $O(1+\sqrt{L/\nu})$ gradient evaluations, returns
+$0<\mathcal M^+\le2L$, and satisfies
+\begin{equation}\label{eq:scar-ar-guarantee}
+ \text{if }\nu\le\mu,\qquad
+ \|\nabla\phi(v)\|\le\tfrac12\|\nabla\phi(u)\|.
+\end{equation}
+The hidden constant is universal, and AR requires neither $L$ nor
+$\mu$ as an input.
+\end{fact}
+\end{samepage}
+
+The residual-halving implication is the cited distance-to-solution
+bound combined with strong convexity; the short derivation is given
+in \Cref{app:scar-tool-proof}. 
 
 \paragraph{SCAR as repeated residual halving.}
 The next two procedures write
@@ -696,19 +690,16 @@ by the caller, even if an AR candidate fails the halving test.
 \DontPrintSemicolon
 \caption{SCARHalf($\phi,u;\nu,\mathcal M$)}
 \label{proc:scar-half}
-\KwIn{Objective $\phi$, point $u$, and shared calibration
- $\nu,\mathcal M>0$}
-\KwOut{Point with residual at most $\|\nabla\phi(u)\|/2$;
- updated calibration}
-Compute and freeze $R=\|\nabla\phi(u)\|$\;
+\KwIn{$\phi:\R^m\to\R$, $u\in\R^m$, $\nu,\mathcal M>0$}
+\KwOut{$v\in\R^m$, $\|\nabla\phi(v)\|\le\|\nabla\phi(u)\|/2$;
+ $(\nu,\mathcal M)\in(0,\infty)^2$}
+$R\leftarrow\|\nabla\phi(u)\|$\label{line:scar-half-residual}\;
 \If{$R=0$}{\Return{$u$}\;}
-\While{true}{
- Run $(v,\mathcal M^+)=\operatorname{AR}(\phi,u,\nu/10,\mathcal M)$
- with freshly initialized accelerated momentum\;
- Set $\mathcal M\leftarrow\mathcal M^+$\;
+\While{$R>0$}{
+ $(v,\mathcal M)\leftarrow\operatorname{AR}(\phi,u,\nu/10,\mathcal M)$
+ \label{line:scar-half-ar}\;
  \If{$\|\nabla\phi(v)\|\le R/2$}{\Return{$v$}\;}
- Discard $v$ and set $\nu\leftarrow\nu/4$;
- keep $u$ and $R$ unchanged\;
+ $\nu\leftarrow\nu/4$\label{line:scar-half-retry}\;
 }
 \end{procedure}
 
@@ -716,54 +707,34 @@ Compute and freeze $R=\|\nabla\phi(u)\|$\;
 \DontPrintSemicolon
 \caption{SCARTarget($\phi,u,\tau;\nu,\mathcal M$)}
 \label{proc:scar-target}
-\KwIn{Objective $\phi$, point $u$, target $\tau>0$, and shared
- calibration $\nu,\mathcal M>0$}
-\KwOut{Point with residual at most $\tau$; updated calibration}
+\KwIn{$\phi:\R^m\to\R$, $u\in\R^m$, $\tau,\nu,\mathcal M>0$}
+\KwOut{$u\in\R^m$, $\|\nabla\phi(u)\|\le\tau$;
+ $(\nu,\mathcal M)\in(0,\infty)^2$}
 \While{$\|\nabla\phi(u)\|>\tau$}{
- Set $u\leftarrow\operatorname{SCARHalf}(\phi,u;\nu,\mathcal M)$\;
+ $u\leftarrow\operatorname{SCARHalf}(\phi,u;\nu,\mathcal M)$
+ \label{line:scar-target-half}\;
 }
 \Return{$u$}\;
 \end{procedure}
 
-For a single objective, initializing $(\nu,\mathcal M)$ once and
-running \textsc{SCARTarget} gives SCAR with the harmless initial
-stopping check.  The following fact records the imported guarantees.
+In \hyperref[proc:scar-half]{\textsc{SCARHalf}},
+line~\ref{line:scar-half-residual} fixes the initial residual, and
+line~\ref{line:scar-half-ar} updates the shared $\mathcal M$ even
+when the candidate fails.  On failure,
+line~\ref{line:scar-half-retry} changes only $\nu$: the starting
+point $u$ and residual $R$ stay fixed throughout the call.
+By contrast, line~\ref{line:scar-target-half} of
+\hyperref[proc:scar-target]{\textsc{SCARTarget}} replaces its
+iterate after each successful halving and stops once the prescribed
+target is met.  Both procedures retain every update to
+$(\nu,\mathcal M)$.
 
-\begin{fact}[SCAR and AR; {\citet[Theorems~4.1 and~5.1]{lan2026optimal}}]
-\label{thm:scar-blackbox}
-Let $\phi:\R^m\to\R$ be differentiable and $\mu$-strongly convex,
-with an $L$-Lipschitz gradient, where $0<\mu\le L$, and let
-$u^*=\arg\min_u\phi(u)$.
-For any $u$, $\nu>0$, and $0<\mathcal M\le4L$, the AR subroutine
-\[
- (v,\mathcal M^+)
- =\operatorname{AR}(\phi,u,\nu/10,\mathcal M)
-\]
-returns
-\begin{equation}\label{eq:scar-ar-guarantee}
- \|\nabla\phi(v)\|\le\frac\nu2\|u-u^*\|,
- \qquad 0<\mathcal M^+\le2L,
-\end{equation}
-using $O(1+\sqrt{L/\nu})$ gradient evaluations.
-For any residual target $\tau>0$, SCAR initialized at $u$ with
-$\nu_0\ge\mu$ and $0<\mathcal M_0\le4L$ returns $\widehat u$
-satisfying
-\begin{equation}\label{eq:scar-residual}
- \|\nabla\phi(\widehat u)\|\le\tau
-\end{equation}
-within
-\begin{equation}\label{eq:scar-original-complexity}
- O\!\left(\sqrt{\frac L\mu}\left[
-  1+\log\frac{\nu_0}{\mu}
-   +\log_+\frac{\|\nabla\phi(u)\|}{\tau}
- \right]\right)
-\end{equation}
-gradient evaluations.  If the initial residual already satisfies the
-target, SCAR returns the initial point.  All constants hidden in these
-bounds are universal, and neither routine requires $L$ or $\mu$ as an
-input.  The AR bound applies also when $L=\mu$, so the SCAR conclusion
-extends to this endpoint without a parameter-dependent branch.
-\end{fact}
+For a single objective, initializing $(\nu,\mathcal M)$ once and
+running \textsc{SCARTarget} implements SCAR with an initial stopping
+check.  We use the name \textsc{SCARTarget} for this target-based
+interface and \textsc{SCARHalf} for one successful halving.  Both
+will be analyzed through \Cref{thm:scar-blackbox}, with calibration
+retained across calls.
 
 An admissible initialization is obtained from two gradient evaluations.
 For any $z\ne u$, define
@@ -799,28 +770,17 @@ $\R^m$, all $\mu$-strongly convex and all with $L$-Lipschitz
 gradients.  Initialize a shared pair $(\nu,\mathcal M)$ with
 $\mu\le\nu_0\le L$ and $0<\mathcal M_0\le4L$.
 
-Use \hyperref[proc:scar-half]{\textnormal{\textsc{SCARHalf}}} for each halving
-call, retaining $(\nu,\mathcal M)$ between calls.  Thus each attempt
-starts from the call's fixed $u$, updates $\mathcal M$ through AR,
-and either halves the fixed initial residual or divides $\nu$ by
-four and retries from $u$.
-
-Every such call terminates and halves its initial residual.  Across
-any $N$ calls, including calls on different objectives or from unrelated
-initial points, the number of failed curvature guesses is at most
-\begin{equation}\label{eq:persistent-scar-failures}
- \left\lceil\log_4\frac{\nu_0}{\mu}\right\rceil
- \le\lceil\log_4(L/\mu)\rceil.
-\end{equation}
-The total number of gradient evaluations, including the initial
-residual queries, is
+Every call to
+\hyperref[proc:scar-half]{\textnormal{\textsc{SCARHalf}}}
+terminates and halves its initial residual.  Retaining
+$(\nu,\mathcal M)$ across any $N$ such calls, including calls on
+different objectives or from unrelated initial points, gives a total of
 \begin{equation}\label{eq:persistent-scar-count}
  O\!\left(\sqrt{\frac L\mu}\left[
  N+\left\lceil\log_4\frac{\nu_0}{\mu}\right\rceil
- \right]\right).
+ \right]\right)
 \end{equation}
-The retained estimate satisfies $0<\mathcal M\le4L$ throughout and
-$\mathcal M\le2L$ after the first nontrivial AR call.
+gradient evaluations, including the initial residual queries.
 \end{lemma}
 
 \subsection{The NC--SC setting}
@@ -835,7 +795,9 @@ We impose the following global regularity assumptions, as in
 \citet{luo2022finding}.
 
 \begin{assumption}[NC--SC regularity]\label{ass:ncsc}
-The payoff $f$ is twice continuously differentiable and satisfies:
+The payoff $f$ is twice continuously differentiable and satisfies
+the following conditions, with Lipschitz continuity understood as in
+\Cref{def:lipschitz}:
 \begin{enumerate}[label=(\roman*)]
   \item $\nabla f$ is $\ell$-Lipschitz on
   $\R^{d_x}\times\R^{d_y}$;
@@ -845,8 +807,8 @@ The payoff $f$ is twice continuously differentiable and satisfies:
   $0<\mu\le\ell$;
   \item $P^*:=\inf_xP(x)>-\infty$.
 \end{enumerate}
-We write $\kappa:=\ell/\mu$.
 \end{assumption}
+We write $\kappa:=\ell/\mu$.
 
 Strong concavity makes
 $y^*(x):=\arg\max_y f(x,y)$ unique and guarantees that
@@ -859,8 +821,7 @@ $\nabla^2_{yy}f(x,y)$ is nonsingular.  Define the Schur complement
 \end{equation}
 
 \begin{lemma}[Value-function geometry]\label{lem:value-geometry}
-Under \Cref{ass:ncsc}, $y^*(\cdot)$ is $\kappa$-Lipschitz, $P$ is twice
-continuously differentiable, and
+Under \Cref{ass:ncsc}, $P$ is twice continuously differentiable, and
 \begin{subequations}\label{eq:value-derivatives}
 \begin{align}
  \nabla P(x)&=\nabla_xf(x,y^*(x)),\label{eq:value-gradient}\\
@@ -881,24 +842,17 @@ These properties follow from
 The residual gives the distance estimate
 \begin{equation}\label{eq:inner-residual-certificate}
  \|y-y^*(x)\|
- \le\frac{\|\nabla_yf(x,y)\|}{\mu}
- \le\kappa\|y-y^*(x)\|.
+ \le\frac{\|\nabla_yf(x,y)\|}{\mu}.
 \end{equation}
-The first inequality follows from strong concavity and
-Cauchy--Schwarz; the second follows from $\ell$-smoothness.
+This follows from strong concavity and Cauchy--Schwarz.
 This estimate is used in the analysis, not as an executable
 certificate when $\mu$ is unknown.
 
-For the inner objective $q_x(y):=-f(x,y)$, the secant in
-\eqref{eq:secant-estimate-pf} becomes
-\begin{equation}\label{eq:scar-secant}
- a_x:=\frac{\|\nabla_yf(x,z)-\nabla_yf(x,y^{\rm in})\|}
-                 {\|z-y^{\rm in}\|},
- \qquad z\ne y^{\rm in}.
-\end{equation}
-By \eqref{eq:secant-bounds-pf}, $\mu\le a_x\le\ell$.
-It initializes persistent SCAR and scales the validation tolerance
-without evaluating either unknown curvature parameter.
+For the inner objective $q_x(y):=-f(x,y)$,
+\eqref{eq:secant-bounds-pf} gives
+$\mu\le a(q_x;u,z)\le\ell$ whenever $u\ne z$.
+This observable secant initializes persistent SCAR and scales the
+validation tolerance without evaluating either unknown parameter.
 
 
 \section{A parameter-free minimax algorithm}
@@ -1013,58 +967,71 @@ without modification.  The next algorithm specifies the three
 working-query operations and the validator; the outer steps,
 acceptance tests, and scale updates are exactly those of
 \Cref{alg:adaptive-utr}.
-Every ``persistent halving'' below is one call to
-\hyperref[proc:scar-half]{\textsc{SCARHalf}}.  Initialization and
-validation use \hyperref[proc:scar-target]{\textsc{SCARTarget}}
-with their displayed residual targets, whereas trial and refresh
-queries prescribe a number of \textsc{SCARHalf} calls.  All these
-calls use the same shared calibration.
+To write the oracle operations compactly, let
+\begin{equation}\label{eq:minimax-scar-notation}
+\begin{aligned}
+ \operatorname{Half}_x^0(y)&:=y,\\
+ \operatorname{Half}_x^{j+1}(y)
+   &:=\operatorname{SCARHalf}
+       (q_x,\operatorname{Half}_x^j(y);\nu,\mathcal M),\\
+ \operatorname{Target}_x(y,\tau)
+   &:=\operatorname{SCARTarget}(q_x,y,\tau;\nu,\mathcal M),\\
+ \mathcal C(x,y)&:=
+   (\widehat P(x,y),\widehat g(x,y),\widehat H(x,y);
+      y,\nabla_yf(x,y)).
+\end{aligned}
+\end{equation}
+The halving recursion means sequential calls, each using the
+calibration left by its predecessor; all calls, including target
+calls, share the same $(\nu,\mathcal M)$.  In $\mathcal C$, the
+auxiliary data are the inner point and its cached residual gradient;
+$y(w)$ denotes the inner point in $w$.  Let $e_1$ be the first
+coordinate vector in $\R^{d_y}$, so every secant below uses two
+distinct points.  Finally, $\operatorname{UTR}(x_0,\epsilon,
+\sigma_0;\mathcal W,\mathcal V)$ denotes \Cref{alg:adaptive-utr}.
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
+\SetKwProg{Fn}{function}{:}{end}
 \caption{Parameter-free minimax UTR with persistent SCAR}
 \label{alg:gradient-scaled-scar}
-\KwIn{$x_0,y_{-1}$ and $0<\epsilon<1$}
-Set $\sigma_0=1/\log(e/\epsilon)$ and $c_0=2^{-12}$\;
-Choose $z_0\ne y_{-1}$, compute $a_0$ by \eqref{eq:scar-secant},
-and initialize the shared SCAR calibration
-$\nu_0=\mathcal M_0=a_0$\;
-Define the working oracle $\mathcal W$ as follows:\;
-\Indp
-\textnormal{Initialization at $x_0$:}
- starting from $y_{-1}$, apply persistent halvings until
- $\|\nabla_yf(x_0,y)\|\le c_0a_0r_\epsilon(\sigma_0)$;
- return the corrected tuple and its inner point $y$\;
-\textnormal{Trial at $x+d$ with scale $\sigma$:}
- starting from the stored $y$, apply
- $N_{\rm tr}(\|d\|,\sigma)$ successful persistent halvings to $q_{x+d}$;
- return the corrected tuple and candidate $y^+$\;
-\textnormal{Refresh at unchanged $x$ after $\sigma$ doubles:}
- starting from the old stored $y$, apply one successful persistent
- halving to $q_x$; return the refreshed corrected tuple and inner point\;
-\Indm
-Define the validation oracle $\mathcal V$ at a candidate $x^+$:\;
-\Indp
-Starting from its working inner point $y^+$, choose $z^+\ne y^+$
- and compute a secant $a^+$ by \eqref{eq:scar-secant}\;
-Keep $a^+$ fixed and continue persistent halvings until
- $\|\nabla_yf(x^+,y_{\rm v})\|\le c_0a^+\epsilon^{3/2}$;
- return $(\widehat g(x^+,y_{\rm v}),\widehat H(x^+,y_{\rm v}))$\;
-\Indm
-Run \Cref{alg:adaptive-utr} with $F=P$, $(x_0,\epsilon,\sigma_0)$,
- and these oracles $\mathcal W,\mathcal V$; return its output\;
+\KwIn{$x_0\in\R^{d_x},\ y_{-1}\in\R^{d_y},\ 0<\epsilon<1$}
+$(\sigma_0,c_0)\leftarrow(1/\log(e/\epsilon),2^{-12})$\;
+$a_0\leftarrow a(q_{x_0};y_{-1},y_{-1}+e_1)$;
+ $(\nu,\mathcal M)\leftarrow(a_0,a_0)$\nllabel{ln:minimax-init}\;
+$\mathcal W^0_{\sigma_0}(x_0):=
+ \mathcal C(x_0,\operatorname{Target}_{x_0}
+              (y_{-1},c_0a_0r_\epsilon(\sigma_0)))$\nllabel{ln:minimax-working-init}\;
+$\mathcal W_{\sigma,z}(x;w):=
+ \mathcal C(x,\operatorname{Half}_x^{N_{\rm tr}(\|x-z\|,\sigma)}
+                      (y(w)))$\nllabel{ln:minimax-trial}\;
+$\mathcal W^{\rm r}_\sigma(x;w):=
+ \mathcal C(x,\operatorname{Half}_x^1(y(w)))$\nllabel{ln:minimax-refresh}\;
+\Fn{$\mathcal V_\sigma(x;w)$}{
+ $y\leftarrow y(w)$;
+ $a_{\rm v}\leftarrow a(q_x;y,y+e_1)$\nllabel{ln:minimax-secant}\;
+ $y_{\rm v}\leftarrow\operatorname{Target}_x(y,c_0a_{\rm v}\epsilon^{3/2})$
+ \nllabel{ln:minimax-validation}\;
+ \Return{$(\widehat g(x,y_{\rm v}),\widehat H(x,y_{\rm v}))$}\;
+}
+\Return{$\operatorname{UTR}(x_0,\epsilon,\sigma_0;
+                         \mathcal W,\mathcal V)$}\nllabel{ln:minimax-outer}\;
 \end{algorithm}
 
-All inner calls share the calibration $(\nu,\mathcal M)$, including
-calls on rejected candidates and failed validators.  Accelerated
-momentum is restarted when the inner objective changes.
-Rejecting a candidate discards its point and corrected tuple but
-retains the updated calibration; a refresh starts from the old
-stored inner point, not the discarded candidate or validator.
-Accepted tuples are stored without further refinement.
-A zero-length trial needs no halving, whereas a scale-doubling
-refresh still requires one.  Residual gradients are cached and
-reused, and every residual and secant query is included in the
+Lines~\ref{ln:minimax-working-init}--\ref{ln:minimax-refresh} define
+routines: their right-hand sides are evaluated only when the outer
+method calls the corresponding oracle.  The calibration initialized
+at line~\ref{ln:minimax-init} is shared by every such evaluation,
+including rejected candidates and failed validations.  The secant
+at line~\ref{ln:minimax-secant} is computed once and held fixed
+throughout line~\ref{ln:minimax-validation}.
+The trial and refresh definitions distinguish zero-length trials
+($N_{\rm tr}(0,\sigma)=0$) from scale refreshes (one halving).
+The outer assignments in lines~\ref{ln:utr-accept}
+and~\ref{ln:utr-refresh} of \Cref{alg:adaptive-utr} ensure that a
+refresh starts from the old stored $y(w)$, not the rejected
+candidate or validation point.  All residual and secant queries,
+with residual gradients cached when available, are included in the
 inner-gradient count.
 
 \subsection{Complexity guarantee}
@@ -1096,23 +1063,17 @@ If $Q$ counts all solved trust-region subproblems and $N_y$ counts
 all inner-gradient evaluations, including the secant evaluations, then
 \begin{subequations}\label{eq:gs-complexities}
 \begin{align}
- Q&=O\!\left(\Delta_P\sqrt{M_P}\,\epsilon^{-3/2}\right)
+ Q&=O\!\left(\Delta_P\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2}\right)
      +O_{\rm fixed}(\log^3(e/\epsilon)),
      \label{eq:gs-outer-complexity}\\
  N_y&=O\!\left(
-       \Delta_P\sqrt{\kappa M_P}\,\epsilon^{-3/2}\right)
+       \Delta_P\kappa^2\sqrt\rho\,\epsilon^{-3/2}\right)
        +O_{\rm fixed}(\sqrt\kappa\,\log^3(e/\epsilon)).
      \label{eq:gs-inner-complexity}
 \end{align}
 \end{subequations}
 Here $O_{\rm fixed}$ may depend on the fixed payoff, regularity
-constants, and initialization, but not on $\epsilon$.  The leading
-outer and inner terms are equivalently
-\[
- O(\Delta_P\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2})
- \quad\text{and}\quad
- O(\Delta_P\kappa^2\sqrt\rho\,\epsilon^{-3/2}).
-\]
+constants, and initialization, but not on $\epsilon$.
 Using internal tolerance $(1536/7225)\epsilon$ returns an
 $\epsilon$-SOSP of $P$, with $M=M_P$ in
 \Cref{def:stationarity}, whenever that internal tolerance is at most
@@ -1138,8 +1099,9 @@ The corrected working and validation tuples satisfy
 \Cref{ass:inexact-oracle} below a class-uniform accuracy threshold.
 Thus the outer guarantee follows directly from
 \Cref{thm:total-complexity}; no separate minimax descent or
-scale-search argument is needed.  Its cubic-path estimate pays for
-tracking on accepted steps, while its stored-value bound controls
+scale-search argument is needed.  The accompanying estimates in
+\Cref{prop:utr-budgets} give a cubic-path bound that pays for
+tracking on accepted steps, while the stored-value bound controls
 tracking at failed trials.  Persistent SCAR shares one curvature
 calibration across the entire run.  The remaining work is the
 initialization, scale-refresh, and candidate-validation cost.
@@ -1149,10 +1111,9 @@ initialization, scale-refresh, and candidate-validation cost.
 \section{NC--SC convergence analysis}
 \label{sec:ncsc-analysis}
 
-The outer complexity and path budget are already available from
-\Cref{thm:total-complexity}.  We prove the corrected-oracle estimates,
-verify its hypotheses for the SCAR construction, and then count the
-inner work.
+The outer bounds are supplied by
+\Cref{thm:total-complexity,prop:utr-budgets}.  We now verify the
+SCAR oracle errors and bound the inner work.
 
 \subsection{Corrected value-function oracles}
 \label{sec:corrected-oracle-proofs}
@@ -1322,7 +1283,7 @@ If also $\sigma^2\ge M_P/6$, then
   |\widehat P-P(x)|&\le\epsilon^{3/2}/(4096\sigma).
  \end{aligned}
 \end{equation}
-Furthermore, for any secant $a_x$ from \eqref{eq:scar-secant}, any
+Furthermore, for any secant $a_x=a(q_x;u,z)$ with $u\ne z$, any
 point $y_{\rm v}$ satisfying
 \begin{equation}\label{eq:validator-residual}
  \|\nabla_yf(x,y_{\rm v})\|\le c_0a_x\epsilon^{3/2}
@@ -1434,8 +1395,10 @@ and positivity of the requested residual targets.  Thus
 \Cref{alg:gradient-scaled-scar}.  The onset restrictions depend only
 on the common constants $(\ell,\mu,\rho)$, and they also ensure
 $\sigma_0=\mathcal A_\epsilon^{-1}<\sqrt{M_P/6}$.  Consequently the
-scale cap in \Cref{thm:total-complexity} gives
-$\bar\sigma=2\sqrt{M_P/6}$.
+scale bound in \Cref{prop:utr-budgets} gives
+$\bar\sigma=2\sqrt{M_P/6}$.  Throughout this proof, $K,J,h_0$ and
+$B_\epsilon$ are the counts and auxiliary quantities defined in that
+proposition and \eqref{eq:utr-budget}, specialized to $F=P$.
 
 We first specialize the budget $B_\epsilon$ in
 \eqref{eq:utr-budget}.  Since $\sigma_0=\mathcal A_\epsilon^{-1}$,
@@ -1736,8 +1699,8 @@ known strong-concavity lower bound, or problem-specific structure.
 The parameter-free minimax method is a direct oracle realization
 of an inexact UTR theorem for general unconstrained optimization.
 The theorem separates the construction of approximate values and
-derivatives from outer progress and provides the accepted path and
-stored-value bounds needed for inner-work analysis.
+derivatives from outer progress; its supporting estimates provide
+the path and stored-value bounds needed for inner-work analysis.
 Corrected envelope oracles and persistent SCAR satisfy its
 hypotheses in the NC--SC setting, yielding leading complexities
 $O(\Delta_P\kappa^{3/2}\sqrt\rho\,\epsilon^{-3/2})$ and
@@ -1755,18 +1718,56 @@ trust-region solves remain beyond the present analysis.
 \appendix
 \section{Proof of the inexact UTR theorem}
 \label{app:adaptive-utr-proofs}
-\label{app:proofs}
 
 All results in this appendix concern the general unconstrained
 objective $F$ and the oracle interface of
 \Cref{ass:inexact-oracle}.  No minimax structure is used.
+
+We first record the auxiliary estimates used by the minimax analysis.
+For this appendix, write $F^*=\inf_xF(x)$,
+$\Delta_F=F(x_0)-F^*$, $h_0=\max\{\|\widehat g_0\|,\epsilon\}$,
+and $\bar\sigma=\max\{\sigma_0,2\sqrt{M/6}\}$, where
+$\widehat g_0$ is the initialized working gradient.  Define
+\begin{equation}\label{eq:utr-budget}
+\begin{aligned}
+ B_\epsilon:={}&\Delta_F+
+ \frac{23C_v\epsilon^{3/2}}{7\sigma_0^3}\\
+ &+\frac{\epsilon^{3/2}}{512\sigma_0}
+ \left[\left\lceil\log_2\frac{h_0}{\epsilon}\right\rceil
+       +1+\log_2\left(1+\frac{5C_g}{4\sigma_0^2}\right)\right].
+\end{aligned}
+\end{equation}
+
+\begin{proposition}[Counting and path estimates]\label{prop:utr-budgets}
+Under the hypotheses of \Cref{thm:total-complexity}, every generated
+scale is at most $\bar\sigma$.  If $K,J,Q$ denote, respectively,
+the numbers of accepted trials, failed trials, and solved
+subproblems at termination, then
+\begin{equation}\label{eq:utr-counts}
+ K\le1024\bar\sigma B_\epsilon\epsilon^{-3/2},\qquad
+ J\le\left\lceil\log_2\max\left\{1,
+          \frac{\sqrt{M/6}}{\sigma_0}\right\}\right\rceil,
+ \qquad Q=K+J+1.
+\end{equation}
+There are at most $J+1$ validation calls.  Every stored iterate and
+every finite prefix of accepted steps satisfy
+\begin{equation}\label{eq:utr-path-budget}
+ F(x)-F^*\le B_\epsilon,\qquad
+ \sum_{\rm accepted}\sigma_k^2\|d_k\|^3\le8B_\epsilon.
+\end{equation}
+The bounds on $K$ and $J$ also hold for every finite prefix.
+\end{proposition}
+
+We prove the proposition together with \Cref{thm:total-complexity}
+at the end of this appendix.
 
 \subsection{A common trust-region estimate}
 \label{app:common-tr-estimate}
 
 \begin{lemma}[Common inexact trust-region step estimate]
 \label{lem:common-inexact-tr-step}
-Suppose \Cref{ass:generic} holds.  At a point $x$, let $g$ and a
+Let $F:\R^n\to\R$ be twice continuously differentiable with an
+$M$-Lipschitz Hessian, $M>0$.  At a point $x$, let $g$ and a
 symmetric $H$ satisfy
 \[
  \|g-\nabla F(x)\|\le\delta_0,
@@ -1784,8 +1785,6 @@ gradient $g^+$ satisfy
 $\|g^+-\nabla F(x+d)\|\le\delta_+$.  Then
 \begin{subequations}\label{eq:common-tr-estimates}
 \begin{align}
- q(d)&\le-\frac{\lambda}{2}r^2,
-       \label{eq:common-model-bound}\\
  F(x)-F(x+d)
  &\ge\frac{a-\xi}{2}r^2+\frac{\lambda}{2}r^2
       -\frac M6r^3-\delta_0r,
@@ -1804,8 +1803,17 @@ and positive-semidefiniteness conditions give
  q(d)=-\frac12d^T(H+aI)d-\lambda r^2
  \le-\frac{\lambda}{2}r^2,
 \]
-which proves \eqref{eq:common-model-bound}.  The Taylor bound and the
-current endpoint errors imply
+and Hessian Lipschitz continuity gives the standard Taylor estimates
+\citep[Lemma~1.2.4]{nesterov2004introductory}
+\[
+\begin{aligned}
+ \|\nabla F(x+d)-\nabla F(x)-\nabla^2F(x)d\|
+ &\le\frac M2r^2,\\
+ F(x+d)-F(x)-\nabla F(x)^Td-\frac12d^T\nabla^2F(x)d
+ &\le\frac M6r^3.
+\end{aligned}
+\]
+The second estimate and the current endpoint errors imply
 \[
  F(x)-F(x+d)
  \ge-g^Td-\frac12d^THd-\delta_0r-\frac{\xi}{2}r^2-\frac M6r^3.
@@ -1833,7 +1841,7 @@ $B=H+aI$, gives $g+Hd=-(a+\lambda)d$.  Taking norms proves
 
 \begin{lemma}[Safe scale for inexact UTR]
 \label{lem:utr-safe}
-Under \Cref{ass:generic,ass:inexact-oracle}, the following hold
+Under the hypotheses of \Cref{thm:total-complexity}, the following hold
 for every generated trial of \Cref{alg:adaptive-utr}.
 If $\sigma^2\ge M/6$, every ordinary trial of
 \Cref{alg:adaptive-utr} satisfies both acceptance tests, and
@@ -2013,12 +2021,10 @@ To account for changes of scale, define
  E(\sigma)&:=C_v\frac{\epsilon^{3/2}}{\sigma^3},
  &E_0&:=E(\sigma_0),
  &T_0&:=\frac{\epsilon^{3/2}}{\sigma_0},\\
- h_0&:=\max\{\|\widehat g_0\|,\epsilon\},
- &\mathcal L_0&:=\mathcal L_\epsilon(h_0),
+ \mathcal L_0&:=\mathcal L_\epsilon(h_0),
  &D_0&:=1+\log_2\left(1+\frac{5C_g}{4\sigma_0^2}\right).
 \end{aligned}
 \end{equation}
-Here $\widehat g_0$ is the working gradient after initialization.
 The budget in \eqref{eq:utr-budget} can therefore be written as
 \[
  B_\epsilon=\Delta_F+\frac{23}{7}E_0+
@@ -2042,12 +2048,6 @@ Under the preceding conditions, every finite prefix satisfies
  \sum_{\rm accepted}
  \left(\frac{W_k}{32}+\frac{T_k}{1024}+\frac{U_k}{16}\right)
  \le B_\epsilon.
-\end{equation}
-If $K$ denotes its number of accepted steps, then
-\begin{equation}\label{eq:utr-prefix-budget}
- K\le1024\bar\sigma B_\epsilon\epsilon^{-3/2},
- \qquad
- \sum_{\rm accepted}\sigma_k^2r_k^3\le8B_\epsilon.
 \end{equation}
 Every stored iterate satisfies $F(x)-F^*\le B_\epsilon$.
 \end{lemma}
@@ -2107,27 +2107,21 @@ paying the two refresh bounds gives
 The same upper bound on the stored potential, together with
 $F(x)\le\Phi+E_0$, gives $F(x)-F^*\le B_\epsilon$.
 
-By \eqref{eq:utr-inexact-scale-bound},
-$T_k\ge\epsilon^{3/2}/\bar\sigma$, which proves the bound on $K$.
-The radius constraint also gives
-\[
- 4\sigma_k^2r_k^3\le\sigma_k\sqrt{h_k}\,r_k^2=W_k.
-\]
-Combining this with \eqref{eq:utr-cumulative-budget} proves the
-cubic-path bound.
-
 \end{proof}
 
 \subsection{Termination and the theorem's conclusions}
 
-\begin{proof}[Proof of \Cref{thm:total-complexity}]
+\begin{proof}[Proof of \Cref{thm:total-complexity,prop:utr-budgets}]
 Every oracle call is finite by the interface assumptions.  By
 \Cref{lem:utr-safe}, failed trials can occur only below
 $\sqrt{M/6}$, and the scale bound
 \eqref{eq:utr-inexact-scale-bound} limits their number uniformly
-over all finite prefixes.  \Cref{lem:utr-cumulative-budget} likewise
-bounds the number of accepted steps of every finite prefix by
-$1024\bar\sigma B_\epsilon\epsilon^{-3/2}$.
+over all finite prefixes.  Since
+$T_k\ge\epsilon^{3/2}/\bar\sigma$, \Cref{lem:utr-cumulative-budget}
+gives, for every finite prefix,
+\[
+ K\frac{\epsilon^{3/2}}{1024\bar\sigma}\le B_\epsilon.
+\]
 Every nonterminal trial is either accepted or failed.  Hence an
 infinite run would contradict one of these finite-prefix bounds,
 and the algorithm terminates.
@@ -2139,14 +2133,56 @@ Every validation either terminates or causes a failed trial, so
 there are at most $J+1$ validation calls.
 The returned-point estimate \eqref{eq:utr-validator-return} and
 $\sigma\le\bar\sigma$ prove \eqref{eq:return-guarantee}.
-Finally, \Cref{lem:utr-cumulative-budget} proves
-\eqref{eq:utr-path-budget} for every stored iterate and every finite
-prefix, as claimed.
+For the cubic-path estimate, the radius constraint gives
+\[
+ 4\sigma_k^2r_k^3\le\sigma_k\sqrt{h_k}\,r_k^2=W_k.
+\]
+Thus \Cref{lem:utr-cumulative-budget} implies
+$\sum_{\rm accepted}\sigma_k^2r_k^3\le8B_\epsilon$ for every
+finite prefix.  Its stored-value estimate supplies the other part
+of \eqref{eq:utr-path-budget}, proving \Cref{prop:utr-budgets}.
+
+To obtain the total count \eqref{eq:utr-total-count}, the initial
+working-gradient bound gives
+\[
+ \frac{h_0}{\epsilon}
+ \le\max\left\{1,
+       \frac{\|\nabla F(x_0)\|}{\epsilon}
+          +\frac{C_g}{\sigma_0^2}\right\}.
+\]
+Consequently the bracket in \eqref{eq:utr-budget} is at most a
+universal constant times
+$\log(e+\|\nabla F(x_0)\|/\epsilon+C_g/\sigma_0^2)$.
+Substitute this estimate and
+$\bar\sigma\le\max\{\sigma_0,\sqrt M\}$ into
+\eqref{eq:utr-counts}.  The terminal $+1$ is absorbed because this
+logarithm and $\max\{\sigma_0,\sqrt M\}/\sigma_0$ are both at least
+one, and the bound on $J$ is
+$O(1+\log(1+\sqrt M/\sigma_0))$.
+This gives \eqref{eq:utr-total-count} and completes the theorem.
 \end{proof}
 
 
 \section{Persistent SCAR}
 \label{app:scar-tool-proof}
+
+\begin{proof}[Derivation of \Cref{thm:scar-blackbox}]
+For $u^*=\arg\min\phi$, the cited AR theorem with initial
+regularization $\nu/10$ gives
+\[
+ \|\nabla\phi(v)\|\le\frac\nu2\|u-u^*\|
+ \le\frac\nu{2\mu}\|\nabla\phi(u)\|,
+\]
+where the second inequality is strong convexity.  This proves the
+halving implication.  The theorem's gradient cost becomes
+$O(1+\sqrt{L/\nu})$.  At each AR stage the backtracking estimate is
+at most $\max\{\mathcal M_{s-1}/2,2L\}$: a trial estimate at least
+$L$ satisfies the tested smoothness inequality, and backtracking
+doubles its estimate only after a failed test.  Starting from
+$\mathcal M\le4L$, induction gives $\mathcal M_s\le2L$ and hence
+the claimed bound on $\mathcal M^+$.  The argument also covers
+$L=\mu$.
+\end{proof}
 
 For completeness, the secant bounds \eqref{eq:secant-bounds-pf} follow
 from strong monotonicity and Cauchy--Schwarz:
@@ -2159,36 +2195,24 @@ Dividing by $\|z-u\|^2$ gives the lower bound; the upper bound is
 gradient Lipschitz continuity.
 
 \begin{proof}[Proof of \Cref{lem:scar-persistent-half}]
-Fix an attempted AR call on $\phi_j$ from $u$, and write
-$u_j^*=\arg\min\phi_j$ and $R=\|\nabla\phi_j(u)\|$.
-Strong convexity gives
-\[
- \|u-u_j^*\|\le\frac{\|\nabla\phi_j(u)\|}{\mu}
- =\frac R\mu.
-\]
-The AR estimate \eqref{eq:scar-ar-guarantee} consequently yields
-\[
- \|\nabla\phi_j(v)\|
- \le\frac\nu2\|u-u_j^*\|
- \le\frac\nu{2\mu}R.
-\]
-Hence a halving attempt must succeed whenever $\nu\le\mu$.
+The initial line-search estimate satisfies $\mathcal M_0\le4L$.
+Every AR call returns $\mathcal M^+\le2L$ by
+\Cref{thm:scar-blackbox}.  All objectives have the same upper
+smoothness bound $L$, so this retained estimate remains admissible
+even when the next objective changes.  Thus the AR guarantee applies
+inductively to every attempted call.
+
+By \Cref{thm:scar-blackbox}, a halving attempt on any $\phi_j$
+must succeed whenever $\nu\le\mu$.
 In particular, failure implies $\nu>\mu$ and the update after a
 failure leaves $\nu>\mu/4$.  Since the initial guess satisfies
 $\nu_0\ge\mu$, throughout the complete sequence we have
 $\nu\ge\mu/4$.  After
 $\lceil\log_4(\nu_0/\mu)\rceil$ failures, the guess is at most
 $\mu$, and no later objective can cause a failure: the same
-strong-convexity bound applies to every $\phi_j$.  This proves
-\eqref{eq:persistent-scar-failures} and finite termination of every
-halving call.
-
-The initial line-search estimate satisfies $\mathcal M_0\le4L$.
-Every nontrivial AR call returns $\mathcal M^+\le2L$ by
-\eqref{eq:scar-ar-guarantee}.  All objectives have the same upper
-smoothness bound $L$, so this retained estimate remains admissible
-even when the next objective changes.  Thus the AR guarantee applies
-inductively to every attempted call.
+strong-convexity bound applies to every $\phi_j$.  Thus the complete
+sequence has at most $\lceil\log_4(\nu_0/\mu)\rceil$ failures,
+and every halving call terminates.
 
 Each attempt uses $O(1+\sqrt{L/\nu})=O(\sqrt{L/\mu})$ gradient
 evaluations because $\nu\ge\mu/4$ and $L/\mu\ge1$.
@@ -2196,9 +2220,9 @@ There are at most $N$ successful AR attempts and at most
 $\lceil\log_4(\nu_0/\mu)\rceil$ failed attempts.
 The at most $N$ initial residual queries, including queries for calls
 with zero initial residual, fit in the same bound.  Summing proves
-\eqref{eq:persistent-scar-count}.  Returning $u$ when $R=0$ already
-satisfies the required residual reduction and does not change either
-retained estimate.
+\eqref{eq:persistent-scar-count}.  Returning $u$ when
+$\nabla\phi_j(u)=0$ already satisfies the required residual reduction
+and does not change either retained estimate.
 \end{proof}
 
 
