@@ -1,0 +1,160 @@
+% Concise protocols; complete records are in the accompanying experiment archive.
+\section{Experimental protocols and reproducibility}
+\label{app:exp-details}
+
+\paragraph{Implementation and accounting.}
+\label{app:exp-accounting}
+Minimax UTR and Minimax UTR-early use $c_0=1/128$ and
+$\sigma_0=1/\log(e/\epsilon)$ throughout.
+A charged secant in the all-ones unit direction initializes its curvature
+state without the strong-concavity modulus. The implemented model uses
+$h=\max\{\|\widehat g\|,\epsilon\}$, radius $\sqrt h/(4\sigma)$,
+and Hessian shift $\sigma\sqrt h+\sigma\sqrt\epsilon/64$.
+Initial refinement targets $c_0a_0\sqrt\epsilon/(4\sigma_0)$, with
+observable secant $a_0$; subsequent calls follow the recorded tracking,
+refresh, and validation schedule. A uses \texttt{tracking\_mode=target}.
+These operational settings are disclosed rather than identified with
+every subroutine setting of the analyzed algorithm. Paired ordinary/early
+runs differ only in the inner return test.
+
+$N_y$ counts performed inner-gradient evaluations, including checks,
+secants, and unsuccessful work. A's fixed-count AGD uses $K_{\rm in}$
+queries per call; C's residual-stopped AGD uses $1+2k$ for $k$ updates,
+plus the recorded initial query and interrupted work. A C query covers
+all 455 samples. C tables charge initialization and current-point model
+refinement; terminal points without a new model use arrival counts.
+Figures subtract initialization and place the common $x_0$ at zero.
+Schur assembly, Hessians, dense subproblem solves, and offline primal
+evaluation consume work outside $N_y$. C's Minimax UTR value oracle uses
+an eight-point curvature integral for small-step remainders; it does not
+perform a hidden inner Newton solve. Offline roots never feed online
+updates. A uses analytic primal derivatives; B uses scalar bisection;
+C uses independent Newton solves in physical coordinates with each
+unaveraged sample residual at most $10^{-12}$.
+
+\paragraph{A: parameter searches.}
+\label{app:exp-a}
+At each start, selection prioritizes the common stationarity hit, then
+$(Q^{\rm hit},N_y^{\rm hit})$, then fixed grid order; invalid solves are
+ineligible. The following sets define the complete candidate families:
+\begin{align*}
+\text{MCN: }\quad M&\in\{.1,.3,1,2,3,5,10,30\},&
+K_{\rm in}&\in\{4,8,12,20,40\},\\
+\eta_y&\in\{.05,.1,.15,.2\},&
+\theta_y&\in\{0,.5,.8,9/11,.9\};\\
+\text{GRTR: }\quad K_{\rm in}&\in\{5,8,10,20\},&
+\eta_y&\in\{.05,.1,.2\},\\
+\theta_y&\in\{0,.5,.9\},&
+(\sigma_{\rm reg},r)&\in\{.03,.1,.3,1\}\times\{.3,1,3\};\\
+\text{HSDA: }\quad K_{\rm in}&\in\{4,8,12,20,40\},&
+\eta_y&\in\{.05,.1,.15,.2\},\\
+\theta_y&\in\{0,.5,.8,.9\},&
+\alpha_H&\in\{.003,.01,.03,.1,.3\},\\
+\Lambda&\in\{.03,.05,.1,.2,.3\},&
+\omega_H&\in\{.05,.1,.25,.4\}.
+\end{align*}
+MCN exhausts 800 configurations per start. GRTR first tests 36 inner
+settings at $(\sigma_{\rm reg},r)=(.1,1)$, then 12 outer settings, then
+one adjacent-coordinate pass, caching duplicates: 200 distinct
+configuration--start pairs overall. HSDA exhausts 8,000 settings per
+start. Baseline budgets are 100 updates; MCN/GRTR stop at external
+hit, while HSDA records its native flag and completes the short-step
+update without stopping. Its displayed curves end at offline first hit.
+Inner points are warm-started with momentum reset. The searches consume,
+respectively, $2{,}920{,}692$, $132{,}327$, and $53{,}760{,}000$ queries,
+excluded from selected curves. Unequal, same-start searches are not
+held-out comparisons. The archive lists all selected parameters and
+complete trajectories.
+
+\paragraph{B: bounds and pathwise verification.}
+\label{app:exp-b}
+\label{app:exp-b-constants}
+For the base payoff, bounds on the curved-valley Hessian and its
+Lipschitz constant are $L_0=3.03777417$ and $M_0=4.03998631$.
+The cosine term contributes at most $2\eta$ and $2\sqrt2\eta$,
+respectively. With $R=6$ and $\eta=.1$, this yields
+\[
+ \ell=\max\{L_0,R\}+2\eta=6.2,\quad \mu=R-\eta=5.9,\quad
+ \rho=M_0+2\sqrt2\eta=4.32282902.
+\]
+The scalar envelope
+$\Psi(s)=\max_z\{\eta[1-\cos(s+z)]-Rz^2/2\}$ satisfies
+$|\Psi'''|\le\eta[R/(R-\eta)]^3$, giving
+$\bar M_P=4.14515772$. The MCN formula scale $28.37671254$ and
+$\bar M_P$ are chosen upper bounds, not measured optimal constants.
+
+\label{app:exp-b-controls}
+Replay freezes the 47 accepted-path points and incoming scales.
+The target is $r_t=c_0\ell\sqrt\epsilon/(4\sigma_t)$:
+$1.79406573\times10^{-4}$ initially and $4.48516433\times10^{-5}$
+thereafter. Costs restart at zero and exclude path-generation rejections
+and validation. Under $z=D_\gamma y$, every solver must satisfy
+$\|D_\gamma^{-1}\nabla_y f\|\le r_t$: the primal and intrinsic accuracy
+are unchanged. AGD uses known $L_y=6.1\gamma$ and $\mu_y=5.9/\gamma$;
+SCAR retains or resets state as specified in the main comparison.
+At $\gamma=1$, persistent/warm-restart/cold-restart totals
+$462/391/445$ decompose into 47 residual checks each, $1/47/47$
+secants, and $414/297/351$ halving queries. Downward-$\nu$ updates
+across $\gamma=1,2,4,8$ are $(0,0,1,2)$, $(0,0,44,89)$, and
+$(0,0,46,92)$, respectively. These are observed state corrections,
+not identification of the true modulus or an additive causal
+attribution at identical inner points. All 940 returned outputs pass
+their common residual target. Exact-primal controls and full-SCAR replay
+are not a full minimax baseline leaderboard.
+
+\paragraph{C: frozen inputs and references.}
+\label{app:exp-c}
+\label{app:exp-c-initialization}
+The seed-2026 stratified split has 455 training samples (170 malignant,
+285 benign) and 114 test samples. Standardization uses training data
+only. Reference centers use KMeans with \texttt{n\_init=1} and seed 2026;
+amplitudes use $N(0,.1^2)$ from the same seed and the bias is zero.
+The frozen start adds a unit-scale seed-4108 Gaussian perturbation.
+It minimizes the initial primal Hessian eigenvalue over 33 predeclared
+candidates, without algorithm outcomes or test labels. The saved vector
+is shared by all methods. Geometry screening is separately charged.
+
+\label{app:exp-c-reference}
+\label{app:exp-c-grids}
+The main text gives the 30 MCN and 25 GRTR practical grid points.
+They fix $(L_y,\mu_y)=(3.25,.175188)$ and tune an absolute residual
+tolerance, with no native stopping certificate. Analytic bounds give
+$L_y=2+5/4$ and $\mu_y<2-C_y$, where $C_y=(5+25/(4e))/4$.
+The two formula-prescribed
+references instead use $(\ell,\mu,\rho)=(5.1283,.175188,73.10)$ and
+AGD step/momentum $(.1949964,.6880101)$; the supplied $\rho$ has not
+been independently certified here. Their outer scales are
+$M=1.03728852\times10^7$ and $L_2=2.02809869\times10^6$, with residual
+targets $1.77922\times10^{-10}$ and $3.55844\times10^{-13}$.
+Both miss $10^{-6}$ stationarity at 10,000 updates: final gradients are
+$.01485070$ and $.17086028$, using $318{,}891$ and $474{,}269$ queries.
+Selection uses initialization-inclusive $(N_y^{\rm hit},Q^{\rm hit})$
+and fixed grid order. Non-hits have no finite hitting cost; the best
+practical baselines use fewer queries than fixed Minimax UTR-early here.
+
+\paragraph{C: stopping, truncation, and archived evidence.}
+\label{app:exp-c-stopping}
+\label{app:exp-diagnostics}
+Budgets are 10,000 subproblems, $10^6$ queries, and 900 online seconds.
+Only offline true gradient $\le10^{-6}$ defines success. An initial
+implementation ran to budget despite numerical stagnation; a later
+checkpoint-compatible patch stops after ten tiny-step/raw-gradient
+checks (or an unchanged iterate), labeling stagnation rather than
+success. Earlier completed records remain intact, so terminal costs
+mix numerical-stop versions; first-hit scores use the original histories.
+Display-only truncation removes a terminal sequence of at least 20
+points if raw gradient $\le10^{-12}$ and step $\le10^{-10}$, or true
+gradient $\le10^{-10}$. It retains the first tail point and any first
+hit; earlier rebounds remain visible. This removes 474,015 display
+points from 50 curves without changing scores or actual costs.
+
+All 57 server records were checked. Float64, single-threaded sequential
+runs used an Intel Xeon Platinum 8469C and PyTorch 2.8.0+cpu. Search
+costs were $1{,}817{,}112$ queries, 27,957.3 online seconds, and 39,534.3
+offline seconds, including idle tails. Minimax UTR-early ran on another machine,
+so no timing ratio is claimed. The accompanying experimental archive
+contains source hashes, exact manifests, complete grids, selected histories,
+state-event logs, scale diagnostics, and truncation audits; full server
+checkpoints are retained separately. These
+single-instance results establish neither held-out tuning performance
+nor uniform superiority.

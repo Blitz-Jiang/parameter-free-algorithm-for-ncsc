@@ -1,5 +1,6 @@
 \documentclass{article}
 \input{revised_header}
+\usepackage{graphicx}
 \newtheorem{fact}{Fact}[section]
 \crefname{fact}{Fact}{Facts}
 \Crefname{fact}{Fact}{Facts}
@@ -1725,6 +1726,10 @@ for example a certified inner gap, a value-function interval, a
 known strong-concavity lower bound, or problem-specific structure.
 
 
+
+\clearpage
+\input{numerical_experiments}
+
 \section{Conclusion}
 \label{sec:conclusion}
 
@@ -1746,6 +1751,7 @@ An observable all-accuracy certificate and a treatment of inexact
 trust-region solves remain beyond the present analysis.
 
 
+\clearpage
 \appendix
 \section{Proof of the inexact UTR theorem}
 \label{app:adaptive-utr-proofs}
@@ -2195,6 +2201,38 @@ satisfies the required residual reduction and does not change either
 retained estimate.
 \end{proof}
 
+
+\clearpage
+\section{Published-setting MCN reproduction}
+\label{app:wshape-published}
+
+For reference, we retain the MCN experimental parameters
+$M=10$, $K=8$, $\eta=0.1$, and $\theta=0.9$ with the original
+21-update budget. We use the paper's Euclidean cubic model and the
+same global spectral solver as in \Cref{sec:w-shaped}; this is not
+a claim to reproduce every implementation detail of the released
+coordinatewise cubic code. These runs are excluded from the tuned
+main comparison. Each uses 168 inner-gradient queries. The target
+in the table is exactly \eqref{eq:wshape-target}; a dash means no
+hit within 21 updates, not nonconvergence beyond that budget.
+
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+$x_0$ & First hit $T$ & Final $P-P^\star$ & Final $\|\nabla P\|$\\
+\midrule
+$(10^{-3},10^{-3},10^{-3})$ & -- & $5.74\cdot10^{-9}$ & $4.79\cdot10^{-4}$\\
+$(0,0,1)$ & 9 & $0$ & $0$\\
+$(0.1,0.1,0.1)$ & -- & $5.67\cdot10^{-5}$ & $4.76\cdot10^{-2}$\\
+$(1,0.1,0.1)$ & -- & $6.64\cdot10^{-4}$ & $1.10\cdot10^{-1}$\\
+\bottomrule
+\end{tabular}
+\end{center}
+Reported zeros are floating-point values. Full trajectories are
+retained in the experiment's published-setting reproduction record.
+
+\clearpage
+\input{numerical_experiments_appendix}
 
 \bibliographystyle{unsrtnat}
 \bibliography{revised_ref}
