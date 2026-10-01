@@ -4,10 +4,10 @@
 
 \paragraph{Implementation and accounting.}
 \label{app:exp-accounting}
-Minimax UTR and Minimax UTR-early use $c_0=1/128$ and
-$\sigma_0=1/\log(e/\epsilon)$ throughout.
-A charged secant in the all-ones unit direction initializes its curvature
-state without the strong-concavity modulus. The implemented model uses
+Historical A/B1/C use $c_0=1/128$ and an all-ones unit secant;
+new B2/B3 use $c_0=2^{-12}$ and the manuscript's $e_1$ secant.
+Full UTR runs initialize $\sigma_0=1/\log(e/\epsilon)$.
+The charged secant initializes curvature without the strong-concavity modulus. The implemented model uses
 $h=\max\{\|\widehat g\|,\epsilon\}$, radius $\sqrt h/(4\sigma)$,
 and Hessian shift $\sigma\sqrt h+\sigma\sqrt\epsilon/64$.
 Initial refinement targets $c_0a_0\sqrt\epsilon/(4\sigma_0)$, with
@@ -28,7 +28,7 @@ Schur assembly, Hessians, dense subproblem solves, and offline primal
 evaluation consume work outside $N_y$. C's Minimax UTR value oracle uses
 an eight-point curvature integral for small-step remainders; it does not
 perform a hidden inner Newton solve. Offline roots never feed online
-updates. A uses analytic primal derivatives; B uses scalar bisection;
+updates. A uses analytic primal derivatives; B uses independent scalar root solves;
 C uses independent Newton solves in physical coordinates with each
 unaveraged sample residual at most $10^{-12}$.
 
@@ -84,6 +84,17 @@ $\bar M_P=4.14515772$. The MCN formula scale $28.37671254$ and
 $\bar M_P$ are chosen upper bounds, not measured optimal constants.
 
 \label{app:exp-b-controls}
+At $x=(.3,-.5)$, perturb the base inner maximizer along $(1,1)/\sqrt2$
+at seven scales $10^{-4}$ to $10^{-1}$. Raw-gradient, corrected-gradient,
+and Schur-Hessian slopes are $.9992$, $2.0055$, and $1.0060$,
+with a 70-digit cross-check. Exact UTR and Minimax UTR-early require
+46 accepted updates and 48 subproblems at $\epsilon=10^{-6}$;
+early costs 779 queries, with identical acceptance decisions and maximum
+single-coordinate path difference $1.16\times10^{-9}$. Exact MCN requires
+153/60/84 updates for $M=28.3767,\bar M_P,2\bar M_P$.
+These separate outer-scale and oracle-accuracy checks are not evidence
+of inner-query savings; exact root computation is not free.
+
 Replay freezes the 47 accepted-path points and incoming scales.
 The target is $r_t=c_0\ell\sqrt\epsilon/(4\sigma_t)$:
 $1.79406573\times10^{-4}$ initially and $4.48516433\times10^{-5}$
@@ -101,6 +112,37 @@ not identification of the true modulus or an additive causal
 attribution at identical inner points. All 940 returned outputs pass
 their common residual target. Exact-primal controls and full-SCAR replay
 are not a full minimax baseline leaderboard.
+
+\paragraph{B2/B3: new audits.}
+The original 47 points and every subdivision endpoint are preserved exactly.
+B2 budgets each configuration at $2\times10^6$ queries or 1,800 seconds;
+an unfinished path is reported as incomplete, with no imputed zero-cost tasks.
+All checks and initial secants are charged. Stored events distinguish the
+sufficient halving budget, actual successful calls, downward-$\nu$ corrections,
+and smoothness backtracking. Both PSCAR arms preserve their own states, which
+can differ; fixed-dynamics AGD provides an additional warm-start control.
+Cold-PSCAR is not a proxy for warm-started MCN.
+
+B3 budgets each precision at 2,000 trials, $2\times10^6$ queries, or
+1,800 seconds. At $\epsilon=10^{-3}$, float64 completes 15 of 17
+scheduled first-trial halvings before a residual near $6.94\times10^{-18}$
+stagnates; 396,070 actual queries precede the AR iteration-limit failure.
+The separate 100-digit runs keep ordinary SCAR, fixed tracking counts,
+one refresh halving, and a once-fixed validation secant target. Rejection
+restores the old inner point but retains updated curvature state. Online
+oracles have analytic derivatives and use no exact inner root. Decimal
+state/residual logs and separately charged offline roots are retained.
+The five native audits give $(Q,K,J)=(44,42,1),(36,34,1),(30,28,1),
+(49,46,2),(43,40,2)$ in decreasing $\epsilon$ order. Scheduled tracking
+counts are $734,644,585,1031,979$; total halving calls, including refresh
+and validation, are $735,646,588,1035,985$. Downward-$\nu$ corrections
+are zero throughout. Final true gradients are approximately
+$2.24\times10^{-7},1.42\times10^{-9},1.07\times10^{-9},
+1.52\times10^{-13},2.04\times10^{-12}$.
+The archive reports all seven disjoint cost categories, $C_2,C_3$, and
+accounting slack. These finite tolerances are not asserted to satisfy an
+unknown theorem onset threshold; 100-digit and float64 timings are not
+compared as a speed benchmark.
 
 \paragraph{C: frozen inputs and references.}
 \label{app:exp-c}

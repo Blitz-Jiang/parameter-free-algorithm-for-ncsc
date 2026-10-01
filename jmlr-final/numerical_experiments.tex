@@ -2,8 +2,8 @@
 \section{Numerical Experiments}
 \label{sec:numerical-experiments}
 
-We study outer progress on a W-shaped problem (A), nonlinear correction
-and persistent inner tracking on a controlled path (B), and robust RBF
+We study outer progress on a W-shaped problem (A), amortized inner calibration
+and accuracy restoration (B), and robust RBF
 classification on real data (C). The baselines are MCN
 \citep{luo2022finding}, GRTR \citep{wang2025gradient}, and, in A, HSDA
 \citep{chen2026hsda}. Full trajectories, search results, and diagnostics
@@ -19,12 +19,12 @@ it shares the outer driver but returns from an AR attempt when an
 already computed gradient of the original inner objective has halved
 the entry residual. Both retain the curvature state and use corrected
 oracles. MCN and GRTR use the raw gradient $f_x$ and Schur Hessian
-$f_{xx}-f_{xy}f_{yy}^{-1}f_{yx}$. Both UTR variants use fixed settings:
-$c_0=1/128$ and $\sigma_0=1/\log(e/\epsilon)$, without inputs
-$(\ell,\mu,\rho)$ or instance-specific calibration. The experimental
-$c_0$ differs from $2^{-12}$ in \Cref{alg:gradient-scaled-scar}; these
-implementations, including early return, are not claimed to inherit
-automatically every guarantee of \Cref{thm:gradient-scaled-scar}.
+$f_{xx}-f_{xy}f_{yy}^{-1}f_{yx}$. A, C, and the historical B1 controls use $c_0=1/128$;
+new B2/B3 use the manuscript's $c_0=2^{-12}$ and fixed $e_1$ secant.
+In full UTR runs $\sigma_0=1/\log(e/\epsilon)$, without inputs
+$(\ell,\mu,\rho)$ or instance-specific calibration. The historical
+settings and early return do not automatically inherit every guarantee
+of \Cref{thm:gradient-scaled-scar}; B3 separately audits the native schedule.
 
 We count solved outer subproblems $Q$ and full-vector inner-gradient
 queries $N_y$, including initialization and performed residual, secant,
@@ -106,7 +106,7 @@ UTR overlap. Actual nonmonotonicity is retained; no running minimum.}
 \label{fig:wshape-benchmark}
 \end{figure}
 
-\subsection{Benchmark B: correction and persistent tracking}
+\subsection{Benchmark B: amortized inner work}
 \label{sec:exp-b}
 
 For $x=(u,v)$, define the curved-valley payoff
@@ -128,34 +128,11 @@ Online derivatives require no root solve. Roots are used only for
 exact-primal controls and offline evaluation; $P\ne P_0$ and $P^*$ is
 not assumed known.
 
-\paragraph{Correction and outer-path reproduction.}
-At $x=(.3,-.5)$, perturb $y^*(x)$ by $\delta(1,1)/\sqrt2$ for seven
-scales from $10^{-4}$ to $10^{-1}$. The raw-gradient,
-corrected-gradient, and Schur-Hessian error slopes are respectively
-$0.9992$, $2.0055$, and $1.0060$, with a 70-digit cross-check
-(\Cref{fig:exp-b-mechanism}). Thus gradient correction removes the
-linear error, whereas Hessian error remains first order.
+Oracle-error scaling, exact-path reproduction, and exact-MCN
+outer-scale controls are retained as auxiliary checks in
+\Cref{app:exp-b-controls}; they do not isolate the source of tracking savings.
 
-Exact-primal UTR and Minimax UTR-early both reach
-$\|\nabla P\|\le10^{-6}$ and
-$\lambda_{\min}\ge-\sqrt{\bar M_P10^{-6}}$ after 46 accepted updates
-and 48 subproblems. Early uses 779 inner queries; acceptance decisions
-agree and the maximum single-coordinate path difference is
-$1.16\times10^{-9}$. Exact MCN needs 153 updates with its prescribed
-$M=28.3767$, versus 60/84 with $M=\bar M_P$ or $2\bar M_P$, respectively.
-These exact-oracle controls isolate outer scaling, not inner tracking;
-root computation is not free (\Cref{app:exp-b-controls}).
-
-\begin{figure}[tb]
-\centering
-\includegraphics[width=\linewidth]{figures/experiments/B_mechanism_and_path.pdf}
-\caption{B: controlled inner-error scaling (left) and accepted
-outer paths (right). Exact UTR and Minimax UTR-early nearly coincide;
-exact MCN is an outer-scale control.}
-\label{fig:exp-b-mechanism}
-\end{figure}
-
-\paragraph{Fixed-path replay and restart ablation.}
+\paragraph{B1: reusing curvature calibration.}
 Freeze exact UTR's 47 accepted points and incoming scales $\sigma_t$.
 For $D_\gamma=\operatorname{diag}(\gamma^{-1/2},\gamma^{1/2})$,
 $\gamma\in\{1,2,4,8\}$, the primal is unchanged. Recount all work from
@@ -184,7 +161,7 @@ $\gamma$ & $\bar\kappa_y$ & Persistent & Warm restart & Cold restart & Warm AGD 
 8 & 66.17 & 3,654 & 17,297 & 18,325 & 5,492 & 6,439\\
 \bottomrule
 \end{tabular}
-\caption{B: fixed-path $N_y^{\rm path}$ at identical intrinsic targets.
+\caption{B1: fixed-path $N_y^{\rm path}$ at identical intrinsic targets.
 The three restart columns use SCAR-early; AGD knows the analytic
 conditioning bounds. The primal and outer path are unchanged.}
 \label{tab:exp-b-conditioning}
@@ -198,10 +175,74 @@ $\nu\leftarrow\nu/4$ number 2/89/92 for persistent/warm/cold restart
 (1/44/46 at $\gamma=4$). Only 46 of the 13,643 saved queries at
 $\gamma=8$ are secant savings; the rest includes all halving and checking
 work, not solely curvature identification. All 940 returned points
-satisfy the common target. This supports amortized state reuse on the
-controlled path, not uniform superiority to AGD or a fitted complexity
-exponent. Replay excludes rejected trials and outer validation, so 462
+satisfy the common target. This supports reuse of curvature calibration, not removal of an
+accuracy logarithm or uniform superiority to AGD. Replay excludes rejected trials and outer validation, so 462
 and the full-run cost 779 are distinct quantities.
+
+\paragraph{B2: restoring accuracy under joint refinement.}
+To separate warm starts from resetting curvature, fix $D=\mathrm{diag}(1/2,2)$
+and subdivide each of the same 46 path segments into
+$m\in\{1,2,4,8,16,32\}$ equal pieces. There are $T_m=46m+1$
+requests, with $\epsilon_m=10^{-3}/m^2$ and the common native target
+\[
+ \|f_y\|\le\tau_m=\frac{c_0(24.5)\sqrt{\epsilon_m}}{4\bar\sigma}
+       =\frac{1.7514703\times10^{-4}}{m},\qquad
+ \bar\sigma=0.26998732,\quad c_0=2^{-12}.
+\]
+Warm-PSCAR carries $y$ forward; Cold-PSCAR starts each request at zero.
+\emph{Both retain their own curvature states and use ordinary SCAR,
+with early return disabled}. Warm/cold AGD use the same fixed
+$(L_y,\mu_y)=(24.4,1.475)$ and reset momentum each request.
+Each method and mesh starts with a fresh state. These are artificial
+moving-target requests, not native UTR iterations.
+
+Since $\|f_y(x',y)-f_y(x,y)\|\le.2\|x'-x\|$, warm starts satisfy
+$R_{\rm in}/\tau_m\le1+.2\|X_{j+1}-X_j\|/\tau_{\rm ref}$,
+independent of $m$. At a fixed nonzero cold residual the ratio instead
+grows as $m$. We report this entry burden alongside actual queries
+(\Cref{fig:exp-b-restoration}), rather than interpreting the sufficient
+budget $\lceil\log_2(R_{\rm in}/\tau_m)\rceil_+$ as an observed count
+or a lower bound.
+From $m=1$ to 16, queries per request change from $859$ to $883$
+for Warm-PSCAR and $1{,}012$ to $1{,}485$ for Cold-PSCAR;
+AGD changes from $39.3$ to $40.7$ and $48.8$ to $69.9$, respectively.
+Neither PSCAR arm makes a downward-$\nu$ correction.
+This separates accuracy restoration from repeated initialization of curvature;
+ordinary SCAR remains much more expensive than known-bound AGD.
+At $m=32$, Warm-PSCAR uses $890$ queries per request; Cold-PSCAR
+completes only $1299/1473$ requests within the frozen $2\times10^6$-query
+budget and is excluded from full-path averages.
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=\linewidth]{figures/experiments/B_accuracy_restoration.pdf}
+\caption{B2: actual average work and relative entry residual under joint
+path/accuracy refinement. Solid curves in the right panel are medians;
+dotted curves are 90th percentiles. Both PSCAR arms retain curvature
+state. Only complete paths enter the average-cost curves; cold entry residuals
+coincide by construction.}
+\label{fig:exp-b-restoration}
+\end{figure}
+
+\paragraph{B3: work along the native algorithm.}
+Finally, run \Cref{alg:gradient-scaled-scar} on the same $D$, from zero,
+for $\epsilon=10^{-3},\ldots,10^{-7}$, using ordinary SCAR,
+$c_0=2^{-12}$, the prescribed fixed halving counts, and native validation.
+A float64 trial reached its residual floor before completing its scheduled
+halvings; we retain that failure and use 100-digit arithmetic for this
+five-run audit, without replacing the schedule by early or target stopping.
+All five 100-digit runs terminate and pass independent gradient checks,
+using $215{,}781$, $189{,}531$, $173{,}125$, $308{,}127$, and $292{,}759$
+queries, respectively. Accepted-trial tracking accounts for $94.9$--$97.5\%$.
+These full-SCAR costs are distinct from early-return costs; changing
+$\sigma_0$ with $\epsilon$ also changes the realized outer path.
+We partition every query into initialization, accepted/rejected trials,
+refresh, failed validation, terminal trial, or successful validation.
+For ordinary accepted steps, the recorded counts satisfy
+$S_{\rm tr}\le16K+\epsilon^{-3/2}C_3$, where
+$C_3=\sum\sigma_k^3\|d_k\|^3$; normal returns also satisfy $Q=K+J+1$.
+These are implementation/accounting checks, not evidence that the bound
+is tight or that five precision settings establish a complexity rate.
 
 \subsection{Benchmark C: robust RBF classification}
 \label{sec:exp-c}
