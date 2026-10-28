@@ -1,0 +1,27 @@
+\section{Problem setting and assumptions}
+\label{sec:setting}
+We consider $\min_{x\in\R^n}f(x)$ under the generalized smoothness
+condition of \citet[Assumption~1]{fang2026parameter}.
+
+\begin{assumption}[Generalized smoothness]\label{ass:setting}
+The function $f\in C^3(\R^n)$ is bounded below:
+$f_*:=\inf_{x\in\R^n}f(x)>-\infty$. There exist constants
+$L_0>0$ and $L_1\ge0$ such that
+\begin{equation}\label{eq:assumption}
+ \norm{\nabla^3 f(x)}\le L_0+L_1\norm{\nabla f(x)}
+ \qquad\text{for every }x\in\R^n.
+\end{equation}
+\end{assumption}
+
+Let $\Delta:=f(x_0)-f_*$. Vector norms are Euclidean and tensor
+norms are induced operator norms. For independent tolerances
+$\epsilon,\delta>0$, an $(\epsilon,\delta)$-second-order stationary
+point satisfies
+\begin{equation}\label{eq:stationarity}
+ \norm{\nabla f(x)}\le\epsilon,\qquad
+ \lambda_{\min}(\nabla^2 f(x))\ge-\delta.
+\end{equation}
+Write $[z]_+:=\max\{z,0\}$ and
+$\lp t:=\max\{\log t,0\}$ for $t>0$, with $\lp0:=0$.
+The algorithm below uses quadratic trust-region subproblems and
+observable acceptance tests, without knowledge of $L_0$ or $L_1$.

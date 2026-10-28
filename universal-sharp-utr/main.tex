@@ -1,0 +1,29 @@
+% !TeX program = pdflatex
+\documentclass[11pt]{article}
+\input{preamble}
+\title{Parameter-Free UTR with Universal Sharp\texorpdfstring{\\}{ }Second-Order Complexity}
+\author{}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+We analyze a curvature-scaled universal trust-region method for
+unconstrained nonconvex optimization under the generalized smoothness
+condition $\norm{\nabla^3 f(x)}\le L_0+L_1\norm{\nabla f(x)}$.
+The method uses exact second-order information and globally solved
+quadratic trust-region subproblems without knowledge of $L_0$ or $L_1$.
+For independently specified gradient and curvature tolerances, it
+attains the universal sharp four-term oracle-complexity bound, with
+only accuracy-independent additive logarithms. A joint scale--gradient
+potential controls both interior and boundary steps. We give the
+algorithm, the global convergence theorem, and a self-contained proof.
+\end{abstract}
+
+\input{sections/problem}
+\input{sections/algorithm}
+\input{sections/analysis}
+\input{sections/main_theorem}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+\end{document}

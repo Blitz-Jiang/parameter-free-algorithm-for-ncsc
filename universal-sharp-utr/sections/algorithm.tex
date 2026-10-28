@@ -1,0 +1,75 @@
+\section{Curvature-scaled parameter-free UTR}
+\label{sec:algorithm}
+Index all trials, including rejected ones, by $k=0,1,\ldots$.
+At $(x_k,\sigma_k)$, where $\sigma_k>0$, set
+\begin{equation}\label{eq:model-scales}
+ h_k=\max\left\{\norm{\nabla f(x_k)},
+       \frac{[-\lambda_{\min}(\nabla^2 f(x_k))]_+^2}{64\sigma_k}\right\},
+ \qquad R_k=\frac{\sqrt{h_k}}{4\sqrt{\sigma_k}}.
+\end{equation}
+Compute a global solution $s_k$ of
+\begin{equation}\label{eq:subproblem}
+ \min_{\norm{u}\le R_k}\left\{\nabla f(x_k)^Tu+
+       \frac12u^T\bigl(\nabla^2 f(x_k)+2\sqrt{\sigma_kh_k}\,I\bigr)u\right\}.
+\end{equation}
+
+The following lemma gives the classical trust-region optimality
+characterization of \citet[Theorem~4.1]{nocedal2006numerical}.
+
+\begin{lemma}[Trust-region optimality conditions]\label{lem:trs}
+Suppose $R_k>0$. A feasible vector $s_k$ is a global minimizer of
+\eqref{eq:subproblem} if and only if there exists $\lambda_k\ge0$ such that
+\begin{equation}\label{eq:kkt}
+ \begin{aligned}
+ \bigl(\nabla^2 f(x_k)+(2\sqrt{\sigma_kh_k}+\lambda_k)I\bigr)s_k
+    &=-\nabla f(x_k),\\
+ \nabla^2 f(x_k)+(2\sqrt{\sigma_kh_k}+\lambda_k)I
+    &\succeq0,\qquad \lambda_k(\norm{s_k}-R_k)=0.
+ \end{aligned}
+\end{equation}
+\end{lemma}
+
+
+\begin{samepage}
+Accept the trial precisely when both inequalities hold:
+\begin{align}
+ f(x_k)-f(x_k+s_k)
+ &\ge\frac34\sqrt{\sigma_kh_k}\,\norm{s_k}^2
+             +\frac12\lambda_k\norm{s_k}^2,
+                                      \label{eq:accept-value}\\*
+ \norm{\nabla f(x_k+s_k)}
+ &\le\frac{11}{16}h_k+\lambda_k\norm{s_k}.
+                                      \label{eq:accept-gradient}
+\end{align}
+\end{samepage}
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\caption{Curvature-scaled parameter-free UTR}
+\label{alg:utr}
+\KwIn{$x_0$, $\sigma_0>0$, $\epsilon>0$, $\delta>0$}
+\For{$k=0,1,\ldots$}{
+ \If{$\norm{\nabla f(x_k)}\le\epsilon$ and
+     $\lambda_{\min}(\nabla^2 f(x_k))\ge-\delta$}{\Return{$x_k$}}
+ Solve \eqref{eq:subproblem} globally, obtaining $(s_k,\lambda_k)$\;
+ \eIf{\eqref{eq:accept-value} and \eqref{eq:accept-gradient} hold}{
+   $x_{k+1}\leftarrow x_k+s_k$; retain the accepted value and gradient\;
+   $\sigma_{k+1}\leftarrow\sigma_k/2$\;
+ }{
+   $x_{k+1}\leftarrow x_k$; $\sigma_{k+1}\leftarrow2\sigma_k$\;
+ }
+}
+\end{algorithm}
+
+The stopping test precedes model construction, so $h_k>0$ whenever
+a trial is formed. If $\nabla f(x_k)=0$ and
+$\lambda_{\min}(\nabla^2 f(x_k))<0$, then
+\[
+ 2\sqrt{\sigma_kh_k}=-\tfrac14\lambda_{\min}(\nabla^2 f(x_k)).
+\]
+The model Hessian retains a negative eigenvalue, and its global
+minimizer lies on the trust-region boundary. The scale has no positive
+lower bound, and the tolerances enter only the stopping test.
+Exact values and derivatives at $x_k$ are cached and reused after a
+rejection; an accepted trial's value and gradient are reused at
+$x_{k+1}$.

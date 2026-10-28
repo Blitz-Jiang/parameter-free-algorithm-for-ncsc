@@ -1,0 +1,38 @@
+\section{Global convergence and universal sharp complexity}
+\label{sec:main-theorem}
+In the theorem below, $\widetilde O(1)$ contains only additive logarithms of problem
+parameters and initial data, independent of $\epsilon$ and $\delta$;
+for $\Delta>0$, it is $O(\mathcal L)$ with $\mathcal L$ defined in
+\eqref{eq:logs}. If $\Delta=0$, the initial stopping test succeeds.
+The same order
+bounds the total exact function, gradient, and Hessian evaluations.
+The bound holds for every pair $(L_0,L_1)$ satisfying
+Assumption~\ref{ass:setting} along the same algorithmic run.
+Arithmetic costs of eigenvalue computations and subproblem solves
+are not included.
+
+\begin{theorem}[Universal sharp complexity]\label{thm:main}
+Under Assumption~\ref{ass:setting}, Algorithm~\ref{alg:utr} finds an
+$(\epsilon,\delta)$-second-order stationary point within
+\begin{equation}\label{eq:complexity}
+ O\!\left(\Delta\left[
+ \frac{\sqrt{L_0}}{\epsilon^{3/2}}+
+ \frac{\sqrt{L_1}}{\epsilon}+
+ \frac{L_0^2}{\delta^3}+
+ \frac{L_1}{\delta}\right]\right)+\widetilde O(1)
+\end{equation}
+trust-region subproblem solves.
+\end{theorem}
+\begin{proof}
+Fix any pair $(L_0,L_1)$ satisfying Assumption~\ref{ass:setting}.
+If $\Delta=0$, then $x_0$ is a global minimizer. For every direction
+$d$, the function $t\mapsto f(x_0+td)$ has a minimum at $t=0$, so
+$\nabla f(x_0)^Td=0$ and $d^T\nabla^2f(x_0)d\ge0$.
+Consequently $\nabla f(x_0)=0$ and $\nabla^2f(x_0)\succeq0$;
+the initial stopping test succeeds without solving a subproblem.
+
+Assume henceforth that $\Delta>0$. We use the quantities in
+\eqref{eq:Q}--\eqref{eq:logs} and the technical estimates above.
+
+\input{sections/complexity}
+\end{proof}

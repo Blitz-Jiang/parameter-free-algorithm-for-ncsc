@@ -1,0 +1,355 @@
+\paragraph{An accuracy-independent gradient prefix}
+\label{sec:gradient-prefix}
+
+Fix any finite prefix of $K$ accepted steps, with the endpoint convention
+for $\tau_K$ specified above. All estimates below concern this finite
+prefix; termination has not yet been assumed. Set
+\[
+ G_*=(\Delta^2Q)^{1/3}>0,\qquad c_r=\frac{51}{3^{2/3}}.
+\]
+For a boundary step, \eqref{eq:boundary} and
+\eqref{eq:descent-budget} give
+\begin{align}
+ \norm{\nabla f(x_{\tau_{j+1}})}
+ &\le51\sigma_{\tau_j}r_{\tau_j}^2\nonumber\\
+ &=51\sigma_{\tau_j}^{1/3}
+             (\sigma_{\tau_j}r_{\tau_j}^3)^{2/3}\nonumber\\
+ &\le c_r\sigma_{\tau_j}^{1/3}
+       [f(x_{\tau_j})-f(x_{\tau_{j+1}})]^{2/3}.
+ \label{eq:boundary-reset}
+\end{align}
+Every function decrease in this expression is at most $\Delta$.
+The global scale bound \eqref{eq:scale-global} therefore shows that
+each boundary step produces a gradient norm no larger than
+$c_r(C_EQ_0)^{1/3}\Delta^{2/3}$. Interior steps multiply the
+current gradient norm by at most $\rho=11/16$. Induction on $j$,
+starting from $x_{\tau_0}=x_0$, consequently gives
+\begin{equation}\label{eq:global-gradient-bound}
+ \norm{\nabla f(x_{\tau_j})}\le H_0
+ :=\max\left\{\norm{\nabla f(x_0)},
+                c_r(C_EQ_0)^{1/3}\Delta^{2/3}\right\},
+ \quad 0\le j\le K.
+\end{equation}
+
+For $j\ge j_\sigma$, the sharper bound
+$\sigma_{\tau_j}\le C_PQ$ in Proposition~\ref{prop:potential}
+and \eqref{eq:boundary-reset} show that a boundary step produces
+a gradient norm no larger than
+\[
+ H:=c_rC_P^{1/3}G_*.
+\]
+Define the nonnegative integers
+\begin{equation}\label{eq:gradient-prefix-length}
+ \ell:=\left\lceil\frac{\lp(H_0/H)}{\log(16/11)}\right\rceil,
+ \qquad s:=j_\sigma+\ell.
+\end{equation}
+If $K<s$, this prefix already has fewer than $s$ accepted steps.
+Suppose instead that $K\ge s$. If all $\ell$ steps with accepted
+indices $j_\sigma,\ldots,s-1$ are interior, repeated use of
+\eqref{eq:interior} gives
+\[
+ \norm{\nabla f(x_{\tau_s})}
+ \le\rho^\ell\norm{\nabla f(x_{\tau_{j_\sigma}})}
+ \le\rho^\ell H_0\le H.
+\]
+The last inequality follows directly from the ceiling in
+\eqref{eq:gradient-prefix-length}; it also holds when $\ell=0$,
+since then $H_0\le H$.
+If one of these steps is a boundary step, its next-point gradient
+norm is at most $H$. Every later interior step contracts this norm,
+and every later boundary step again bounds it by $H$. Thus in both
+cases
+\begin{equation}\label{eq:post-prefix-gradient}
+ \norm{\nabla f(x_{\tau_s})}\le H.
+\end{equation}
+
+We next bound the prefix length explicitly in terms of the analysis
+parameters. Since $c_rC_P^{1/3}>1$ and $C_E<C_P$, the definitions imply
+\[
+ \frac{H_0}{H}
+ \le\max\left\{
+       \frac{\norm{\nabla f(x_0)}}{G_*},
+       \left(\frac{Q_0}{Q}\right)^{1/3}\right\}.
+\]
+Using $\lceil z\rceil\le z+1$ for $z\ge0$ and
+$\log_+\max\{a,b\}\le\log_+a+\log_+b$ for $a\ge0$, $b>0$,
+we obtain
+\[
+ \ell\le1+\frac{1}{\log(16/11)}
+ \left(\lp\frac{\norm{\nabla f(x_0)}}{G_*}
+                   +\frac13\lp\frac{Q_0}{Q}\right).
+\]
+Together with the bound for $j_\sigma$ from
+Proposition~\ref{prop:potential}, this proves
+\begin{equation}\label{eq:prefix-bound}
+ s=O\left(1+\lp\frac{Q_0}{Q}
+                 +\lp\frac{\norm{\nabla f(x_0)}}{G_*}\right).
+\end{equation}
+In particular, $s$ does not depend on $\epsilon$ or $\delta$.
+These indices are used only in the proof; the algorithm does not
+compute them or restart at $s$.
+
+\paragraph{Sums of gradient norms and negative curvature}
+\label{sec:stationarity-sums}
+
+Suppose $K\ge s+m$ for some integer $m\ge1$, and let
+\[
+ \mathcal J=\{s,s+1,\ldots,s+m-1\},\qquad
+ T=\sum_{j\in\mathcal J}\sigma_{\tau_j},\qquad
+ S=mL_0+L_1^{3/2}\Delta.
+\]
+Partition $\mathcal J$ into the boundary indices
+$\mathcal J_\partial:=\{j\in\mathcal J:r_{\tau_j}=R_{\tau_j}\}$
+and the interior indices $\mathcal J_\circ:=\mathcal J\setminus
+\mathcal J_\partial$. The scale estimate \eqref{eq:suffix-scale}
+and the descent budget \eqref{eq:descent-budget} imply
+\begin{equation}\label{eq:suffix-budgets}
+ \begin{aligned}
+ T&\le C_TS,\\
+ \sum_{j\in\mathcal J}\sigma_{\tau_j}r_{\tau_j}^3
+ &\le\frac13\sum_{j\in\mathcal J}
+          [f(x_{\tau_j})-f(x_{\tau_{j+1}})]
+ \le\frac{\Delta}{3}.
+ \end{aligned}
+\end{equation}
+Also $S\ge Q$ because $m\ge1$.
+
+Both cases in \eqref{eq:boundary}--\eqref{eq:interior} imply
+the single recurrence
+\[
+ \norm{\nabla f(x_{\tau_{j+1}})}
+ \le\rho\norm{\nabla f(x_{\tau_j})}
+       +51\mathbf1_{\{j\in\mathcal J_\partial\}}
+            \sigma_{\tau_j}r_{\tau_j}^2,
+ \qquad j\in\mathcal J.
+\]
+Indeed, on an interior step the second term vanishes, while on a
+boundary step \eqref{eq:boundary} bounds the left-hand side by
+the second term alone. Summing this recurrence and retaining the
+two endpoint terms gives
+\[\begin{aligned}
+ &(1-\rho)\sum_{j\in\mathcal J}\norm{\nabla f(x_{\tau_j})}\\
+ &\quad\le\norm{\nabla f(x_{\tau_s})}
+          -\norm{\nabla f(x_{\tau_{s+m}})}
+          +51\sum_{j\in\mathcal J_\partial}
+                 \sigma_{\tau_j}r_{\tau_j}^2\\
+ &\quad\le H+51\sum_{j\in\mathcal J_\partial}
+                 \sigma_{\tau_j}r_{\tau_j}^2.
+\end{aligned}\]
+The last line uses \eqref{eq:post-prefix-gradient} and nonnegativity
+of the terminal gradient norm.
+For the remaining sum, H\"older's inequality with exponents $3/2$
+and $3$ yields
+\begin{align*}
+ \sum_{j\in\mathcal J_\partial}\sigma_{\tau_j}r_{\tau_j}^2
+ &=\sum_{j\in\mathcal J_\partial}
+       (\sigma_{\tau_j}r_{\tau_j}^3)^{2/3}
+       \sigma_{\tau_j}^{1/3}\\
+ &\le\left(\sum_{j\in\mathcal J_\partial}
+                    \sigma_{\tau_j}r_{\tau_j}^3\right)^{2/3}
+       \left(\sum_{j\in\mathcal J_\partial}
+                    \sigma_{\tau_j}\right)^{1/3}\\
+ &\le(\Delta/3)^{2/3}T^{1/3}
+ \le3^{-2/3}C_T^{1/3}\Delta^{2/3}S^{1/3}.
+\end{align*}
+Empty boundary sums equal zero, so this argument also covers a
+suffix consisting entirely of interior steps. Since
+$H=c_rC_P^{1/3}\Delta^{2/3}Q^{1/3}$ and $Q\le S$, we conclude that
+\begin{equation}\label{eq:sum-g}
+ \begin{aligned}
+ \sum_{j\in\mathcal J}\norm{\nabla f(x_{\tau_j})}
+ &\le C_g\Delta^{2/3}S^{1/3},\\
+ C_g&:=\frac{c_rC_P^{1/3}+51\cdot3^{-2/3}C_T^{1/3}}{1-\rho}.
+ \end{aligned}
+\end{equation}
+
+For the curvature sum, first use the interior estimate in
+\eqref{eq:interior}, followed by Cauchy--Schwarz:
+\begin{align*}
+ &\sum_{j\in\mathcal J_\circ}
+       [-\lambda_{\min}(\nabla^2f(x_{\tau_j}))]_+\\
+ &\quad\le2\sum_{j\in\mathcal J_\circ}
+                 \sqrt{\sigma_{\tau_j}\norm{\nabla f(x_{\tau_j})}}\\
+ &\quad\le2\left(\sum_{j\in\mathcal J_\circ}\sigma_{\tau_j}\right)^{1/2}
+             \left(\sum_{j\in\mathcal J_\circ}
+                          \norm{\nabla f(x_{\tau_j})}\right)^{1/2}\\
+ &\quad\le2\sqrt{C_TC_g}\,\Delta^{1/3}S^{2/3}.
+\end{align*}
+For boundary indices, \eqref{eq:boundary} and H\"older's inequality
+with exponents $3$ and $3/2$ instead give
+\begin{align*}
+ &\sum_{j\in\mathcal J_\partial}
+       [-\lambda_{\min}(\nabla^2f(x_{\tau_j}))]_+\\
+ &\quad\le32\sum_{j\in\mathcal J_\partial}\sigma_{\tau_j}r_{\tau_j}\\
+ &\quad=32\sum_{j\in\mathcal J_\partial}
+       (\sigma_{\tau_j}r_{\tau_j}^3)^{1/3}\sigma_{\tau_j}^{2/3}\\
+ &\quad\le32\left(\sum_{j\in\mathcal J_\partial}
+                     \sigma_{\tau_j}r_{\tau_j}^3\right)^{1/3}
+              \left(\sum_{j\in\mathcal J_\partial}
+                     \sigma_{\tau_j}\right)^{2/3}\\
+ &\quad\le32\cdot3^{-1/3}C_T^{2/3}\Delta^{1/3}S^{2/3}.
+\end{align*}
+Adding the two estimates proves
+\begin{equation}\label{eq:sum-mu}
+ \sum_{j\in\mathcal J}[-\lambda_{\min}(\nabla^2f(x_{\tau_j}))]_+
+ \le C_{\rm curv}\Delta^{1/3}S^{2/3},
+\end{equation}
+where the universal numerical constant is
+\[
+ C_{\rm curv}:=2\sqrt{C_TC_g}+32\cdot3^{-1/3}C_T^{2/3}.
+\]
+In particular, the curvature estimate concerns the current accepted
+points. It does not require a Taylor estimate of the next-point
+Hessian at a trial scale that may underestimate the safe scale.
+
+\paragraph{The four-term bound and finite termination}
+\label{sec:termination}
+
+At every accepted trial the stopping test has failed. Therefore,
+for each $j\in\mathcal J$, at least one of
+$\norm{\nabla f(x_{\tau_j})}>\epsilon$ and
+$[-\lambda_{\min}(\nabla^2f(x_{\tau_j}))]_+>\delta$ holds, and
+\[
+ 1<\frac{\norm{\nabla f(x_{\tau_j})}}{\epsilon}
+     +\frac{[-\lambda_{\min}(\nabla^2f(x_{\tau_j}))]_+}{\delta}.
+\]
+Sum over $\mathcal J$, divide by $m$, and apply
+\eqref{eq:sum-g} and \eqref{eq:sum-mu}. This gives
+\[
+ 1<\frac{C_g\Delta^{2/3}S^{1/3}}{\epsilon m}
+       +\frac{C_{\rm curv}\Delta^{1/3}S^{2/3}}{\delta m}.
+\]
+For nonnegative $a,b$ and $0<p<1$,
+$(a+b)^p\le a^p+b^p$: when $a+b>0$, divide by $(a+b)^p$
+and use $t^p\ge t$ on $0\le t\le1$ for
+$t=a/(a+b)$ and $1-t=b/(a+b)$; the case $a=b=0$ is immediate.
+Apply this inequality with $p=1/3$ and $p=2/3$ to
+$S=mL_0+L_1^{3/2}\Delta$. The two resulting expressions are
+\begin{align*}
+ \frac{\Delta^{2/3}S^{1/3}}{\epsilon m}
+ &\le\frac{\Delta^{2/3}L_0^{1/3}}{\epsilon m^{2/3}}
+       +\frac{\sqrt{L_1}\Delta}{\epsilon m},\\
+ \frac{\Delta^{1/3}S^{2/3}}{\delta m}
+ &\le\frac{\Delta^{1/3}L_0^{2/3}}{\delta m^{1/3}}
+       +\frac{L_1\Delta}{\delta m}.
+\end{align*}
+With $C_*:=\max\{1,C_g,C_{\rm curv}\}$ we have therefore proved
+\begin{equation}\label{eq:average}
+ 1<C_*\left[
+ \frac{\Delta^{2/3}L_0^{1/3}}{\epsilon m^{2/3}}
+ +\frac{\sqrt{L_1}\Delta}{\epsilon m}
+ +\frac{\Delta^{1/3}L_0^{2/3}}{\delta m^{1/3}}
+ +\frac{L_1\Delta}{\delta m}\right].
+\end{equation}
+
+To make the contradiction explicit, set $q=(8C_*)^3$ and define
+\begin{equation}\label{eq:tail-length}
+ m_*:=\left\lceil q\left[1+\Delta\left(
+       \frac{\sqrt{L_0}}{\epsilon^{3/2}}
+       +\frac{\sqrt{L_1}}{\epsilon}
+       +\frac{L_0^2}{\delta^3}
+       +\frac{L_1}{\delta}\right)\right]\right\rceil.
+\end{equation}
+If $m\ge m_*$, each of the four ratios of a complexity term in
+the brackets of \eqref{eq:tail-length} to $m$ is at most $q^{-1}$.
+The four terms in brackets in \eqref{eq:average} are respectively
+the $2/3$ power, the first power, the $1/3$ power, and the first
+power of these ratios. Hence the right-hand side of
+\eqref{eq:average} is at most
+\[
+ C_*(q^{-2/3}+q^{-1}+q^{-1/3}+q^{-1})
+ \le4C_*q^{-1/3}=\frac12,
+\]
+where $q\ge1$ was used in the second inequality. This contradicts
+\eqref{eq:average}.
+
+Consequently no finite accepted prefix can have $K\ge s+m_*$:
+if it did, its first $m_*$ accepted steps after $s$ would give the
+contradiction just established. Prefixes with $K<s$ already satisfy
+the same upper bound. Thus every finite accepted prefix obeys
+\begin{equation}\label{eq:accepted-count}
+ \begin{aligned}
+ K<s+m_*=O\Biggl(&\Delta\left(
+       \frac{\sqrt{L_0}}{\epsilon^{3/2}}
+       +\frac{\sqrt{L_1}}{\epsilon}
+       +\frac{L_0^2}{\delta^3}
+       +\frac{L_1}{\delta}\right)\\
+       &+1+\lp\frac{Q_0}{Q}
+          +\lp\frac{\norm{\nabla f(x_0)}}{G_*}\Biggr).
+ \end{aligned}
+\end{equation}
+The constants here are numerical and independent of all problem
+parameters and tolerances. An infinite sequence of trials could
+not contain only finitely many acceptances: after its last
+acceptance, or from the initial state if no step were accepted,
+the point would remain fixed, and Lemma~\ref{lem:safe}
+would force acceptance after finitely many doublings unless the
+algorithm had already stopped. An infinite run would therefore
+have arbitrarily long finite accepted prefixes, contrary to
+\eqref{eq:accepted-count}. The algorithm terminates in finitely
+many trials, and its stopping test gives the required
+$(\epsilon,\delta)$-second-order stationary point.
+
+\paragraph{Rejected trials, oracle evaluations, and universality}
+\label{sec:oracle-count}
+
+If the initial point passes the stopping test, no trust-region
+subproblem is solved and at most three initial oracle evaluations
+are needed. Otherwise let $K\ge1$ and $J\ge0$ be the total numbers
+of accepted and rejected trials before termination. The stopping
+condition depends only on the current point, which does not change
+on a rejection. Hence the algorithm stops immediately after its
+last accepted step; no rejected trials follow that step.
+Immediately before this last acceptance, the scale has been halved
+exactly $K-1$ times and doubled exactly $J$ times. Thus
+\[
+ \sigma_{\tau_{K-1}}=\sigma_0\,2^{J-(K-1)},
+ \qquad
+ J=K-1+\log_2\frac{\sigma_{\tau_{K-1}}}{\sigma_0}.
+\]
+Using \eqref{eq:scale-global} and $Q_0\ge\sigma_0>0$, we obtain
+\begin{align}
+ J&\le K-1+\log_2C_E+\frac{1}{\log2}
+                            \log\frac{Q_0}{\sigma_0}\nonumber\\
+  &\le K+C\left(1+\lp\frac{Q_0}{\sigma_0}\right),
+  \label{eq:rejected-count}
+\end{align}
+for a universal numerical constant $C$.
+
+Every trial solves one trust-region subproblem, so the total
+number of subproblems is $K+J$. The initial function value,
+gradient, and Hessian cost at most three oracle evaluations.
+Each trial evaluates one new function value and one new gradient;
+on acceptance these are retained, and one new Hessian is evaluated
+for the next stopping test or trial. On rejection the current data
+are reused. Therefore the total number of exact function, gradient,
+and Hessian evaluations, counting these three kinds together, is
+at most
+\[
+ 3+2(K+J)+K=3+3K+2J.
+\]
+Combining \eqref{eq:accepted-count}, \eqref{eq:rejected-count}, and
+the definition of $\mathcal L$ in \eqref{eq:logs}, both counts are
+bounded by
+\begin{equation}\label{eq:explicit-total-count}
+ C\left[\Delta\left(
+       \frac{\sqrt{L_0}}{\epsilon^{3/2}}
+       +\frac{\sqrt{L_1}}{\epsilon}
+       +\frac{L_0^2}{\delta^3}
+       +\frac{L_1}{\delta}\right)+\mathcal L\right].
+\end{equation}
+This also covers initial termination because $\mathcal L\ge1$.
+It proves the stated bound, with the additive
+$\widetilde O(1)$ term equal to $O(\mathcal L)$ and independent
+of $\epsilon$ and $\delta$.
+
+Finally, fix any pair $(L_0,L_1)$ satisfying the smoothness
+assumption. Every preceding argument applies to that pair and
+establishes \eqref{eq:explicit-total-count}. The algorithm uses
+neither member of the pair, nor $f_*$ or $\Delta$; its trial
+subproblems and acceptance decisions depend only on its inputs
+and the oracle data. The same realized run thus satisfies the bound
+for every admissible pair separately. This is the asserted
+universality. All constants introduced for the potential and
+counting arguments are proof constants and are not algorithmic
+inputs.

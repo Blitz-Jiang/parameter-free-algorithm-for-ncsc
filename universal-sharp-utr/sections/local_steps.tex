@@ -1,0 +1,332 @@
+\subsection{Nonzero steps and finite backtracking}
+
+For every formed trial, write $r_k=\norm{s_k}$. The index $k$
+continues to count all trials, including rejected ones.
+
+\begin{lemma}[Nonzero trial steps]\label{lem:nonzero}
+Every trial formed by Algorithm~\ref{alg:utr} has $h_k>0$,
+$R_k>0$, and $r_k>0$.
+\end{lemma}
+\begin{proof}
+If $h_k=0$, both terms in its defining maximum vanish. This gives
+$\nabla f(x_k)=0$ and a positive semidefinite Hessian, so the stopping
+test would have succeeded before the trial was formed.
+Thus $h_k>0$, and $R_k>0$ follows from $\sigma_k>0$.
+
+If $\nabla f(x_k)\ne0$, the first equation in \eqref{eq:kkt}
+rules out $s_k=0$. If $\nabla f(x_k)=0$, failure of the stopping
+test implies $\lambda_{\min}(\nabla^2f(x_k))<-\delta<0$.
+The scale definition then gives
+\[
+ 2\sqrt{\sigma_kh_k}
+ =-\tfrac14\lambda_{\min}(\nabla^2f(x_k)).
+\]
+Consequently the smallest eigenvalue of the model Hessian is
+$\tfrac34\lambda_{\min}(\nabla^2f(x_k))<0$. A sufficiently
+small nonzero vector in a corresponding eigenvector direction is
+feasible and has strictly negative model value, whereas the model
+value at zero is zero. Hence zero is not a global minimizer.
+In either case $r_k>0$.
+\end{proof}
+
+\begin{lemma}[Safe trial scale]\label{lem:safe}
+Both acceptance tests hold for trial $k$ whenever
+\begin{equation}\label{eq:safe}
+ \sigma_k\ge L_0+L_1\norm{\nabla f(x_k)}
+        +\sqrt{L_1}[-\lambda_{\min}(\nabla^2 f(x_k))]_+.
+\end{equation}
+Thus the number of consecutive rejected trials at any fixed point
+is finite.
+\end{lemma}
+\begin{proof}
+Taking the inner product of the first KKT equation with $s_k$
+and using Cauchy--Schwarz gives
+\[
+ \begin{aligned}
+ (2\sqrt{\sigma_kh_k}+\lambda_k)r_k^2
+ &=-\nabla f(x_k)^Ts_k-s_k^T\nabla^2f(x_k)s_k\\
+ &\le\norm{\nabla f(x_k)}r_k
+       +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k^2.
+ \end{aligned}
+\]
+By Lemma~\ref{lem:nonzero}, division by $r_k$ is legitimate.
+The same KKT equation identifies the linearized gradient, so
+\begin{equation}\label{eq:linear-gradient}
+ \begin{aligned}
+ (2\sqrt{\sigma_kh_k}+\lambda_k)r_k
+ &\le\norm{\nabla f(x_k)}
+       +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k,\\
+ \norm{\nabla f(x_k)+\nabla^2f(x_k)s_k}
+ &=(2\sqrt{\sigma_kh_k}+\lambda_k)r_k.
+ \end{aligned}
+\end{equation}
+For $u\in[0,1]$, the identity
+\[
+ \nabla f(x_k)+u\nabla^2f(x_k)s_k
+ =(1-u)\nabla f(x_k)
+    +u\bigl(\nabla f(x_k)+\nabla^2f(x_k)s_k\bigr)
+\]
+and the triangle inequality therefore imply
+\begin{equation}\label{eq:linear-segment}
+ \norm{\nabla f(x_k)+u\nabla^2f(x_k)s_k}
+ \le\norm{\nabla f(x_k)}
+       +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k.
+\end{equation}
+
+Under \eqref{eq:safe}, each nonnegative term on its right-hand
+side is at most $\sigma_k$. In particular,
+\[
+ \begin{aligned}
+ L_1h_k
+ &=\max\left\{L_1\norm{\nabla f(x_k)},
+       \frac{L_1[-\lambda_{\min}(\nabla^2f(x_k))]_+^2}
+            {64\sigma_k}\right\}\\
+ &\le\max\{\sigma_k,\sigma_k/64\}=\sigma_k.
+ \end{aligned}
+\]
+Since $r_k\le R_k$, it follows that
+\begin{equation}\label{eq:safe-radius}
+ \sqrt{L_1}r_k\le\sqrt{L_1}R_k
+   =\frac14\sqrt{\frac{L_1h_k}{\sigma_k}}\le\frac14,
+ \qquad L_1r_k^2\le\frac1{16}.
+\end{equation}
+These inequalities also hold when $L_1=0$ and do not divide by
+$L_1$.
+
+Continuity of $\nabla^3f$ on the compact trial segment ensures
+that
+\[
+ M_k:=\max_{0\le u\le1}\norm{\nabla^3f(x_k+us_k)}<\infty.
+\]
+Taylor's integral formula for the gradient is
+\[
+ \begin{aligned}
+ \nabla f(x_k+us_k)
+ &=\nabla f(x_k)+u\nabla^2f(x_k)s_k\\
+ &\quad+\int_0^u(u-\theta)
+          \nabla^3f(x_k+\theta s_k)[s_k,s_k]\,d\theta.
+ \end{aligned}
+\]
+Here the third derivative applied to two vectors is viewed as
+a vector through the Euclidean inner product. Its integral has
+norm at most
+$M_kr_k^2\int_0^u(u-\theta)\,d\theta
+ =\tfrac12u^2M_kr_k^2$. Combining this with
+\eqref{eq:linear-segment} yields, for every $u\in[0,1]$,
+\[
+ \norm{\nabla f(x_k+us_k)}
+ \le\norm{\nabla f(x_k)}
+       +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k
+       +\tfrac12M_kr_k^2.
+\]
+Apply the generalized smoothness assumption at every point of
+the segment and then take the maximum. Using
+\eqref{eq:safe-radius} and \eqref{eq:safe} gives
+\[
+ \begin{aligned}
+ M_k
+ &\le L_0+L_1\norm{\nabla f(x_k)}
+       +L_1[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k
+       +\tfrac12L_1M_kr_k^2\\
+ &\le L_0+L_1\norm{\nabla f(x_k)}
+       +\tfrac14\sqrt{L_1}[-\lambda_{\min}(\nabla^2f(x_k))]_+
+       +\tfrac1{32}M_k\\
+ &\le\sigma_k+\tfrac1{32}M_k.
+ \end{aligned}
+\]
+Subtracting $M_k/32$ proves $M_k\le32\sigma_k/31$.
+
+The scalar Taylor formula similarly gives
+\[
+ \begin{aligned}
+ &f(x_k+s_k)-f(x_k)-\nabla f(x_k)^Ts_k
+                    -\tfrac12s_k^T\nabla^2f(x_k)s_k\\
+ &\qquad=\frac12\int_0^1(1-\theta)^2
+     \nabla^3f(x_k+\theta s_k)[s_k,s_k,s_k]\,d\theta.
+ \end{aligned}
+\]
+Its absolute value is at most
+$M_kr_k^3/6\le(16/93)\sigma_kr_k^3\le\sigma_kr_k^3$.
+The gradient remainder at $u=1$ has norm at most
+$M_kr_k^2/2\le(16/31)\sigma_kr_k^2\le3\sigma_kr_k^2$.
+
+The first KKT equation and the positive semidefinite condition
+in \eqref{eq:kkt} imply
+\[
+ \begin{aligned}
+ &-\nabla f(x_k)^Ts_k-\tfrac12s_k^T\nabla^2f(x_k)s_k\\
+ &=\tfrac12s_k^T\bigl(\nabla^2f(x_k)
+              +(2\sqrt{\sigma_kh_k}+\lambda_k)I\bigr)s_k
+       +\tfrac12(2\sqrt{\sigma_kh_k}+\lambda_k)r_k^2\\
+ &\ge\tfrac12(2\sqrt{\sigma_kh_k}+\lambda_k)r_k^2.
+ \end{aligned}
+\]
+Since $\sigma_kr_k\le\sigma_kR_k=\sqrt{\sigma_kh_k}/4$,
+subtracting the scalar Taylor remainder proves
+\[
+ \begin{aligned}
+ f(x_k)-f(x_k+s_k)
+ &\ge\left(\sqrt{\sigma_kh_k}+\tfrac12\lambda_k\right)r_k^2
+          -\sigma_kr_k^3\\
+ &\ge\tfrac34\sqrt{\sigma_kh_k}\,r_k^2
+          +\tfrac12\lambda_kr_k^2.
+ \end{aligned}
+\]
+This is \eqref{eq:accept-value}. For the gradient test, the
+remainder bound and \eqref{eq:linear-gradient} give
+\[
+ \begin{aligned}
+ \norm{\nabla f(x_k+s_k)}
+ &\le(2\sqrt{\sigma_kh_k}+\lambda_k)r_k+3\sigma_kr_k^2\\
+ &\le2\sqrt{\sigma_kh_k}R_k+3\sigma_kR_k^2+\lambda_kr_k\\
+ &=\tfrac12h_k+\tfrac3{16}h_k+\lambda_kr_k
+   =\tfrac{11}{16}h_k+\lambda_kr_k.
+ \end{aligned}
+\]
+Thus \eqref{eq:accept-gradient} holds as well. During consecutive
+rejections the point $x_k$ stays fixed, so the right-hand side
+of \eqref{eq:safe} is a fixed finite number. Each rejection
+doubles the positive trial scale; finitely many doublings reach
+that number. The resulting trial must be accepted.
+\end{proof}
+
+\subsection{Accepted trials, descent, and step geometry}
+
+Consider any finite prefix ending immediately after its $K$th
+accepted trial, where $K\ge1$. Let
+$\tau_0<\cdots<\tau_{K-1}$ be its accepted trial indices, and
+define the endpoint index $\tau_K=\tau_{K-1}+1$. This last index
+denotes the point after the final acceptance; it need not be an
+accepted trial. Rejections do not change the iterate, and therefore
+\begin{equation}\label{eq:accepted-points}
+ x_{\tau_0}=x_0,\qquad
+ x_{\tau_{j+1}}=x_{\tau_j}+s_{\tau_j}
+ \quad(0\le j<K).
+\end{equation}
+If the prefix is extended, the endpoint index can change to the
+next accepted index, but its associated point remains the same
+through all intervening rejections.
+
+For the scale recurrence only, use the formal convention
+$\sigma_{\tau_{-1}}:=2\sigma_0$; this does not introduce an
+additional trial. Then, for $0\le j<K$,
+\begin{equation}\label{eq:backtrack-upper}
+ \begin{aligned}
+ \sigma_{\tau_j}\le\max\bigl\{\sigma_{\tau_{j-1}}/2,\,
+ &2\bigl(L_0+L_1\norm{\nabla f(x_{\tau_j})}\\
+ &\hspace{1em}+\sqrt{L_1}
+       [-\lambda_{\min}(\nabla^2f(x_{\tau_j}))]_+\bigr)\bigr\}.
+ \end{aligned}
+\end{equation}
+Indeed, the first trial at this point uses
+$\sigma_{\tau_{j-1}}/2$, including $j=0$ under the convention.
+If this trial succeeds, the first term in the maximum suffices.
+Otherwise the trial immediately preceding $\tau_j$ was rejected,
+at the same point and at scale $\sigma_{\tau_j}/2$.
+By Lemma~\ref{lem:safe}, this rejected scale is strictly smaller
+than the safe threshold in \eqref{eq:safe}. Multiplying that
+strict inequality by two proves the second alternative in
+\eqref{eq:backtrack-upper}.
+
+For every accepted trial $k$, its acceptance test, $r_k>0$, and
+$\sqrt{\sigma_kh_k}\ge4\sigma_kr_k$ show
+\[
+ f(x_k)-f(x_{k+1})
+ \ge\tfrac34\sqrt{\sigma_kh_k}\,r_k^2
+       +\tfrac12\lambda_kr_k^2
+ \ge3\sigma_kr_k^3>0.
+\]
+Using \eqref{eq:accepted-points}, these inequalities telescope:
+\begin{equation}\label{eq:descent-budget}
+ \begin{gathered}
+ f(x_{\tau_j})-f(x_{\tau_{j+1}})
+ \ge3\sigma_{\tau_j}r_{\tau_j}^3>0
+ \quad(0\le j<K),\\
+ \begin{aligned}
+ 3\sum_{j=0}^{K-1}\sigma_{\tau_j}r_{\tau_j}^3
+ &\le\sum_{j=0}^{K-1}
+       \bigl(f(x_{\tau_j})-f(x_{\tau_{j+1}})\bigr)\\
+ &=f(x_0)-f(x_{\tau_K})\le f(x_0)-f_* =\Delta.
+ \end{aligned}
+ \end{gathered}
+\end{equation}
+Each summand is nonnegative, so the same upper bound applies to
+any subinterval of accepted trials. No limit of iterates or
+infinite sum is needed for this argument.
+
+\begin{lemma}[Boundary and interior steps]\label{lem:geometry}
+Put $\rho=11/16$. An accepted boundary trial $k$, for which
+$r_k=R_k$, satisfies
+\begin{equation}\label{eq:boundary}
+ \begin{aligned}
+ \norm{\nabla f(x_k)}&\le16\sigma_kr_k^2,\\
+ \norm{\nabla f(x_{k+1})}&\le51\sigma_kr_k^2,\\
+ [-\lambda_{\min}(\nabla^2f(x_k))]_+&\le32\sigma_kr_k,\qquad
+ \lambda_k\le10\sqrt{\sigma_kh_k}.
+ \end{aligned}
+\end{equation}
+An accepted interior trial $k$, for which $r_k<R_k$, satisfies
+\begin{equation}\label{eq:interior}
+ \begin{aligned}
+ h_k&=\norm{\nabla f(x_k)},\qquad\lambda_k=0,\\
+ \norm{\nabla f(x_{k+1})}&\le\rho\norm{\nabla f(x_k)},\\
+ [-\lambda_{\min}(\nabla^2f(x_k))]_+
+ &\le2\sqrt{\sigma_k\norm{\nabla f(x_k)}}.
+ \end{aligned}
+\end{equation}
+\end{lemma}
+\begin{proof}
+The definition of $h_k$ implies both
+$\norm{\nabla f(x_k)}\le h_k$ and
+$[-\lambda_{\min}(\nabla^2f(x_k))]_+
+ \le8\sqrt{\sigma_kh_k}$, without requiring a safe scale.
+If $r_k=R_k$, then
+\[
+ h_k=16\sigma_kr_k^2,\qquad
+ \sqrt{\sigma_kh_k}=4\sigma_kr_k.
+\]
+These identities give the first and third bounds in
+\eqref{eq:boundary}. The KKT inequality
+\eqref{eq:linear-gradient}, which was derived before imposing
+\eqref{eq:safe}, gives
+\[
+ \begin{aligned}
+ \lambda_k
+ &\le\frac{\norm{\nabla f(x_k)}}{R_k}
+        +[-\lambda_{\min}(\nabla^2f(x_k))]_+
+        -2\sqrt{\sigma_kh_k}\\
+ &\le4\sqrt{\sigma_kh_k}+8\sqrt{\sigma_kh_k}
+        -2\sqrt{\sigma_kh_k}
+   =10\sqrt{\sigma_kh_k}.
+ \end{aligned}
+\]
+The gradient acceptance test now yields
+\[
+ \begin{aligned}
+ \norm{\nabla f(x_{k+1})}
+ &\le\tfrac{11}{16}h_k+\lambda_kr_k\\
+ &\le\tfrac{11}{16}(16\sigma_kr_k^2)
+       +10(4\sigma_kr_k)r_k
+   =51\sigma_kr_k^2.
+ \end{aligned}
+\]
+
+If $r_k<R_k$, complementarity implies $\lambda_k=0$.
+The positive semidefinite condition then gives
+\[
+ [-\lambda_{\min}(\nabla^2f(x_k))]_+
+ \le2\sqrt{\sigma_kh_k}.
+\]
+If the curvature term were strictly larger than the gradient
+term in the definition of $h_k$, it would be positive and give
+\[
+ 2\sqrt{\sigma_kh_k}
+ =\tfrac14[-\lambda_{\min}(\nabla^2f(x_k))]_+>0.
+\]
+The two preceding displays would force a positive number to be
+at most one quarter of itself, which is impossible. Therefore
+$h_k=\norm{\nabla f(x_k)}$. Substitution into the semidefinite
+bound proves the last inequality of \eqref{eq:interior};
+substitution into the gradient acceptance test, with
+$\lambda_k=0$, proves its contraction inequality.
+\end{proof}
