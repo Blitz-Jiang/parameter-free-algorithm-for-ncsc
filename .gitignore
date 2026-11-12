@@ -1,7 +1,7 @@
 # macOS
 .DS_Store
 
-# Temporary and rendered files
+# Local build directories
 tmp/
 out/
 
@@ -25,8 +25,3 @@ out/
 __pycache__/
 *.py[cod]
 .pytest_cache/
-
-./numerical_experiment/outputs
-/numerical_experiment/docs/
-
-/numerical_experiment/outputs/

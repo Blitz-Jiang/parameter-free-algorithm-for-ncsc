@@ -422,34 +422,61 @@ $(\nabla F(x),\nabla^2F(x))$.  All errors are then zero, so the
 assumption holds with $C_g=C_v=0$ for every $\epsilon,\sigma_0>0$;
 no refinement or auxiliary data are needed.
 
-At a stored working tuple, set
-\begin{equation}\label{eq:clipped-scale}
- h:=\max\{\|\widehat g\|,\epsilon\},\qquad
- R(h,\sigma):=\frac{\sqrt h}{4\sigma},
-\end{equation}
-and solve
+For a stored working tuple $w$, put
+$h:=\max\{\|\widehat g\|,\epsilon\}$ and define the trust-region
+operator by
 \begin{equation}\label{eq:adaptive-subproblem}
- \min_{\|d\|\le R(h,\sigma)}
- \quad \widehat g^Td+\frac12d^T
+\begin{aligned}
+ \operatorname{TR}_\sigma(w)&:=(d,\lambda),\\
+ d&\in\underset{\|u\|\le\sqrt h/(4\sigma)}{\arg\min}
+ \left\{\widehat g^Tu+\frac12u^T
  \left(\widehat H+\frac{\sigma\sqrt\epsilon}{64}I
-                    +\sigma\sqrt h I\right)d.
+                    +\sigma\sqrt h I\right)u\right\},
+\end{aligned}
 \end{equation}
-For its global solution and multiplier $(d,\lambda)$, define
-\begin{equation}\label{eq:utr-step-quantities}
- r:=\|d\|,\qquad W:=\sigma\sqrt h\,r^2,\qquad
- U:=\lambda r^2,\qquad T:=\frac{\epsilon^{3/2}}{\sigma}.
-\end{equation}
+where $\lambda\ge0$ is the associated multiplier satisfying
+\eqref{eq:tr-global-optimality}.
 An ordinary trial is accepted when
 \begin{equation}\label{eq:acceptance}
- \widehat F-\widehat F^+\ge\frac W8+\frac U4-\frac T{1024},
+ \widehat F-\widehat F^+
+ \ge\frac{\sigma\sqrt h\,\|d\|^2}{8}
+    +\frac{\lambda\|d\|^2}{4}
+    -\frac{\epsilon^{3/2}}{1024\sigma},
  \qquad
- \|\widehat g^+\|\le\frac h2+\lambda r.
+ \|\widehat g^+\|\le\frac h2+\lambda\|d\|.
 \end{equation}
 The exception is an interior step at $h=\epsilon$, which invokes
 validation rather than the ordinary acceptance test.
-We denote by $\operatorname{TR}_\sigma(w)$ a globally optimal
-primal--multiplier pair for \eqref{eq:adaptive-subproblem}, with
-$h$ defined by \eqref{eq:clipped-scale}.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\caption{Parameter-free inexact adaptive UTR}
+\label{alg:adaptive-utr}
+\KwIn{$x_0,\ \epsilon>0,\ \sigma_0>0,\ \mathcal W,\ \mathcal V$}
+$(x,\sigma)\leftarrow(x_0,\sigma_0)$;
+ $w\leftarrow\mathcal W^0_\sigma(x)$\nllabel{ln:utr-init}\;
+\While{true}{
+ $h\leftarrow\max\{\|\widehat g\|,\epsilon\}$;
+ $(d,\lambda)\leftarrow\operatorname{TR}_\sigma(w)$\nllabel{ln:utr-model}\;
+ $x^+\leftarrow x+d$;
+ $w^+\leftarrow\mathcal W_{\sigma,x}(x^+;w)$\nllabel{ln:utr-trial}\;
+ \eIf{$h=\epsilon$ and $\|d\|<\sqrt h/(4\sigma)$}{
+  $(g_{\rm v},H_{\rm v})\leftarrow
+       \mathcal V_\sigma(x^+;w^+)$\nllabel{ln:utr-validation}\;
+  \If{$\|g_{\rm v}\|\le\epsilon/2$ and
+   $\lambda_{\min}(H_{\rm v})\ge-(21/8)\sigma\sqrt\epsilon$}{
+   \Return{$x^+$}\nllabel{ln:utr-return}\;
+  }
+ }{
+  \If{\eqref{eq:acceptance} holds}{
+   $(x,w)\leftarrow(x^+,w^+)$\nllabel{ln:utr-accept}\;
+   \textbf{continue}\;
+  }
+ }
+ $\sigma\leftarrow2\sigma$\nllabel{ln:utr-double}\;
+ $w\leftarrow\mathcal W^{\rm r}_\sigma(x;w)$\nllabel{ln:utr-refresh}\;
+}
+\end{algorithm}
 
 \begin{remark}[Why working and validation oracles?]
 \label{rem:utr-oracle-roles}
@@ -494,37 +521,6 @@ two-oracle interface: a small model gradient prompts an accuracy
 check rather than immediate termination.
 \end{remark}
 
-\begin{algorithm}[H]
-\DontPrintSemicolon
-\caption{Parameter-free inexact adaptive UTR}
-\label{alg:adaptive-utr}
-\KwIn{$x_0,\ \epsilon>0,\ \sigma_0>0,\ \mathcal W,\ \mathcal V$}
-$(x,\sigma)\leftarrow(x_0,\sigma_0)$;
- $w\leftarrow\mathcal W^0_\sigma(x)$\nllabel{ln:utr-init}\;
-\While{true}{
- $h\leftarrow\max\{\|\widehat g\|,\epsilon\}$;
- $(d,\lambda)\leftarrow\operatorname{TR}_\sigma(w)$\nllabel{ln:utr-model}\;
- $(x^+,r)\leftarrow(x+d,\|d\|)$;
- $(W,U,T)\leftarrow(\sigma\sqrt h\,r^2,\lambda r^2,
-                         \epsilon^{3/2}/\sigma)$\;
- $w^+\leftarrow\mathcal W_{\sigma,x}(x^+;w)$\nllabel{ln:utr-trial}\;
- \eIf{$h=\epsilon$ and $r<\sqrt h/(4\sigma)$}{
-  $(g_{\rm v},H_{\rm v})\leftarrow
-       \mathcal V_\sigma(x^+;w^+)$\nllabel{ln:utr-validation}\;
-  \If{$\|g_{\rm v}\|\le\epsilon/2$ and
-   $\lambda_{\min}(H_{\rm v})\ge-(21/8)\sigma\sqrt\epsilon$}{
-   \Return{$x^+$}\nllabel{ln:utr-return}\;
-  }
- }{
-  \If{\eqref{eq:acceptance} holds}{
-   $(x,w)\leftarrow(x^+,w^+)$\nllabel{ln:utr-accept}\;
-   \textbf{continue}\;
-  }
- }
- $\sigma\leftarrow2\sigma$\nllabel{ln:utr-double}\;
- $w\leftarrow\mathcal W^{\rm r}_\sigma(x;w)$\nllabel{ln:utr-refresh}\;
-}
-\end{algorithm}
 In \Cref{alg:adaptive-utr}, line~\ref{ln:utr-trial} forms $w^+$
 without changing $w$.  Apart from initialization, $w$ changes only
 on acceptance (line~\ref{ln:utr-accept}) or refresh
@@ -555,10 +551,12 @@ terminates at a point satisfying
  \lambda_{\min}(\nabla^2F(x_{\rm out}))
  \ge-\frac{85}{32}\max\{\sigma_0,2\sqrt{M/6}\}\sqrt\epsilon.
 \end{equation}
-Its total number of trust-region subproblem solves is
+Its total number $N_{\rm or}$ of working and validation oracle
+queries, counting each initialization, trial, refresh, or validation
+call once, satisfies
 \begin{equation}\label{eq:utr-total-count}
 \begin{aligned}
- Q=O\!\Bigg(&\max\{\sigma_0,\sqrt M\}
+ N_{\rm or}=O\!\Bigg(&\max\{\sigma_0,\sqrt M\}
  \left[\frac{F(x_0)-\inf F}{\epsilon^{3/2}}
        +\frac{C_v}{\sigma_0^3}
        +\frac1{\sigma_0}\log\!\left(
@@ -571,8 +569,9 @@ with a universal hidden constant.  The algorithm does not require
 $M,C_g$, or $C_v$.
 \end{theorem}
 
-The theorem separates outer progress from the construction and cost
-of the oracles.  Its proof is in \Cref{app:adaptive-utr-proofs}.
+The theorem counts oracle calls, not the work performed inside each
+call.  The latter is analyzed separately for the minimax construction.
+The proof is in \Cref{app:adaptive-utr-proofs}.
 The finer counting and path estimates used in the minimax analysis
 are recorded separately in \Cref{prop:utr-budgets}; they do not
 require any additional assumption or algorithmic input.
@@ -1432,7 +1431,7 @@ scale bound.  The tolerance conversion follows from
 $(85/(16\sqrt6))^2=7225/1536$.
 
 It remains to count successful halvings.  On an accepted step, set
-$z_k=\sigma_kr_k/\sqrt\epsilon$.  Since $c_0=2^{-12}$,
+$z_k=\sigma_k\|d_k\|/\sqrt\epsilon$.  Since $c_0=2^{-12}$,
 \[
  N_{{\rm tr},k}
  =\left\lceil\log_2(1+2^{14}z_k)\right\rceil
@@ -1444,7 +1443,7 @@ Thus \eqref{eq:utr-counts} and \eqref{eq:utr-path-budget} give
 \begin{align}
  \sum_{\rm accepted}N_{{\rm tr},k}
  &\le16K+\epsilon^{-3/2}
-                  \sum_{\rm accepted}\sigma_k^3r_k^3\notag\\
+                  \sum_{\rm accepted}\sigma_k^3\|d_k\|^3\notag\\
  &\le16K+8\bar\sigma B_\epsilon\epsilon^{-3/2}\notag\\
  &\le16392\bar\sigma B_\epsilon\epsilon^{-3/2}.
  \label{eq:gs-accepted-tracking}
@@ -1463,7 +1462,7 @@ At every stored iterate, \eqref{eq:utr-path-budget} and
                    +C_g\epsilon\mathcal A_\epsilon^2\right\}
  =O_{\rm fixed}(1).
 \]
-Since $r\le R(h,\sigma)$, each failed trial requires at most
+Since $\|d\|\le\sqrt h/(4\sigma)$, each failed trial requires at most
 \[
  N_{\rm fail}:=
  \left\lceil\log_2\left(
@@ -1472,7 +1471,7 @@ Since $r\le R(h,\sigma)$, each failed trial requires at most
  =O_{\rm fixed}(\mathcal A_\epsilon)
 \]
 working halvings.  A terminal trial has $h=\epsilon$ and
-$r<r_\epsilon(\sigma)$, so its working tracking uses at most
+$\|d\|<r_\epsilon(\sigma)$, so its working tracking uses at most
 $\lceil\log_2(1+1/c_0)\rceil=13$ halvings.
 Each failure uses one additional halving for the refresh.
 
@@ -1749,7 +1748,12 @@ subproblems at termination, then
           \frac{\sqrt{M/6}}{\sigma_0}\right\}\right\rceil,
  \qquad Q=K+J+1.
 \end{equation}
-There are at most $J+1$ validation calls.  Every stored iterate and
+There are exactly $1+Q+J$ working calls and at most $J+1$ validation
+calls.  Their total therefore satisfies
+\begin{equation}\label{eq:utr-query-count}
+ N_{\rm or}\le Q+2J+2=K+3J+3\le3Q.
+\end{equation}
+Every stored iterate and
 every finite prefix of accepted steps satisfy
 \begin{equation}\label{eq:utr-path-budget}
  F(x)-F^*\le B_\epsilon,\qquad
@@ -1780,17 +1784,17 @@ For $a\ge0$ and $R>0$, let $d$ be a global solution of
  q(u):=g^Tu+\frac12u^T(H+aI)u,
 \]
 let $\lambda$ be the multiplier supplied by
-\eqref{eq:tr-global-optimality}, and write $r=\|d\|$.  Let a candidate
+\eqref{eq:tr-global-optimality}.  Let a candidate
 gradient $g^+$ satisfy
 $\|g^+-\nabla F(x+d)\|\le\delta_+$.  Then
 \begin{subequations}\label{eq:common-tr-estimates}
 \begin{align}
  F(x)-F(x+d)
- &\ge\frac{a-\xi}{2}r^2+\frac{\lambda}{2}r^2
-      -\frac M6r^3-\delta_0r,
+ &\ge\frac{a-\xi}{2}\|d\|^2+\frac{\lambda}{2}\|d\|^2
+      -\frac M6\|d\|^3-\delta_0\|d\|,
        \label{eq:common-function-bound}\\
  \|g^+\|
- &\le(a+\xi+\lambda)r+\frac M2r^2+\delta_0+\delta_+.
+ &\le(a+\xi+\lambda)\|d\|+\frac M2\|d\|^2+\delta_0+\delta_+.
        \label{eq:common-gradient-bound}
 \end{align}
 \end{subequations}
@@ -1800,26 +1804,27 @@ $\|g^+-\nabla F(x+d)\|\le\delta_+$.  Then
 Apply \eqref{eq:tr-global-optimality} with $B=H+aI$.  Its stationarity
 and positive-semidefiniteness conditions give
 \[
- q(d)=-\frac12d^T(H+aI)d-\lambda r^2
- \le-\frac{\lambda}{2}r^2,
+ q(d)=-\frac12d^T(H+aI)d-\lambda\|d\|^2
+ \le-\frac{\lambda}{2}\|d\|^2,
 \]
 and Hessian Lipschitz continuity gives the standard Taylor estimates
 \citep[Lemma~1.2.4]{nesterov2004introductory}
 \[
 \begin{aligned}
  \|\nabla F(x+d)-\nabla F(x)-\nabla^2F(x)d\|
- &\le\frac M2r^2,\\
+ &\le\frac M2\|d\|^2,\\
  F(x+d)-F(x)-\nabla F(x)^Td-\frac12d^T\nabla^2F(x)d
- &\le\frac M6r^3.
+ &\le\frac M6\|d\|^3.
 \end{aligned}
 \]
 The second estimate and the current endpoint errors imply
 \[
  F(x)-F(x+d)
- \ge-g^Td-\frac12d^THd-\delta_0r-\frac{\xi}{2}r^2-\frac M6r^3.
+ \ge-g^Td-\frac12d^THd-\delta_0\|d\|
+      -\frac{\xi}{2}\|d\|^2-\frac M6\|d\|^3.
 \]
 Since
-$-g^Td-d^THd/2=-q(d)+ar^2/2$, the model bound yields
+$-g^Td-d^THd/2=-q(d)+a\|d\|^2/2$, the model bound yields
 \eqref{eq:common-function-bound}.
 
 For the candidate gradient, decompose the two endpoint errors, Taylor
@@ -1845,7 +1850,8 @@ Under the hypotheses of \Cref{thm:total-complexity}, the following hold
 for every generated trial of \Cref{alg:adaptive-utr}.
 If $\sigma^2\ge M/6$, every ordinary trial of
 \Cref{alg:adaptive-utr} satisfies both acceptance tests, and
-every trial with $h=\epsilon$ and $r<R(h,\sigma)$ passes validation.
+every trial with $h=\epsilon$ and $\|d\|<\sqrt h/(4\sigma)$
+passes validation.
 At any scale $\sigma\ge\sigma_0$, successful validation implies
 \begin{equation}\label{eq:utr-validator-return}
  \|\nabla F(x^+)\|<\epsilon,
@@ -1865,39 +1871,45 @@ Apply \Cref{lem:common-inexact-tr-step} to $F$ with
  \delta_0=\delta_+=\frac{\epsilon}{1024}.
 \]
 The endpoint errors follow from \eqref{eq:utr-safe-errors}.
-Since $r\le\sqrt h/(4\sigma)$ and $M\le6\sigma^2$,
+Since $\|d\|\le\sqrt h/(4\sigma)$ and $M\le6\sigma^2$,
 \[
- \frac{M}{6}r^3\le\frac W4.
+ \frac{M}{6}\|d\|^3\le\frac{\sigma\sqrt h}{4}\|d\|^2.
 \]
 Thus \eqref{eq:common-function-bound} gives
 \[
- F(x)-F(x+d)\ge\frac W4+\frac U2-\frac{\epsilon r}{1024}.
+ F(x)-F(x+d)
+ \ge\frac{\sigma\sqrt h}{4}\|d\|^2
+       +\frac{\lambda}{2}\|d\|^2-\frac{\epsilon\|d\|}{1024}.
 \]
 Young's inequality and $h\ge\epsilon$ imply
 \[
- \frac{\epsilon r}{1024}
- \le\frac W8+
+ \frac{\epsilon\|d\|}{1024}
+ \le\frac{\sigma\sqrt h}{8}\|d\|^2+
        \frac{2\epsilon^2}{1024^2\sigma\sqrt h}
- \le\frac W8+\frac{2T}{1024^2}.
+ \le\frac{\sigma\sqrt h}{8}\|d\|^2
+       +\frac{2\epsilon^{3/2}}{1024^2\sigma}.
 \]
 After paying the two working-value errors,
-\[
+\begin{align*}
  \widehat F-\widehat F^+
- \ge\frac W8+\frac U2
-       -\left(\frac{2}{1024^2}+\frac{2}{4096}\right)T
- \ge\frac W8+\frac U4-\frac T{1024}.
-\]
+ &\ge\frac{\sigma\sqrt h}{8}\|d\|^2+\frac{\lambda}{2}\|d\|^2
+       -\left(\frac{2}{1024^2}+\frac{2}{4096}\right)
+          \frac{\epsilon^{3/2}}{\sigma}\\
+ &\ge\frac{\sigma\sqrt h}{8}\|d\|^2+\frac{\lambda}{4}\|d\|^2
+       -\frac{\epsilon^{3/2}}{1024\sigma}.
+\end{align*}
 For the gradient test, \eqref{eq:common-gradient-bound} gives
 \[
  \|\widehat g^+\|
- \le\lambda r+\frac h4+\frac h{128}
+ \le\lambda\|d\|+\frac h4+\frac h{128}
                     +\frac{3h}{16}+\frac h{512}
- =\lambda r+\frac{229h}{512}
- \le\lambda r+\frac h2.
+ =\lambda\|d\|+\frac{229h}{512}
+ \le\lambda\|d\|+\frac h2.
 \]
 Hence every ordinary trial is accepted at a safe scale.
 
-If $h=\epsilon$ and $r<R(h,\sigma)$, complementarity gives
+If $h=\epsilon$ and $\|d\|<\sqrt h/(4\sigma)$,
+complementarity gives
 $\lambda=0$, and the model shift is
 $a=(65/64)\sigma\sqrt\epsilon$.  Applying
 \eqref{eq:common-gradient-bound} to the true endpoint gradient
@@ -1913,7 +1925,7 @@ Moreover, model positive semidefiniteness, the current Hessian error,
 and Hessian Lipschitz continuity imply
 \begin{align*}
  \lambda_{\min}(\nabla^2F(x+d))
- &\ge-a-\xi-Mr\\
+ &\ge-a-\xi-M\|d\|\\
  &\ge-\left(\frac{66}{64}+\frac32\right)\sigma\sqrt\epsilon
  =-\frac{81}{32}\sigma\sqrt\epsilon.
 \end{align*}
@@ -1953,7 +1965,10 @@ For $h\ge\epsilon$, define the gradient level and stored potential
 Every ordinary accepted step of
 \Cref{alg:adaptive-utr} satisfies
 \begin{equation}\label{eq:utr-potential-decrease}
- \Phi-\Phi^+\ge\frac W{32}+\frac T{1024}+\frac U{16},
+ \Phi-\Phi^+
+ \ge\frac{\sigma\sqrt h}{32}\|d\|^2
+       +\frac{\epsilon^{3/2}}{1024\sigma}
+       +\frac{\lambda}{16}\|d\|^2,
 \end{equation}
 where the scale is unchanged and $\Phi$ is defined by
 \eqref{eq:utr-potential}.
@@ -1974,53 +1989,66 @@ We will also use, for $c\ge1$ and $h^+\le ch$,
  \le\lceil\log_2c\rceil\le1+\log_2c.
 \end{equation}
 
-Suppose first that the accepted step is interior.  Then $\lambda=0$
-and $U=0$.  Since this is an ordinary trial, $h>\epsilon$.
+Suppose first that the accepted step is interior.  Then $\lambda=0$.
+Since this is an ordinary trial, $h>\epsilon$.
 The gradient acceptance test implies
 $h^+\le\max\{h/2,\epsilon\}$, so \eqref{eq:utr-layer-halving} and
 the value test yield
-\[
- \Phi-\Phi^+\ge\frac W8-\frac T{1024}+\frac T{512}
- =\frac W8+\frac T{1024}.
-\]
+\begin{align*}
+ \Phi-\Phi^+
+ &\ge\frac{\sigma\sqrt h}{8}\|d\|^2
+       -\frac{\epsilon^{3/2}}{1024\sigma}
+       +\frac{\epsilon^{3/2}}{512\sigma}\\
+ &=\frac{\sigma\sqrt h}{8}\|d\|^2
+       +\frac{\epsilon^{3/2}}{1024\sigma}.
+\end{align*}
 This proves \eqref{eq:utr-potential-decrease} in the interior case.
 
-For a boundary step, put $z=\lambda r/h$.  The gradient test gives
+For a boundary step, put $z=\lambda\|d\|/h$.  The gradient test gives
 $h^+/h\le\max\{1,1/2+z\}$.  By \eqref{eq:utr-layer-growth},
 \[
  \mathcal L_\epsilon(h^+)-\mathcal L_\epsilon(h)
  \le1+\log_2\max\{1,1/2+z\}
  \le1+\frac z{\ln2}.
 \]
-Since $r=\sqrt h/(4\sigma)$,
-\[
- W=\frac{h^{3/2}}{16\sigma}\ge\frac T{16},
+Since $\|d\|=\sqrt h/(4\sigma)$ and $h\ge\epsilon$,
+\begin{align*}
+ \sigma\sqrt h\,\|d\|^2
+ &=\frac{h^{3/2}}{16\sigma}
+   \ge\frac{\epsilon^{3/2}}{16\sigma},\\
+ \lambda\|d\|^2&=\frac{zh^{3/2}}{4\sigma},
  \qquad
- U=\frac{zh^{3/2}}{4\sigma},
- \qquad Tz\le4U.
-\]
+ \frac{\epsilon^{3/2}z}{\sigma}\le4\lambda\|d\|^2.
+\end{align*}
 Consequently,
 \begin{align*}
  \Phi-\Phi^+
- &\ge\frac W8+\frac U4-\frac T{1024}
-       -\frac T{512}\left(1+\frac z{\ln2}\right)\\
- &\ge\frac W8+
-       \left(\frac14-\frac1{128\ln2}\right)U
-       -\frac{3T}{1024}\\
- &\ge\frac{5W}{64}
-       +\left(\frac14-\frac1{128\ln2}\right)U.
+ &\ge\frac{\sigma\sqrt h}{8}\|d\|^2+\frac{\lambda}{4}\|d\|^2
+       -\frac{\epsilon^{3/2}}{1024\sigma}
+       -\frac{\epsilon^{3/2}}{512\sigma}
+           \left(1+\frac z{\ln2}\right)\\
+ &\ge\frac{\sigma\sqrt h}{8}\|d\|^2+
+       \left(\frac14-\frac1{128\ln2}\right)\lambda\|d\|^2
+       -\frac{3\epsilon^{3/2}}{1024\sigma}\\
+ &\ge\frac{5\sigma\sqrt h}{64}\|d\|^2
+       +\left(\frac14-\frac1{128\ln2}\right)\lambda\|d\|^2.
 \end{align*}
 Finally,
-$5W/64\ge W/32+T/1024$ and
-$1/4-1/(128\ln2)\ge1/16$, proving the claim.
+\[
+ \frac{5\sigma\sqrt h}{64}\|d\|^2
+ \ge\frac{\sigma\sqrt h}{32}\|d\|^2
+       +\frac{\epsilon^{3/2}}{1024\sigma},
+ \qquad
+ \frac14-\frac1{128\ln2}\ge\frac1{16},
+\]
+proving the claim.
 \end{proof}
 
 To account for changes of scale, define
 \begin{equation}\label{eq:utr-budget-parameters}
 \begin{aligned}
  E(\sigma)&:=C_v\frac{\epsilon^{3/2}}{\sigma^3},
- &E_0&:=E(\sigma_0),
- &T_0&:=\frac{\epsilon^{3/2}}{\sigma_0},\\
+ &E_0&:=E(\sigma_0),\\
  \mathcal L_0&:=\mathcal L_\epsilon(h_0),
  &D_0&:=1+\log_2\left(1+\frac{5C_g}{4\sigma_0^2}\right).
 \end{aligned}
@@ -2028,7 +2056,8 @@ To account for changes of scale, define
 The budget in \eqref{eq:utr-budget} can therefore be written as
 \[
  B_\epsilon=\Delta_F+\frac{23}{7}E_0+
-                \frac{T_0}{512}(\mathcal L_0+D_0).
+                \frac{\epsilon^{3/2}}{512\sigma_0}
+                   (\mathcal L_0+D_0).
 \]
 Write $\sigma_*:=\sqrt{M/6}$.  Every failed trial doubles $\sigma$,
 and \Cref{lem:utr-safe} excludes failures at or above $\sigma_*$.
@@ -2046,7 +2075,9 @@ Consequently every finite prefix satisfies
 Under the preceding conditions, every finite prefix satisfies
 \begin{equation}\label{eq:utr-cumulative-budget}
  \sum_{\rm accepted}
- \left(\frac{W_k}{32}+\frac{T_k}{1024}+\frac{U_k}{16}\right)
+ \left(\frac{\sigma_k\sqrt{h_k}}{32}\|d_k\|^2
+       +\frac{\epsilon^{3/2}}{1024\sigma_k}
+       +\frac{\lambda_k}{16}\|d_k\|^2\right)
  \le B_\epsilon.
 \end{equation}
 Every stored iterate satisfies $F(x)-F^*\le B_\epsilon$.
@@ -2079,31 +2110,35 @@ $h_{\rm old}\ge\epsilon$.  Hence
        -\mathcal L_\epsilon(h_{\rm old})\le D_0.
 \]
 Write $\mathcal L_{\rm old}$ and $\mathcal L_{\rm new}$ for these
-two levels.  Since $T_{\rm new}=T_{\rm old}/2$ and the levels are
-nonnegative, the positive jump of the level contribution is at most
+two levels.  Since the scale doubles and the levels are nonnegative,
+the positive jump of the level contribution is at most
 \[
  \left[
-  \frac{T_{\rm old}}{1024}
+  \frac{\epsilon^{3/2}}{1024\sigma}
   (\mathcal L_{\rm new}-2\mathcal L_{\rm old})
  \right]_+
- \le\frac{T_{\rm old}D_0}{1024}.
+ \le\frac{\epsilon^{3/2}D_0}{1024\sigma}.
 \]
 Its cumulative positive jump is therefore bounded by
 \[
- \frac{T_0D_0}{1024}\sum_{j\ge0}2^{-j}
- =\frac{T_0D_0}{512}.
+ \frac{\epsilon^{3/2}D_0}{1024\sigma_0}\sum_{j\ge0}2^{-j}
+ =\frac{\epsilon^{3/2}D_0}{512\sigma_0}.
 \]
 
 The initial potential is at most
-$F(x_0)+E_0+T_0\mathcal L_0/512$, and every stored potential is at
+$F(x_0)+E_0+\epsilon^{3/2}\mathcal L_0/(512\sigma_0)$,
+and every stored potential is at
 least $F^*-E_0$.  Telescoping \eqref{eq:utr-potential-decrease} and
 paying the two refresh bounds gives
-\[
- \sum_{\rm accepted}
- \left(\frac W{32}+\frac T{1024}+\frac U{16}\right)
- \le\Delta_F+2E_0+\frac97E_0
-       +\frac{T_0}{512}(\mathcal L_0+D_0)=B_\epsilon.
-\]
+\begin{align*}
+ &\sum_{\rm accepted}
+ \left(\frac{\sigma_k\sqrt{h_k}}{32}\|d_k\|^2
+       +\frac{\epsilon^{3/2}}{1024\sigma_k}
+       +\frac{\lambda_k}{16}\|d_k\|^2\right)\\
+ &\qquad\le\Delta_F+2E_0+\frac97E_0
+       +\frac{\epsilon^{3/2}}{512\sigma_0}
+       (\mathcal L_0+D_0)=B_\epsilon.
+\end{align*}
 The same upper bound on the stored potential, together with
 $F(x)\le\Phi+E_0$, gives $F(x)-F^*\le B_\epsilon$.
 
@@ -2117,7 +2152,8 @@ Every oracle call is finite by the interface assumptions.  By
 $\sqrt{M/6}$, and the scale bound
 \eqref{eq:utr-inexact-scale-bound} limits their number uniformly
 over all finite prefixes.  Since
-$T_k\ge\epsilon^{3/2}/\bar\sigma$, \Cref{lem:utr-cumulative-budget}
+$\epsilon^{3/2}/\sigma_k\ge\epsilon^{3/2}/\bar\sigma$,
+\Cref{lem:utr-cumulative-budget}
 gives, for every finite prefix,
 \[
  K\frac{\epsilon^{3/2}}{1024\bar\sigma}\le B_\epsilon.
@@ -2131,14 +2167,21 @@ trials, and one successful validation trial, each solving one
 subproblem.  Thus $Q=K+J+1$, proving \eqref{eq:utr-counts}.
 Every validation either terminates or causes a failed trial, so
 there are at most $J+1$ validation calls.
+There is one working call at initialization, one trial call for each
+subproblem, and one refresh call after each failure.  Thus there are
+exactly $1+Q+J$ working calls, including repeated query points and
+zero-length trials.  Adding the validation calls gives
+\eqref{eq:utr-query-count}; the last inequality follows from
+$K+3J+3\le3(K+J+1)=3Q$.
 The returned-point estimate \eqref{eq:utr-validator-return} and
 $\sigma\le\bar\sigma$ prove \eqref{eq:return-guarantee}.
 For the cubic-path estimate, the radius constraint gives
 \[
- 4\sigma_k^2r_k^3\le\sigma_k\sqrt{h_k}\,r_k^2=W_k.
+ 4\sigma_k^2\|d_k\|^3
+ \le\sigma_k\sqrt{h_k}\,\|d_k\|^2.
 \]
 Thus \Cref{lem:utr-cumulative-budget} implies
-$\sum_{\rm accepted}\sigma_k^2r_k^3\le8B_\epsilon$ for every
+$\sum_{\rm accepted}\sigma_k^2\|d_k\|^3\le8B_\epsilon$ for every
 finite prefix.  Its stored-value estimate supplies the other part
 of \eqref{eq:utr-path-budget}, proving \Cref{prop:utr-budgets}.
 
@@ -2159,7 +2202,8 @@ $\bar\sigma\le\max\{\sigma_0,\sqrt M\}$ into
 logarithm and $\max\{\sigma_0,\sqrt M\}/\sigma_0$ are both at least
 one, and the bound on $J$ is
 $O(1+\log(1+\sqrt M/\sigma_0))$.
-This gives \eqref{eq:utr-total-count} and completes the theorem.
+Finally, $N_{\rm or}\le3Q$ gives \eqref{eq:utr-total-count} and
+completes the theorem.
 \end{proof}
 
 

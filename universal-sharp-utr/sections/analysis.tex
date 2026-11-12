@@ -1,24 +1,24 @@
 \section{Technical estimates}
 \label{sec:analysis}
-Fix any pair $(L_0,L_1)$ satisfying Assumption~\ref{ass:setting}.
-For analysis only, define
+For the estimates in this section, fix a pair $(L_0,L_1)$ satisfying
+Assumption~\ref{ass:setting} and assume $\Delta>0$. Define
 \begin{equation}\label{eq:Q}
  \begin{aligned}
  Q&=L_0+L_1^{3/2}\Delta,\\
  Q_0&=\sigma_0+L_0+L_1\norm{\nabla f(x_0)}+L_1^{3/2}\Delta,
  \end{aligned}
 \end{equation}
-so $Q_0\ge Q>0$. For $\Delta>0$, also put
+so $Q_0\ge Q>0$, and set
 \begin{equation}\label{eq:logs}
  \mathcal L=1+\lp\frac{Q_0}{Q}
                 +\lp\frac{Q_0}{\sigma_0}
                 +\lp\frac{\norm{\nabla f(x_0)}}{(\Delta^2Q)^{1/3}}.
 \end{equation}
-The additive logarithmic term in the complexity bound below is
-$O(\mathcal L)$ when $\Delta>0$. All constants in the $O(\cdot)$
-notation are universal numerical constants. The quantities in
-\eqref{eq:Q}--\eqref{eq:logs} are never used by the algorithm and
-do not depend on $\epsilon$ or $\delta$.
+We write $\widetilde O(1)$ for additive logarithmic terms in problem
+parameters and initial data, independent of $\epsilon,\delta$;
+the explicit term proved below is $O(\mathcal L)$.
+All constants in $O(\cdot)$ and all occurrences of $C$ are universal;
+$C$ may change between inequalities.
 
 \input{sections/local_steps}
 \input{sections/potential}

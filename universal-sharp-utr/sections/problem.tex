@@ -13,15 +13,10 @@ $L_0>0$ and $L_1\ge0$ such that
 \end{equation}
 \end{assumption}
 
-Let $\Delta:=f(x_0)-f_*$. Vector norms are Euclidean and tensor
-norms are induced operator norms. For independent tolerances
+For independent tolerances
 $\epsilon,\delta>0$, an $(\epsilon,\delta)$-second-order stationary
 point satisfies
 \begin{equation}\label{eq:stationarity}
  \norm{\nabla f(x)}\le\epsilon,\qquad
  \lambda_{\min}(\nabla^2 f(x))\ge-\delta.
 \end{equation}
-Write $[z]_+:=\max\{z,0\}$ and
-$\lp t:=\max\{\log t,0\}$ for $t>0$, with $\lp0:=0$.
-The algorithm below uses quadratic trust-region subproblems and
-observable acceptance tests, without knowledge of $L_0$ or $L_1$.

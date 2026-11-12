@@ -1,0 +1,978 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.85in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage[colorlinks=true,linkcolor=blue]{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+\allowdisplaybreaks
+\numberwithin{equation}{section}
+\newtheorem{assumption}{Assumption}[section]
+\newtheorem{definition}[assumption]{Definition}
+\newtheorem{theorem}[assumption]{Theorem}
+\newtheorem{lemma}[assumption]{Lemma}
+\newcommand{\R}{\mathbb R}
+\newcommand{\eps}{\epsilon}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\Md}{M_{\mathrm d}}
+\newcommand{\MP}{M_P}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator{\range}{range}
+\DeclareMathOperator{\diag}{diag}
+
+\begin{document}
+
+\section{Assumptions, operators, and algorithms}
+
+\begin{assumption}\label{ass:regularity}
+Let $f:\R^n\times\R^m\to\R$ be twice continuously differentiable.
+There exist $\ell\ge\mu>0$ and $\rho>0$ such that, for all
+$\zeta,\zeta'\in\R^{n+m}$,
+\begin{equation}\label{eq:regularity}
+ \norm{\nabla^2 f(\zeta)}_{\op}\le\ell,
+ \qquad
+ \norm{\nabla^2 f(\zeta)-\nabla^2 f(\zeta')}_{\op}
+ \le\rho\norm{\zeta-\zeta'},
+ \qquad
+ f_{yy}(\zeta)\preceq-\mu I.
+\end{equation}
+Moreover,
+\[
+ P(x):=\max_y f(x,y),\qquad P_*:=\inf_xP(x)>-\infty.
+\]
+Vector norms are Euclidean and matrix norms are induced operator norms.
+The notation $f_x,f_y,f_{xx},f_{xy},f_{yx},f_{yy}$ denotes partial
+gradients and Hessian blocks.
+\end{assumption}
+
+\begin{definition}\label{def:operators}
+For $x\in\R^n$ and $y\in\R^m$, define
+\begin{align}
+ y^*(x)&:=\argmax_y f(x,y),
+ &\kappa&:=\ell/\mu,
+ &\Md&:=\rho\kappa^{3/2},
+ &\MP&:=4\sqrt2\,\rho\kappa^3,\label{eq:derived}\\
+ N_x(y)&:=y-f_{yy}(x,y)^{-1}f_y(x,y),\label{eq:newton-map}\\
+ \widehat P(x,y)&:=f(x,y)-\tfrac12 f_y(x,y)^T
+                            f_{yy}(x,y)^{-1}f_y(x,y),\label{eq:corrected-value}\\
+ \widehat g(x,y)&:=f_x(x,y)-f_{xy}(x,y)f_{yy}(x,y)^{-1}f_y(x,y),\label{eq:corrected-gradient}\\
+ \mathcal H(x,y)=\widehat H(x,y)
+ &:=f_{xx}(x,y)-f_{xy}(x,y)f_{yy}(x,y)^{-1}f_{yx}(x,y).\label{eq:corrected-hessian}
+\end{align}
+The cached data at $(x,y)$ are
+\[
+ \Xi(x,y):=(f(x,y),\nabla f(x,y),\nabla^2f(x,y)),
+ \qquad
+ \mathcal C(x,y):=(\widehat P(x,y),\widehat g(x,y),\widehat H(x,y);\Xi(x,y)).
+\]
+An evaluation of each of $f$, $\nabla f$, and $\nabla^2f$ counts as
+one query to the corresponding oracle. Cached responses may be reused.
+All oracle responses and linear algebra operations are exact.
+Trust-region subproblems are solved globally; their arithmetic cost
+is not included in the query count.
+\end{definition}
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\caption{Persistent Armijo Newton initialization}
+\label{alg:initialization}
+\KwIn{$f,x_0,y_{\mathrm{init}},\eps>0$}
+$\phi(y)\leftarrow-f(x_0,y)$;
+ $(y,\alpha)\leftarrow(y_{\mathrm{init}},1)$;
+ query and cache $\Xi(x_0,y)$\;
+\While{$\norm{\nabla\phi(y)}>\eps^2$}{
+ $d\leftarrow-[\nabla^2\phi(y)]^{-1}\nabla\phi(y)$\;
+ \While{$\phi(y+\alpha d)>\phi(y)+\frac\alpha2\nabla\phi(y)^Td$}{
+  $\alpha\leftarrow\alpha/2$\;
+ }
+ $y\leftarrow y+\alpha d$;
+ query and cache $\Xi(x_0,y)$, reusing the accepted function value\;
+}
+\Return{$(y,\mathcal C(x_0,y))$}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\caption{Adaptive fixed-radius trust region with dual Newton tracking}
+\label{alg:main}
+\KwIn{$f,x_0,y_{\mathrm{init}},\ 0<\eps<1$}
+$c\leftarrow2^{-10}$;
+ $(x,\sigma)\leftarrow(x_0,1/\log(e/\eps))$\;
+$(y,W)\leftarrow\textnormal{Algorithm~\ref{alg:initialization}}
+ (f,x_0,y_{\mathrm{init}},\eps)$\;
+\While{true}{
+ $R\leftarrow c\sqrt\eps/\sigma$;
+ $a\leftarrow\sigma\sqrt\eps$\;
+ $s\in\argmin_{\norm{u}\le R}
+    \{\widehat g^Tu+\tfrac12u^T(\widehat H+aI)u\}$,
+ where $(\widehat P,\widehat g,\widehat H)$ are the components of $W$\;
+ $\widehat D\leftarrow-\widehat g^Ts-\tfrac12s^T\widehat Hs$\;
+ $z\leftarrow x+s$;
+ $y_z\leftarrow N_z(y)$;
+ $W_z\leftarrow\mathcal C(z,y_z)$\;
+ \eIf{$\widehat D>aR^2/4$}{
+  \If{$\widehat P-\widehat P_z\ge\widehat D/2$}{
+   $(x,y,W)\leftarrow(z,y_z,W_z)$;
+   \textbf{continue}\;
+  }
+ }{
+  $\theta\leftarrow\tfrac12\norm{f_{yy}(z,y_z)}_{\op}$;
+  $\widehat H_z=\sum_{i=1}^n\lambda_iv_iv_i^T$,
+  $\{v_i\}_{i=1}^n$ orthonormal\;
+  $p\leftarrow-\sum_{\lambda_i>\theta}
+       \lambda_i^{-1}(v_i^T\widehat g_z)v_i$\;
+  \If{$\norm{p}\le R$}{
+   $w\leftarrow z+p$;
+   $y_w\leftarrow N_w(y_z)$;
+   $W_w\leftarrow\mathcal C(w,y_w)$\;
+   \If{$\norm{\widehat g_w}\le\eps/2$ and
+        $\lambda_{\min}(\widehat H_w)\ge-9a/8$}{
+    \Return{$w$}
+   }
+  }
+ }
+ $\sigma\leftarrow2\sigma$;
+ $y\leftarrow N_x(y)$;
+ $W\leftarrow\mathcal C(x,y)$\;
+}
+\end{algorithm}
+
+\section{Convergence and query complexity}
+
+\begin{theorem}\label{thm:main}
+Suppose \Cref{ass:regularity} holds. Let
+$x_0\in\R^n$, $y_{\mathrm{init}}\in\R^m$, and define
+\[
+ \Delta_P:=P(x_0)-P_*,\qquad
+ \Delta_y:=P(x_0)-f(x_0,y_{\mathrm{init}}).
+\]
+Assume that $\eps$ satisfies
+\begin{subequations}\label{eq:onset}
+\begin{align}
+ 0<\eps&\le e^{-5},
+ &\log(e/\eps)&\ge\frac1{\sqrt{\rho\kappa^{3/2}}},\label{eq:onset-scale}\\
+ \frac{\eps}{\log^2(e/\eps)}
+ &\le\frac{\rho\kappa^2}{2^{19}},\label{eq:onset-init}\\
+ \eps\log^2(e/\eps)
+ &\le\frac{2^8\mu^2}{\rho^2\kappa^2},\label{eq:onset-radius}\\
+ \eps\log^6(e/\eps)
+ &\le\frac{2^{24}\mu^2}
+              {(1+\kappa)^4\rho^4\kappa^4},\label{eq:onset-hessian}\\
+ \eps&\le\min\left\{
+       \frac{\mu^2}{64\rho\kappa^{5/2}},
+       \frac{8\mu^2}{\rho\kappa^{11/2}}
+                         \right\}.\label{eq:onset-polish}
+\end{align}
+\end{subequations}
+Then \Cref{alg:main} terminates at a point $x_{\mathrm{out}}$ satisfying
+\begin{equation}\label{eq:stationarity}
+ \norm{\nabla P(x_{\mathrm{out}})}<\eps,
+ \qquad
+ \lambda_{\min}(\nabla^2P(x_{\mathrm{out}}))
+ \ge-\frac{145}{64}\sqrt\rho\,\kappa^{3/4}\sqrt\eps
+ \ge-\sqrt{\MP\eps}.
+\end{equation}
+Let $K,J,Q$ be the numbers of accepted trials, failed trials, and
+solved trust-region subproblems, respectively. With $c=2^{-10}$,
+\begin{align}
+ K&\le\frac{16\Delta_P\sqrt\rho\,\kappa^{3/4}}
+                 {c^2\eps^{3/2}}+1,\label{eq:K-bound}\\
+ J&\le\left\lceil\log_2\left(
+             \sqrt\rho\,\kappa^{3/4}\log(e/\eps)\right)\right\rceil,
+ \qquad Q=K+J+1.\label{eq:J-bound}
+\end{align}
+There is a universal numerical constant $C>0$ such that the total
+numbers of original-payoff oracle queries satisfy
+\begin{equation}\label{eq:query-bound}
+\begin{split}
+ N_f+N_{\nabla f}+N_{\nabla^2 f}\le C\Bigg[
+ &1+\Delta_P\sqrt\rho\,\kappa^{3/4}\eps^{-3/2}
+   +\kappa^2\log\left(1+\frac{\ell\Delta_y}{\eps^4}\right)\\
+ &+\log\left(1+
+          \sqrt\rho\,\kappa^{3/4}\log(e/\eps)\right)\Bigg].
+\end{split}
+\end{equation}
+For every fixed $\ell\ge\mu>0$ and $\rho>0$, the set of accuracies
+in \eqref{eq:onset} is a nonempty interval $(0,\eps_0]$.
+Its endpoint depends only on $(\ell,\mu,\rho)$, not on $f$, the
+dimensions, or the initialization. Neither algorithm takes these
+parameters or $\eps_0$ as input. The conclusions
+\eqref{eq:stationarity}--\eqref{eq:query-bound} are asserted for
+\eqref{eq:onset} only.
+\end{theorem}
+
+\section{Value-function geometry}
+
+\begin{lemma}\label{lem:geometry}
+Under \Cref{ass:regularity}, $y^*$ is well defined and continuously
+differentiable, $P\in C^2$, and
+\begin{align}
+ Dy^*(x)&=-f_{yy}(x,y^*(x))^{-1}f_{yx}(x,y^*(x)),
+ &\norm{Dy^*(x)}_{\op}&\le\kappa,\label{eq:ystar}\\
+ \nabla P(x)&=f_x(x,y^*(x)),
+ &\nabla^2P(x)&=\mathcal H(x,y^*(x)).\label{eq:P-derivatives}
+\end{align}
+For every $\zeta=(x,y)$, put
+\[
+ T(\zeta)=\begin{pmatrix}I\\-f_{yy}(\zeta)^{-1}f_{yx}(\zeta)\end{pmatrix}.
+\]
+Then
+\begin{align}
+ -\ell I\preceq\mathcal H(\zeta)&\preceq\frac{\ell^2}{\mu}I,
+ \label{eq:schur-spectral}\\
+ T(\zeta)^TT(\zeta)&\preceq
+       \frac{\mathcal H(\zeta)+(\ell+\mu)I}{\mu},
+ \label{eq:relative-geometry}\\
+ \norm{\mathcal H(\zeta)-\mathcal H(\zeta')}_{\op}
+ &\le(1+\kappa)^2\rho\norm{\zeta-\zeta'},
+ \label{eq:schur-lipschitz}\\
+ \norm{\nabla^2P(x)-\nabla^2P(x')}_{\op}
+ &\le\MP\norm{x-x'}.
+ \label{eq:P-lipschitz}
+\end{align}
+If $\delta=\norm{\nabla^2f(\zeta_1)-\nabla^2f(\zeta_0)}_{\op}$,
+then
+\begin{equation}\label{eq:schur-comparison}
+ \mathcal H(\zeta_1)\succeq
+ (1-\delta/\mu)\mathcal H(\zeta_0)
+ -\delta(1+\kappa)I.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+For fixed $x$, $-f(x,\cdot)$ is strongly convex and coercive, so its
+minimizer is unique. The implicit function theorem applied to
+$f_y(x,y^*(x))=0$ proves \eqref{eq:ystar}. Differentiating
+$P(x)=f(x,y^*(x))$ proves \eqref{eq:P-derivatives}.
+In particular, $y^*$ is $\kappa$-Lipschitz.
+
+At any $\zeta$, write
+\[
+ \nabla^2f(\zeta)=
+ \begin{pmatrix}A&B\\B^T&-C\end{pmatrix},
+ \qquad C\succeq\mu I,
+ \qquad \mathcal H=A+BC^{-1}B^T.
+\]
+The lower bound in \eqref{eq:schur-spectral} follows from
+$A\succeq-\ell I$. For its upper bound, fix a unit vector $u$ and
+let $v=C^{-1}B^Tu$. If $v=0$, then
+$u^T\mathcal H u=u^TAu\le\ell\le\ell^2/\mu$.
+If $v\ne0$, set
+\[
+ e=v/\norm v,\qquad
+ \alpha=u^TAu,\quad \beta=u^TBe,\quad \gamma=e^TCe.
+\]
+The compression to $(u,0),(0,e)$ satisfies
+\[
+ -\ell I\preceq
+ \begin{pmatrix}\alpha&\beta\\\beta&-\gamma\end{pmatrix}
+ \preceq\ell I.
+\]
+Consequently,
+\[
+ \beta^2\le\min\{(\ell-\alpha)(\ell+\gamma),
+                         (\ell+\alpha)(\ell-\gamma)\}.
+\]
+Since $\beta=\gamma\norm v$,
+\[
+ \gamma u^T\mathcal H u
+ =\gamma\alpha+\beta^2
+ \le\ell^2-\ell|\gamma-\alpha|\le\ell^2.
+\]
+Now $\gamma\ge\mu$ proves the upper bound. Moreover,
+\[
+ T^TT=I+BC^{-2}B^T
+ \preceq I+\mu^{-1}BC^{-1}B^T
+ \preceq\mu^{-1}\bigl(\mathcal H+(\ell+\mu)I\bigr),
+\]
+which proves \eqref{eq:relative-geometry}.
+
+For two points, write $D=f_{yy}(\zeta)$, $D'=f_{yy}(\zeta')$,
+$B=f_{xy}(\zeta)$, and $B'=f_{xy}(\zeta')$.
+The identity
+\[
+\begin{split}
+ BD^{-1}B^T-B'D'^{-1}B'^T
+ ={}&(B-B')D^{-1}B^T
+     +B'(D^{-1}-D'^{-1})B^T\\
+    &+B'D'^{-1}(B-B')^T
+\end{split}
+\]
+and $D^{-1}-D'^{-1}=D^{-1}(D'-D)D'^{-1}$ give
+\eqref{eq:schur-lipschitz}, with coefficient
+$\rho(1+2\ell/\mu+\ell^2/\mu^2)$.
+Applying it to $(x,y^*(x))$ and $(x',y^*(x'))$ gives
+\[
+ \operatorname{Lip}(\nabla^2P)
+ \le(1+\kappa)^2\sqrt{1+\kappa^2}\rho
+ \le4\sqrt2\,\rho\kappa^3.
+\]
+
+Finally, for every $u$,
+\[
+ u^T\mathcal H(\zeta_1)u
+ =\max_v\begin{pmatrix}u\\v\end{pmatrix}^{\!T}
+              \nabla^2f(\zeta_1)
+              \begin{pmatrix}u\\v\end{pmatrix}
+ \ge u^T\mathcal H(\zeta_0)u-\delta\norm{T(\zeta_0)u}^2.
+\]
+Using \eqref{eq:relative-geometry} proves \eqref{eq:schur-comparison}.
+\end{proof}
+
+\begin{lemma}[Directional Taylor bounds]\label{lem:directional}
+Suppose \Cref{ass:regularity} holds. Let $x,s\in\R^n$ and
+$r=\norm s\le\mu/(64\rho\kappa)$. For $t\in[0,1]$, define
+\[
+ \zeta_t=(x+ts,y^*(x+ts)),\quad
+ F_t=\nabla^2f(\zeta_t),\quad
+ H_t=\nabla^2P(x+ts),\quad
+ T_t=T(\zeta_t),\quad S_t=H_t+(\ell+\mu)I,
+\]
+\[
+ b(t)=\mu^{-1}s^TS_ts
+      =(1+\kappa)r^2+\mu^{-1}s^TH_ts.
+\]
+Then, for $t,u\in[0,1]$,
+\begin{equation}\label{eq:path-comparisons}
+ b(t)\le4b(0),\qquad S_t\preceq4S_u,
+ \qquad\norm{F_1-F_0}_{\op}\le2\rho\sqrt{b(0)}.
+\end{equation}
+Writing
+\[
+ \mathcal R=P(x+s)-P(x)-\nabla P(x)^Ts-\tfrac12s^TH_0s,
+\]
+one has
+\begin{equation}\label{eq:scalar-remainder}
+ |\mathcal R|\le\tfrac43\rho b(0)^{3/2}.
+\end{equation}
+In particular,
+\begin{align}
+ s^TH_0s\le\ell r^2
+ &\quad\Longrightarrow\quad
+ |\mathcal R|\le4\sqrt3\,\rho\kappa^{3/2}r^3,
+ \label{eq:low-curvature-remainder}\\
+ s^TH_0s>\ell r^2
+ &\quad\Longrightarrow\quad
+ |\mathcal R|\le\frac{8\rho\kappa r}{\mu}s^TH_0s.
+ \label{eq:high-curvature-remainder}
+\end{align}
+For $r_g=\nabla P(x+s)-\nabla P(x)-H_0s$,
+\begin{equation}\label{eq:full-gradient-remainder}
+ \norm{r_g}\le2\sqrt2\,\rho\kappa b(0).
+\end{equation}
+If $\Pi$ is an orthogonal projector such that
+$v^TH_1v\le\ell\norm v^2$ for all $v\in\range\Pi$, then
+\begin{equation}\label{eq:projected-gradient-remainder}
+ \norm{\Pi r_g}\le2\rho\sqrt{12\kappa}\,b(0).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The assertions are immediate if $s=0$. Otherwise $S_t\succeq\mu I$
+and $b(t)>0$. The paths $F_t,T_t,H_t$ are Lipschitz. Their derivatives
+exist almost everywhere, and
+\[
+ \norm{F_t'}_{\op}\le\rho\norm{T_ts},\qquad
+ F_tT_t=\begin{pmatrix}H_t\\0\end{pmatrix},\qquad
+ H_t'=T_t^TF_t'T_t.
+\]
+Indeed, $H_t=T_t^TF_tT_t$, and both terms involving $T_t'$ vanish
+because the upper block of $T_t'$ is zero.
+By \eqref{eq:relative-geometry},
+\[
+ |b'(t)|\le\frac\rho\mu\norm{T_ts}^3
+            \le\frac\rho\mu b(t)^{3/2}.
+\]
+By \eqref{eq:schur-spectral},
+\[
+ b(0)\le(1+\kappa+\kappa^2)r^2\le3\kappa^2r^2,
+ \qquad \frac{\rho\sqrt{b(0)}}{2\mu}\le\frac{\sqrt3}{128}.
+\]
+Integration of the differential inequality gives
+\[
+ b(t)\le
+ \frac{b(0)}{\bigl(1-t\rho\sqrt{b(0)}/(2\mu)\bigr)^2}
+ \le4b(0).
+\]
+For fixed $v\ne0$, the positive function $v^TS_tv$ satisfies
+\[
+ \left|\frac{d}{dt}\log(v^TS_tv)\right|
+ \le\frac\rho\mu\sqrt{b(t)}
+ \le\frac{2\rho\sqrt{b(0)}}\mu
+ \le\frac{\sqrt3}{32}<\log4.
+\]
+Integration proves $S_t\preceq4S_u$. Integration of $F_t'$ proves
+the remaining bound in \eqref{eq:path-comparisons}.
+
+The integral Taylor identities are
+\[
+ \mathcal R=\tfrac12\int_0^1(1-t)^2s^TH_t's\,dt,
+ \qquad r_g=\int_0^1(1-t)H_t's\,dt.
+\]
+Since $|s^TH_t's|\le\rho b(t)^{3/2}$,
+\eqref{eq:scalar-remainder} follows. In the low-curvature case,
+$b(0)\le(1+2\kappa)r^2\le3\kappa r^2$, proving
+\eqref{eq:low-curvature-remainder}. In the high-curvature case,
+put $q=s^TH_0s>\ell r^2$. Then
+\[
+ b(0)\le3q/\mu,\qquad
+ q\le\mu\kappa^2r^2,
+\]
+and hence
+\[
+ |\mathcal R|\le4\sqrt3\,\rho(q/\mu)^{3/2}
+ \le4\sqrt3\,\frac{\rho\kappa r}{\mu}q
+ \le8\frac{\rho\kappa r}{\mu}q.
+\]
+
+For any unit vector $v$,
+\[
+ |v^Tr_g|\le
+ \rho\int_0^1(1-t)\norm{T_tv}\norm{T_ts}^2\,dt.
+\]
+The bound $\norm{T_t}_{\op}\le\sqrt{1+\kappa^2}\le\sqrt2\kappa$
+proves \eqref{eq:full-gradient-remainder}.
+If $v\in\range\Pi$, then
+\[
+ \norm{T_tv}^2\le\mu^{-1}v^TS_tv
+ \le4\mu^{-1}v^TS_1v\le12\kappa.
+\]
+Taking the supremum over unit vectors in $\range\Pi$ proves
+\eqref{eq:projected-gradient-remainder}.
+\end{proof}
+
+\section{Newton initialization and oracle errors}
+
+\begin{lemma}[Initialization]\label{lem:initialization}
+Under \Cref{ass:regularity}, \Cref{alg:initialization} terminates for
+every $\eps>0$ and every $(x_0,y_{\mathrm{init}})$.
+Put $\Delta_y=P(x_0)-f(x_0,y_{\mathrm{init}})$.
+Let $N_{\mathrm{init}}$ count all its function-value, gradient, and
+Hessian queries, including the returned cached tuple.
+If $T_0$ is its number of Newton updates and $J_0$
+its number of failed Armijo tests, then
+\begin{equation}\label{eq:initialization-count}
+ T_0\le\left\lceil2\kappa^2\log_+
+                   \frac{2\ell\Delta_y}{\eps^4}\right\rceil,
+ \qquad J_0\le\lceil\log_2\kappa\rceil,
+ \qquad N_{\mathrm{init}}\le3T_0+J_0+3,
+\end{equation}
+where $\log_+(t):=\log\max\{1,t\}$ for $t\ge0$.
+Its returned point satisfies
+\begin{equation}\label{eq:initialization-distance}
+ \norm{y_0-y^*(x_0)}\le\eps^2/\mu.
+\end{equation}
+Moreover, for a universal constant $C$,
+\begin{equation}\label{eq:initialization-clean-count}
+ N_{\mathrm{init}}
+ \le C\left[1+\kappa^2\log\left(1+
+                                  \frac{\ell\Delta_y}{\eps^4}\right)\right].
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Write $g=\nabla\phi(y)$, $B=\nabla^2\phi(y)$, and $d=-B^{-1}g$.
+Since $\mu I\preceq B\preceq\ell I$, the descent lemma gives
+\[
+ \phi(y+\alpha d)
+ \le\phi(y)+\alpha g^Td+\tfrac12\ell\alpha^2\norm d^2
+ \le\phi(y)+\tfrac\alpha2g^Td
+ \quad\text{if }\alpha\le\mu/\ell.
+\]
+Thus every accepted step has $\alpha\ge1/(2\kappa)$, and the
+persistent step size is halved at most $\lceil\log_2\kappa\rceil$
+times over the entire initialization. Strong convexity implies
+$\norm g^2\ge2\mu(\phi(y)-\phi_*)$, and hence
+\[
+ \phi(y)-\phi(y+\alpha d)
+ \ge\tfrac\alpha2g^TB^{-1}g
+ \ge\frac1{4\kappa\ell}\norm g^2
+ \ge\frac1{2\kappa^2}(\phi(y)-\phi_*).
+\]
+Also, applying the descent lemma at $y-g/\ell$ yields
+$\norm g^2\le2\ell(\phi(y)-\phi_*)$.
+Consequently a gap at most $\eps^4/(2\ell)$ suffices for termination,
+and geometric contraction proves the bound on $T_0$.
+Strong convexity gives
+$\mu\norm{y-y^*}\le\norm{\nabla\phi(y)}$, proving
+\eqref{eq:initialization-distance}.
+
+The initial cached triple costs three queries; each accepted update
+costs one function value and two derivative queries; each failed
+Armijo test costs one function value. This proves
+\eqref{eq:initialization-count}.
+Put $t=\ell\Delta_y/\eps^4$. If $T_0=0$, then $J_0=0$.
+Otherwise the initial residual exceeds $\eps^2$, so
+$t>1/2$. Therefore $\lceil\log_2\kappa\rceil$
+is absorbed into a universal multiple of $\kappa^2\log(1+t)$.
+The update bound has the same form, proving
+\eqref{eq:initialization-clean-count}.
+\end{proof}
+
+\begin{lemma}[Corrected oracle and Newton errors]\label{lem:oracle-errors}
+Under \Cref{ass:regularity}, put $e_y=\norm{y-y^*(x)}$.
+For every $(x,y)$,
+\begin{align}
+ \norm{N_x(y)-y^*(x)}&\le\frac\rho{2\mu}e_y^2,
+ \label{eq:newton-distance}\\
+ \norm{\widehat g(x,y)-\nabla P(x)}
+ &\le\frac{(1+\kappa)\rho}{2}e_y^2,
+ \label{eq:gradient-error}\\
+ \norm{\widehat H(x,y)-\nabla^2P(x)}_{\op}
+ &\le(1+\kappa)^2\rho e_y.
+ \label{eq:hessian-error}
+\end{align}
+If $e_y\le\mu/\rho$, then
+\begin{equation}\label{eq:value-error}
+ |\widehat P(x,y)-P(x)|\le\frac{7\rho}{24}e_y^3.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Let $\delta=y-y^*(x)$, $D=f_{yy}(x,y)$, $B=f_{xy}(x,y)$,
+and $q=f_y(x,y)$. Taylor's formula gives
+\[
+ q=D\delta+v,\qquad \norm v\le\tfrac\rho2\norm\delta^2,
+\]
+\[
+ f_x(x,y)-f_x(x,y^*(x))=B\delta+r_x,
+ \qquad\norm{r_x}\le\tfrac\rho2\norm\delta^2.
+\]
+Since $N_x(y)-y^*(x)=-D^{-1}v$,
+\eqref{eq:newton-distance} follows. Moreover,
+\[
+ \widehat g(x,y)-\nabla P(x)=r_x-BD^{-1}v,
+\]
+and $\norm{BD^{-1}}_{\op}\le\kappa$ proves
+\eqref{eq:gradient-error}. Equation \eqref{eq:hessian-error}
+is \eqref{eq:schur-lipschitz} at $(x,y)$ and $(x,y^*(x))$.
+
+Taylor expansion of the value at $y$ gives
+\[
+ P(x)=f(x,y)-q^T\delta+\tfrac12\delta^TD\delta+\mathcal E,
+ \qquad |\mathcal E|\le\tfrac\rho6\norm\delta^3.
+\]
+Substitution of $q=D\delta+v$ yields
+\[
+ P(x)-\widehat P(x,y)=\mathcal E+\tfrac12v^TD^{-1}v.
+\]
+Thus
+\[
+ |P(x)-\widehat P(x,y)|
+ \le\frac\rho6e_y^3+\frac{\rho^2}{8\mu}e_y^4
+ \le\frac{7\rho}{24}e_y^3
+ \quad\text{if }e_y\le\mu/\rho.
+\]
+\end{proof}
+
+\begin{lemma}[Accuracy at every generated scale]\label{lem:tracking}
+Under the hypotheses of \Cref{thm:main}, every stored, trial,
+refreshed, and evaluated corrected tuple in \Cref{alg:main},
+at its associated scale $\sigma\ge\sigma_0:=1/\log(e/\eps)$,
+satisfies
+\begin{equation}\label{eq:tracking}
+ \norm{y-y^*(x)}\le C_eR^2\le\kappa R,
+ \qquad R=c\sqrt\eps/\sigma,
+ \qquad C_e:=\frac{2\rho\kappa^2}{\mu}.
+\end{equation}
+Define
+\begin{equation}\label{eq:error-coefficients}
+ C_g:=\frac{2(1+\kappa)\rho^3\kappa^4}{\mu^2},
+ \quad C_H:=\frac{2(1+\kappa)^2\rho^2\kappa^2}{\mu},
+ \quad C_F:=\frac{7\rho^4\kappa^6}{3\mu^3}.
+\end{equation}
+For each such tuple, define
+\[
+ \delta_g:=\norm{\widehat g-\nabla P(x)},\qquad
+ \delta_H:=\norm{\widehat H-\nabla^2P(x)}_{\op},\qquad
+ \delta_F:=|\widehat P-P(x)|.
+\]
+Then
+\begin{equation}\label{eq:strong-errors}
+ \delta_g\le C_gR^4,\qquad
+ \delta_H\le C_HR^2,\qquad
+ \delta_F\le C_FR^6,
+\end{equation}
+and, with $a=\sigma\sqrt\eps$,
+\begin{equation}\label{eq:uniform-errors}
+ \delta_g\le\frac{aR}{128},\qquad
+ \delta_H\le\frac a{128},\qquad
+ \delta_F\le\frac{aR^2}{1024}.
+\end{equation}
+These assertions hold for every finite execution prefix without
+assuming an upper bound on $\sigma$.
+\end{lemma}
+
+\begin{proof}
+Write $R_0=c\sqrt\eps\log(e/\eps)$.
+Conditions \eqref{eq:onset-init} and \eqref{eq:onset-radius} give
+\[
+ \frac{\eps^2}{\mu}\le C_eR_0^2,
+ \qquad R_0\le\frac{\mu}{64\rho\kappa}.
+\]
+For every $R\le R_0$, $C_eR\le\kappa/32\le\kappa$.
+Thus initialization satisfies \eqref{eq:tracking}.
+If a primal move has length at most $R$, its warm start has error at
+most $\kappa R+\kappa R=2\kappa R$, so one application of
+\eqref{eq:newton-distance} gives error at most $C_eR^2$.
+This applies to trial moves and, after the explicit norm test, to
+the correction $p$.
+On a refresh the new radius $R$ equals half the old radius; the old
+error is at most $2\kappa R$, and the same argument applies.
+The induction does not use an upper scale bound.
+
+In fact $C_eR^2\le\mu/(2048\rho)$, so
+\Cref{lem:oracle-errors} applies and gives
+\eqref{eq:strong-errors}. By \eqref{eq:onset-hessian},
+\[
+ \frac{C_HR^2}{a}
+ =C_Hc^2\frac{\sqrt\eps}{\sigma^3}
+ \le C_Hc^2\sqrt\eps\log^3(e/\eps)\le\frac1{128}.
+\]
+Furthermore,
+\[
+ \frac{C_g}{C_H}R
+ =\frac{\rho\kappa^2R}{\mu(1+\kappa)}\le\frac1{64},
+ \qquad
+ \frac{C_F}{C_g}R
+ =\frac{7\rho\kappa^2R}{6\mu(1+\kappa)}\le\frac7{384}.
+\]
+Consequently $C_gR^4\le aR/8192$ and
+$C_FR^6\le7aR^2/3145728$, which imply
+\eqref{eq:uniform-errors}.
+\end{proof}
+
+\section{Acceptance and terminal correction}
+
+\begin{lemma}[Trust-region identities]\label{lem:TR}
+Let $a,R>0$, $\widehat H=\widehat H^T$, and let $s$ be a global
+minimizer of $\widehat g^Tu+\tfrac12u^T(\widehat H+aI)u$ over
+$\norm u\le R$. There exists $\lambda\ge0$ such that
+\begin{equation}\label{eq:TR-KKT}
+ (\widehat H+(a+\lambda)I)s=-\widehat g,
+ \quad\widehat H+(a+\lambda)I\succeq0,
+ \quad\lambda(\norm s-R)=0.
+\end{equation}
+For $\widehat D=-\widehat g^Ts-\tfrac12s^T\widehat Hs$,
+\begin{equation}\label{eq:TR-D}
+ \widehat D=\tfrac12s^T\widehat Hs+(a+\lambda)\norm s^2
+ \ge\tfrac12(a+\lambda)\norm s^2.
+\end{equation}
+If $\norm{H-\widehat H}_{\op}\le a/128$, then
+$s^THs\le2\widehat D$.
+If additionally $\widehat D\le aR^2/4$, then
+\begin{equation}\label{eq:TR-small}
+ \norm s<R,\quad\lambda=0,\quad
+ \widehat H\succeq-aI,\quad
+ H\succeq-\tfrac{129}{128}aI,\quad
+ s^THs\le\tfrac12aR^2.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Put $B=\widehat H+aI$. Diagonalize $B=U\diag(\beta_i)U^T$ and
+write $g_i=(U^T\widehat g)_i$.
+For $\lambda>\max\{0,-\min_i\beta_i\}$, the vector with coordinates
+$-g_i/(\beta_i+\lambda)$ has norm continuous and nonincreasing in
+$\lambda$, tending to zero at infinity.
+If its norm reaches $R$, the resulting vector and multiplier satisfy
+\eqref{eq:TR-KKT}. If the limiting norm at the left endpoint is at
+most $R$, all singular coordinates have $g_i=0$. At a positive
+left endpoint add a nullspace component to make the norm equal to
+$R$; at endpoint zero use the limiting vector. This again gives a
+feasible pair $(s_*,\lambda_*)$ satisfying \eqref{eq:TR-KKT}.
+For any feasible $u$,
+\[
+ q(u)-q(s_*)
+ =\tfrac12(u-s_*)^T(B+\lambda_*I)(u-s_*)
+  +\tfrac{\lambda_*}{2}(\norm{s_*}^2-\norm u^2)\ge0.
+\]
+Thus $s_*$ is a global minimizer. For any other global minimizer,
+equality forces the same stationarity and complementarity relations
+with $\lambda_*$. Hence \eqref{eq:TR-KKT} holds for the chosen $s$.
+Substitution gives \eqref{eq:TR-D}.
+Also,
+\[
+ s^THs\le2\widehat D-2(a+\lambda)\norm s^2
+                         +\frac a{128}\norm s^2
+ \le2\widehat D.
+\]
+A boundary solution has $\widehat D\ge aR^2/2$; the small-decrease
+condition excludes it. The remaining assertions follow from
+\eqref{eq:TR-KKT} and the Hessian error bound.
+\end{proof}
+
+\begin{lemma}[Large-decrease acceptance]\label{lem:acceptance}
+Under the hypotheses of \Cref{thm:main}, any trial with
+$\sigma^2\ge\Md$ and $\widehat D>aR^2/4$ is accepted.
+\end{lemma}
+
+\begin{proof}
+Let $r=\norm s$, $H=\nabla^2P(x)$, and $q=s^THs$.
+If $q\le\ell r^2$, \Cref{lem:directional,lem:TR} give
+\[
+ |\mathcal R|
+ \le4\sqrt3\Md r^3
+ \le8\sqrt3\frac{\Md R}{a}\widehat D
+ \le8\sqrt3c\widehat D<\frac{\widehat D}{64}.
+\]
+If $q>\ell r^2$, they give
+\[
+ |\mathcal R|\le\frac{8\rho\kappa r}{\mu}q
+ \le\frac{16\rho\kappa R}{\mu}\widehat D
+ \le\frac{\widehat D}{4}.
+\]
+The working tuples at $x$ and $z=x+s$ satisfy
+\eqref{eq:uniform-errors}. Therefore
+\[
+\begin{aligned}
+ \widehat P-\widehat P_z
+ &\ge\widehat D-|\mathcal R|
+       -\frac{aRr}{128}-\frac{ar^2}{256}
+       -\frac{aR^2}{512}\\
+ &\ge\left(1-\frac14-\frac1{32}-\frac1{64}-\frac1{128}\right)
+           \widehat D
+ =\frac{89}{128}\widehat D>\frac12\widehat D.
+\end{aligned}
+\]
+\end{proof}
+
+\begin{lemma}[Small-decrease termination]\label{lem:termination}
+Under the hypotheses of \Cref{thm:main}, a trial with
+\[
+ \sqrt{\Md}\le\sigma\le2\sqrt{\Md},
+ \qquad \widehat D\le aR^2/4
+\]
+passes the norm test on $p$ and both final derivative tests in
+\Cref{alg:main}.
+\end{lemma}
+
+\begin{proof}
+The first bound in \eqref{eq:onset-polish} implies
+\begin{equation}\label{eq:a-small}
+ a\le2\sqrt{\Md\eps}\le\frac{\mu}{4\sqrt\kappa}\le\ell.
+\end{equation}
+Let $H_0=\nabla^2P(x)$, $H_1=\nabla^2P(z)$, and use the notation
+of \Cref{lem:directional}. By \Cref{lem:TR},
+\[
+ b(0)\le(1+\kappa)R^2+\frac{aR^2}{2\mu}
+ \le\frac52\kappa R^2.
+\]
+Thus $\delta:=\norm{F_1-F_0}_{\op}\le\sqrt{10}\rho\sqrt\kappa R$.
+The radius bound also gives $\delta<\mu$.
+Using \eqref{eq:schur-comparison}, \eqref{eq:TR-small}, and
+$\sigma^2\ge\Md$,
+\begin{equation}\label{eq:endpoint-curvature}
+ H_1\succeq
+ -\left(1+\frac1{128}\right)aI-\delta(1+\kappa)I
+ \succeq-\left(1+\frac1{128}+2\sqrt{10}c\right)aI.
+\end{equation}
+
+Let $\Pi_-$ be the spectral projector of $\widehat H_z$ onto
+$(-\infty,\theta]$, where
+$\theta=\norm{f_{yy}(z,y_z)}_{\op}/2$.
+Assumption~\ref{ass:regularity} gives
+$\mu/2\le\theta\le\ell/2$. For every $v\in\range\Pi_-$,
+\[
+ v^TH_1v\le(\theta+a/128)\norm v^2\le\ell\norm v^2.
+\]
+Equation \eqref{eq:projected-gradient-remainder} therefore applies
+to this projector, without any spectral-gap condition.
+By the interior stationarity relation in \eqref{eq:TR-KKT},
+\[
+ \nabla P(x)+H_0s
+ =-as+(\nabla P(x)-\widehat g)
+       +(H_0-\widehat H)s.
+\]
+Using the two gradient errors, the initial Hessian error, and the
+projected remainder gives
+\begin{equation}\label{eq:low-gradient}
+\begin{split}
+ \norm{\Pi_-\widehat g_z}
+ &\le aR+\frac{3aR}{128}
+       +10\sqrt3\Md R^2\\
+ &\le\left(1+\frac3{128}+10\sqrt3c\right)c\eps
+ <2c\eps.
+\end{split}
+\end{equation}
+The full-space bound \eqref{eq:full-gradient-remainder} similarly
+gives
+\begin{equation}\label{eq:full-endpoint-gradient}
+\begin{split}
+ \norm{\widehat g_z}
+ &\le\left(1+\frac3{128}\right)c\eps
+         +5\sqrt2\rho\kappa^2R^2\\
+ &\le\left(1+\frac3{128}+5\sqrt2c\right)c\sqrt\kappa\eps
+ <2c\sqrt\kappa\eps.
+\end{split}
+\end{equation}
+The correction therefore obeys
+\begin{equation}\label{eq:p-bound}
+ \norm p\le\theta^{-1}\norm{\widehat g_z}
+ \le\frac{4c\sqrt\kappa\eps}{\mu},
+ \qquad
+ \widehat g_z+\widehat H_zp=\Pi_-\widehat g_z.
+\end{equation}
+The two conditions in \eqref{eq:onset-polish} are equivalently
+\[
+ \eps\le\frac{\mu^2}{64\Md\kappa},
+ \qquad
+ \eps\le\frac{\mu^2\Md}{4096c^2\MP^2\kappa}.
+\]
+Together with \eqref{eq:p-bound}, they give
+\begin{equation}\label{eq:p-small}
+ \norm p\le R,
+ \qquad \MP\norm p\le a/16.
+\end{equation}
+Hence the correction is evaluated, and its tuple satisfies
+\Cref{lem:tracking}.
+
+Let $w=z+p$. Taylor's formula and \eqref{eq:P-lipschitz} give
+\[
+\begin{split}
+ \widehat g_w
+ ={}&\Pi_-\widehat g_z
+   +(\nabla P(z)-\widehat g_z)
+   +(H_1-\widehat H_z)p\\
+   &+r_p+(\widehat g_w-\nabla P(w)),
+ \qquad \norm{r_p}\le\tfrac12\MP\norm p^2.
+\end{split}
+\]
+By \eqref{eq:low-gradient}, \eqref{eq:uniform-errors}, and
+\eqref{eq:p-small},
+\[
+ \norm{\widehat g_w}
+ \le2c\eps+\frac{3aR}{128}+\frac{aR}{32}
+ =\left(2+\frac7{128}\right)c\eps<\eps/2.
+\]
+For the Hessian, \eqref{eq:endpoint-curvature} gives
+\[
+ \widehat H_w\succeq
+ -\left(1+\frac2{128}+2\sqrt{10}c+\frac1{16}\right)aI
+ \succ-\frac98aI.
+\]
+Both final tests hold.
+\end{proof}
+
+\section{Proof of the convergence theorem}
+
+\begin{proof}[Proof of \Cref{thm:main}]
+All Newton inverses exist by strong concavity. The initialization
+terminates by \Cref{lem:initialization}. Every trust-region subproblem
+has a global minimizer by compactness, and $\theta\ge\mu/2>0$
+makes each spectral correction well defined. Every other operation
+requires finitely many oracle queries.
+
+By \Cref{lem:tracking}, oracle accuracy holds throughout every
+finite execution prefix. Put $\sigma_*=\sqrt{\Md}$.
+Condition \eqref{eq:onset-scale} gives $\sigma_0\le\sigma_*$.
+The first scale at or above $\sigma_*$ lies in
+$[\sigma_*,2\sigma_*]$. At such a scale,
+\Cref{lem:acceptance,lem:termination} exclude every failure.
+It follows, without assuming termination, that
+\begin{equation}\label{eq:scale-bound}
+ \sigma\le2\sqrt{\Md},\qquad
+ J\le\left\lceil\log_2\frac{\sqrt{\Md}}{\sigma_0}\right\rceil
+\end{equation}
+for every finite prefix.
+
+To bound accepted trials, retain the value-error bound
+\begin{equation}\label{eq:E-definition}
+ E(\sigma):=C_Fc^6\eps^3\sigma^{-6},
+ \qquad E(2\sigma)=E(\sigma)/64.
+\end{equation}
+Each refresh changes the saved proxy at the same primal point by
+at most $E(\sigma)+E(2\sigma)$ in absolute value.
+For a finite prefix containing $J$ failures, summing changes of the
+saved proxy gives
+\begin{align}
+ \sum_{\mathrm{accepted}}(\widehat P-\widehat P^+)
+ &\le\Delta_P+E(\sigma_0)+E(2^J\sigma_0)
+       +\sum_{j=0}^{J-1}\bigl[E(2^j\sigma_0)+E(2^{j+1}\sigma_0)\bigr]
+       \notag\\
+ &=\Delta_P+2\sum_{j=0}^JE(2^j\sigma_0)
+ \le\Delta_P+\frac{128}{63}E(\sigma_0).
+ \label{eq:proxy-budget}
+\end{align}
+This identity uses only saved tuples; rejected trial and correction
+tuples do not replace them.
+Every accepted trial decreases the saved proxy by more than
+\[
+ \frac{aR^2}{8}
+ =\frac{c^2\eps^{3/2}}{8\sigma}
+ \ge\frac{c^2\eps^{3/2}}{16\sqrt{\Md}}.
+\]
+Thus every finite prefix satisfies
+\begin{equation}\label{eq:raw-K-bound}
+ K\le\frac{16\sqrt{\Md}}{c^2\eps^{3/2}}
+       \left[\Delta_P+\frac{128}{63}E(\sigma_0)\right].
+\end{equation}
+Applying the coefficient bound $C_gR^4\le aR/128$
+from \Cref{lem:tracking} at $\sigma=\sigma_0$ gives
+\[
+ \eps\log^4(e/\eps)
+ \le\frac1{128C_gc^3}
+ =\frac{\mu^2}{256c^3(1+\kappa)\rho^3\kappa^4}.
+\]
+Consequently the error contribution in \eqref{eq:raw-K-bound} is
+\begin{align*}
+ \frac{2048\sqrt{\Md}}{63c^2\eps^{3/2}}E(\sigma_0)
+ &=\frac{2048}{63}\sqrt{\Md}C_Fc^4
+             \bigl[\eps\log^4(e/\eps)\bigr]^{3/2}\\
+ &\le\frac1{54\sqrt c}
+             \frac{\kappa^{3/4}}{(1+\kappa)^{3/2}}
+ \le\frac8{27\sqrt2}<1.
+\end{align*}
+This proves \eqref{eq:K-bound} for every prefix.
+Both accepted and failed trials are therefore finite in number.
+An infinite execution is impossible, and the algorithm returns.
+There is exactly one final terminating trial, so $Q=K+J+1$.
+
+At any return, including one below $\sigma_*$, the all-scale error
+bounds and the actual tests imply
+\[
+ \norm{\nabla P(x_{\mathrm{out}})}
+ \le\eps/2+c\eps/128<\eps,
+\]
+\[
+ \lambda_{\min}(\nabla^2P(x_{\mathrm{out}}))
+ \ge-\left(\frac98+\frac1{128}\right)\sigma\sqrt\eps
+ \ge-\frac{145}{64}\sqrt{\Md\eps}.
+\]
+Finally,
+\[
+ \left(\frac{145}{64}\right)^2\Md
+ \le4\sqrt2\,\rho\kappa^3=\MP
+ \qquad(\kappa\ge1),
+\]
+which proves \eqref{eq:stationarity}.
+
+Each trial tuple costs at most five queries: a gradient and a
+Hessian at the warm start, followed by a full cached triple after
+the Newton update. Each evaluated correction costs at most five
+queries in the same way. Each refresh costs at most three queries,
+because its Newton direction uses the saved derivatives.
+There are at most $J+1$ evaluated corrections: each either returns
+or causes a failure. Hence
+\begin{equation}\label{eq:explicit-query-count}
+ N_f+N_{\nabla f}+N_{\nabla^2f}
+ \le N_{\mathrm{init}}+5Q+5(J+1)+3J
+ =N_{\mathrm{init}}+5K+13J+10.
+\end{equation}
+Combining \eqref{eq:initialization-clean-count},
+\eqref{eq:K-bound}, and \eqref{eq:J-bound} proves
+\eqref{eq:query-bound} with a universal constant.
+
+For fixed parameters, all upper-bound left sides in
+\eqref{eq:onset} tend to zero as $\eps\downarrow0$, whereas
+$\log(e/\eps)$ tends to infinity. On $(0,e^{-5}]$ the functions
+$\eps\log^2(e/\eps)$ and $\eps\log^6(e/\eps)$ are nondecreasing,
+and $\eps/\log^2(e/\eps)$ is strictly increasing.
+Thus the admissible set is a nonempty interval $(0,\eps_0]$
+depending only on the common parameters. Inspection of
+\Cref{alg:initialization,alg:main} proves the assertion about inputs.
+\end{proof}
+
+\end{document}

@@ -1,231 +1,205 @@
-\subsection{A contracting scale--gradient potential}
+\subsection{Scale control and initial gradient reduction}
 \label{sec:potential-proof}
-Fix a finite prefix containing $K\ge1$ accepted trials and use the
-indices $\tau_j$ defined above. For the potential estimates, define
-\begin{equation}\label{eq:vE}
- \begin{aligned}
- v_j&=L_1\norm{\nabla f(x_{\tau_j})}\quad(0\le j\le K),\\
- w_j&=\sqrt{L_1}[-\lambda_{\min}(\nabla^2 f(x_{\tau_j}))]_+,\\
- E_j&=L_1^{3/2}\bigl(f(x_{\tau_j})-f(x_{\tau_{j+1}})\bigr)
-       \quad(0\le j<K).
- \end{aligned}
-\end{equation}
-The definition of $w_j$ is used for $0\le j<K$. The descent budget
-\eqref{eq:descent-budget} gives
-\begin{equation}\label{eq:weighted-budget}
- E_j\ge0,\qquad \sum_{j=0}^{K-1}E_j\le L_1^{3/2}\Delta.
-\end{equation}
-These weighted quantities are used only in the proof.
 
-\begin{lemma}[Two Young estimates]\label{lem:young}
-For every accepted-trial index $0\le j<K$ and every $\eta>0$,
+\begin{lemma}[One-step scale and gradient estimates]\label{lem:young}
+For $0\le j<K$ and every $\eta>0$,
 \begin{align}
- w_j&\le\frac{\sigma_{\tau_j}}{16}+256v_j
-                 +\frac{33554432}{81}E_j,\label{eq:w-young}\\
- v_{j+1}&\le\rho v_j+\eta\sigma_{\tau_j}
-                 +\frac{122}{\sqrt\eta}E_j.\label{eq:v-young}
+ \sqrt{L_1}\chi_j
+ &\le\frac{\sigma_{\tau_j}}{16}+256L_1g_j
+                         +CL_1^{3/2}\Delta_j,\label{eq:curvature-young}\\
+ L_1g_{j+1}
+ &\le\tfrac{11}{16}L_1g_j+\eta\sigma_{\tau_j}
+                         +\frac{C}{\sqrt\eta}L_1^{3/2}\Delta_j.
+                         \label{eq:gradient-young}
 \end{align}
-Consequently, with the formal predecessor convention from
-\eqref{eq:backtrack-upper},
+Consequently,
 \begin{equation}\label{eq:scale-recursion}
- \sigma_{\tau_j}\le\frac47\sigma_{\tau_{j-1}}
-                    +3L_0+600v_j+10^6E_j.
+ \sigma_{\tau_j}\le\tfrac47\sigma_{\tau_{j-1}}
+                         +3L_0+600L_1g_j+CL_1^{3/2}\Delta_j.
 \end{equation}
 \end{lemma}
 \begin{proof}
-First suppose $h_{\tau_j}=\norm{\nabla f(x_{\tau_j})}$.
-The definition of $h_{\tau_j}$ implies
+If $h_{\tau_j}=g_j$, then
 \[
- w_j\le8\sqrt{\sigma_{\tau_j}v_j}
-       \le\frac{\sigma_{\tau_j}}{16}+256v_j.
+ \sqrt{L_1}\chi_j
+       \underset{(a)}{\le}8\sqrt{\sigma_{\tau_j}L_1g_j}
+       \underset{(b)}{\le}\frac{\sigma_{\tau_j}}{16}+256L_1g_j.
 \]
-The last inequality follows from the exact identity
+Here (a) uses \eqref{eq:model-scales} and (b) is Young's inequality.
+If $h_{\tau_j}>g_j$, then
+$2\sqrt{\sigma_{\tau_j}h_{\tau_j}}=\chi_j/4$.
+Equation~\eqref{eq:kkt-psd} implies
+$\lambda_{\tau_j}\ge3\chi_j/4>0$, so
+\eqref{eq:kkt-complementarity} gives $j\in\mathcal B$.
+Using \eqref{eq:model-scales} and \eqref{eq:descent-sum},
 \[
- \frac{\sigma_{\tau_j}}{16}+256v_j
-       -8\sqrt{\sigma_{\tau_j}v_j}
- =\left(\frac{\sqrt{\sigma_{\tau_j}}}{4}-16\sqrt{v_j}\right)^2
- \ge0.
+ r_{\tau_j}=\frac{\chi_j}{32\sigma_{\tau_j}},\qquad
+ \Delta_j\ge3\sigma_{\tau_j}r_{\tau_j}^3
+             =\frac{3\chi_j^3}{32^3\sigma_{\tau_j}^2}.
 \]
-This proves \eqref{eq:w-young} in this case, because $E_j\ge0$.
+Therefore
+\[
+ \sqrt{L_1}\chi_j
+ \underset{(a)}{\le}\frac{32}{3^{1/3}}\sigma_{\tau_j}^{2/3}
+                      (L_1^{3/2}\Delta_j)^{1/3}
+ \underset{(b)}{\le}\frac{\sigma_{\tau_j}}{16}+CL_1^{3/2}\Delta_j.
+\]
+Here (a) rearranges the preceding bound on $\Delta_j$, and
+(b) is Young's inequality with exponents $3/2$ and $3$.
+These two cases prove \eqref{eq:curvature-young}.
 
-Now suppose the curvature term in $h_{\tau_j}$ is strictly larger
-than $\norm{\nabla f(x_{\tau_j})}$. Then
+For $j\in\mathcal I$, \eqref{eq:gradient-young} follows directly
+from \eqref{eq:interior}. For $j\in\mathcal B$,
 \[
- 2\sqrt{\sigma_{\tau_j}h_{\tau_j}}
- =\tfrac14[-\lambda_{\min}(\nabla^2 f(x_{\tau_j}))]_+>0.
+ \begin{aligned}
+ L_1g_{j+1}
+ &\underset{(a)}{\le}51L_1\sigma_{\tau_j}r_{\tau_j}^2\\
+ &\underset{(b)}{\le}\eta\sigma_{\tau_j}
+          +\frac{C}{\sqrt\eta}L_1^{3/2}\sigma_{\tau_j}r_{\tau_j}^3\\
+ &\underset{(c)}{\le}\eta\sigma_{\tau_j}
+          +\frac{C}{\sqrt\eta}L_1^{3/2}\Delta_j.
+ \end{aligned}
 \]
-The positive-semidefiniteness condition in \eqref{eq:kkt} yields
+Here (a) is \eqref{eq:boundary}, (b) is Young's inequality with
+exponents $3/2$ and $3$, and (c) uses \eqref{eq:descent-sum}.
+This proves \eqref{eq:gradient-young}.
+Finally, \eqref{eq:backtrack-upper} and
+\eqref{eq:curvature-young} imply
 \[
- \lambda_{\tau_j}\ge
- \tfrac34[-\lambda_{\min}(\nabla^2 f(x_{\tau_j}))]_+>0.
-\]
-Complementarity therefore forces
-\[
- r_{\tau_j}=R_{\tau_j}
- =\frac{[-\lambda_{\min}(\nabla^2 f(x_{\tau_j}))]_+}
-        {32\sigma_{\tau_j}}.
-\]
-Multiplying the descent inequality in \eqref{eq:descent-budget} by
-$L_1^{3/2}$ now gives
-\begin{equation}\label{eq:curvature-energy}
- E_j\ge3L_1^{3/2}\sigma_{\tau_j}r_{\tau_j}^3
-     =\frac{3w_j^3}{32768\sigma_{\tau_j}^2}.
-\end{equation}
-For every $z\ge0$,
-\[
- \frac1{16}+\frac{1024}{27}z^3-z
-   =\frac{(32z-3)^2(16z+3)}{432}\ge0.
-\]
-Apply this identity with $z=w_j/\sigma_{\tau_j}$ and multiply by
-$\sigma_{\tau_j}>0$. Using \eqref{eq:curvature-energy}, we obtain
-\[
- w_j\le\frac{\sigma_{\tau_j}}{16}
-        +\frac{1024w_j^3}{27\sigma_{\tau_j}^2}
- \le\frac{\sigma_{\tau_j}}{16}
-        +\frac{1024\cdot32768}{27\cdot3}E_j.
-\]
-Since $1024\cdot32768/(27\cdot3)=33554432/81$, adding the
-nonnegative term $256v_j$ proves \eqref{eq:w-young}.
-
-To prove \eqref{eq:v-young}, an interior accepted step satisfies
-$v_{j+1}\le\rho v_j$ by \eqref{eq:interior}, which is already sufficient.
-For a boundary step, put $u=\sqrt{L_1}\,r_{\tau_j}\ge0$.
-Equations~\eqref{eq:boundary} and \eqref{eq:descent-budget} give
-\[
- v_{j+1}\le51\sigma_{\tau_j}u^2,
- \qquad E_j\ge3\sigma_{\tau_j}u^3.
-\]
-For any $\eta>0$, if $u\le\sqrt{\eta/51}$, then $51u^2\le\eta$.
-Otherwise $u>\sqrt{\eta/51}$, so
-\[
- 51u^2<51\sqrt{51}\,\frac{u^3}{\sqrt\eta}
-      <366\frac{u^3}{\sqrt\eta},
-\]
-where $51\sqrt{51}<366$ follows by squaring both sides.
-Thus in either case
-\[
- 51u^2\le\eta+\frac{366}{\sqrt\eta}u^3.
-\]
-Multiplying by $\sigma_{\tau_j}$ and using the energy bound yields
-\[
- v_{j+1}\le\eta\sigma_{\tau_j}
-                  +\frac{122}{\sqrt\eta}E_j
-          \le\rho v_j+\eta\sigma_{\tau_j}
-                  +\frac{122}{\sqrt\eta}E_j.
-\]
-All these arguments include $L_1=0$; no division by $L_1$ is used.
-
-Finally, apply $\max\{a,b\}\le a+b$ for nonnegative $a,b$ to
-\eqref{eq:backtrack-upper} and substitute \eqref{eq:w-young}:
-\begin{align*}
  \sigma_{\tau_j}
- &\le\tfrac12\sigma_{\tau_{j-1}}+2L_0+2v_j+2w_j\\
- &\le\tfrac12\sigma_{\tau_{j-1}}+2L_0+514v_j
-       +\tfrac18\sigma_{\tau_j}+\frac{67108864}{81}E_j.
-\end{align*}
-Move $\sigma_{\tau_j}/8$ to the left and multiply by $8/7$:
-\[
- \sigma_{\tau_j}\le\frac47\sigma_{\tau_{j-1}}
-       +\frac{16}{7}L_0+\frac{4112}{7}v_j
-       +\frac{536870912}{567}E_j.
+ \le\tfrac12\sigma_{\tau_{j-1}}+2L_0+514L_1g_j
+                  +\tfrac18\sigma_{\tau_j}+CL_1^{3/2}\Delta_j.
 \]
-The inequalities $16/7<3$, $4112/7<600$, and
-$536870912/567<10^6$ prove \eqref{eq:scale-recursion}.
+Moving $\sigma_{\tau_j}/8$ to the left and using
+$16/7<3$ and $4112/7<600$ proves \eqref{eq:scale-recursion}.
 \end{proof}
 
 \begin{proposition}[Joint potential and scale sums]\label{prop:potential}
-Set
-\begin{equation}\label{eq:potential-definition}
- P_j=\sigma_{\tau_{j-1}}+10000v_j\quad(0\le j\le K),
- \qquad P_0=2\sigma_0+10000L_1\norm{\nabla f(x_0)},
-\end{equation}
-where the formula at $j=0$ uses the formal predecessor convention.
-With $C_E=1.3\cdot10^9$, one has
-\begin{equation}\label{eq:potential}
- P_{j+1}\le\frac34P_j+4L_0+C_EE_j\qquad(0\le j<K).
-\end{equation}
 Define
-\begin{equation}\label{eq:scale-prefix}
- j_\sigma=\left\lceil\frac{\lp(P_0/Q)}{\log(4/3)}\right\rceil,
- \qquad C_P=C_E+1,\qquad C_T=3C_P+16+4C_E.
+\begin{equation}\label{eq:potential-definition}
+ P_j=\sigma_{\tau_{j-1}}+10^4L_1g_j\quad(0\le j\le K).
 \end{equation}
-Then $j_\sigma=O(1+\lp(Q_0/Q))$, and every existing accepted scale satisfies
-\begin{equation}\label{eq:scale-global}
- \sigma_{\tau_j}\le C_EQ_0,\qquad
- \sigma_{\tau_j}\le C_PQ\quad\text{if }j\ge j_\sigma.
+Then
+\begin{equation}\label{eq:potential}
+ P_{j+1}\le\tfrac34P_j+4L_0+CL_1^{3/2}\Delta_j
+                  \quad(0\le j<K).
 \end{equation}
-For integers $b\ge j_\sigma$ and $m\ge1$ with $b+m\le K$,
-\begin{equation}\label{eq:suffix-scale}
+In particular,
+\begin{equation}\label{eq:potential-expansion}
+ P_j\le(3/4)^jP_0+16L_0+CL_1^{3/2}\Delta
+                  \quad(0\le j\le K),
+ \qquad \sigma_{\tau_j}\le CQ_0\quad(0\le j<K).
+\end{equation}
+For $0\le b<b+m\le K$,
+\begin{equation}\label{eq:scale-sum-general}
  \sum_{j=b}^{b+m-1}\sigma_{\tau_j}
- \le C_T\bigl(mL_0+L_1^{3/2}\Delta\bigr).
+ \le3P_b+16mL_0+CL_1^{3/2}\Delta.
 \end{equation}
 \end{proposition}
 \begin{proof}
-Choose $\eta=10^{-6}$ in \eqref{eq:v-young}. Since
-$10000\rho=6875$ and $10000\eta=0.01$, adding
-$\sigma_{\tau_j}$ gives
-\begin{align*}
+With $\eta=10^{-6}$,
+\[
+ \begin{aligned}
  P_{j+1}
- &\le1.01\sigma_{\tau_j}+6875v_j+1.22\cdot10^9E_j\\
- &\le\frac{101}{175}\sigma_{\tau_{j-1}}
-       +3.03L_0+7481v_j+1.22101\cdot10^9E_j\\
- &\le\tfrac34\sigma_{\tau_{j-1}}+7500v_j+4L_0+C_EE_j
-   =\tfrac34P_j+4L_0+C_EE_j.
-\end{align*}
-The second line uses \eqref{eq:scale-recursion}; the third uses
-$101/175<3/4$, $7481<7500$, $3.03<4$, and
-$1.22101\cdot10^9<C_E$.
+ &\underset{(a)}{\le}
+       1.01\sigma_{\tau_j}+6875L_1g_j+CL_1^{3/2}\Delta_j\\
+ &\underset{(b)}{\le}\tfrac{101}{175}\sigma_{\tau_{j-1}}
+          +3.03L_0+7481L_1g_j+CL_1^{3/2}\Delta_j\\
+ &\underset{(c)}{\le}\tfrac34P_j+4L_0+CL_1^{3/2}\Delta_j.
+ \end{aligned}
+\]
+Here (a) uses \eqref{eq:gradient-young} and
+\eqref{eq:potential-definition}; (b) uses \eqref{eq:scale-recursion};
+and (c) uses $101/175<3/4$, $3.03<4$, and $7481<7500$.
+Iterating \eqref{eq:potential} and using
+$\sum_{j=0}^{K-1}\Delta_j\le\Delta$ proves the bound on $P_j$ in
+\eqref{eq:potential-expansion}. Its bound on $\sigma_{\tau_j}$
+follows from $\sigma_{\tau_j}\le P_{j+1}$ and
+$P_0=2\sigma_0+10^4L_1g_0\le10^4Q_0$.
 
-Repeated substitution in \eqref{eq:potential} gives, for $0\le n\le K$,
+To prove \eqref{eq:scale-sum-general}, sum \eqref{eq:potential}
+over $j=b,\ldots,b+m-1$ and rearrange:
+\[
+ \frac14\sum_{j=b}^{b+m-1}P_{j+1}
+ \le\frac34(P_b-P_{b+m})+4mL_0
+                         +CL_1^{3/2}\sum_{j=b}^{b+m-1}\Delta_j.
+\]
+Now use $P_{b+m}\ge0$, $\sigma_{\tau_j}\le P_{j+1}$, and
+$\sum_{j=b}^{b+m-1}\Delta_j\le\Delta$.
+\end{proof}
+
+\begin{lemma}[Initial-stage bounds]
+\label{lem:initial-stage}
+There exists an integer $j_0\ge0$ with
+\begin{equation}\label{eq:initial-count}
+ j_0=O\left(1+\lp\frac{Q_0}{Q}
+              +\lp\frac{g_0}{(\Delta^2Q)^{1/3}}\right)
+\end{equation}
+such that
 \begin{align}
- P_n
- &\le(3/4)^nP_0
-       +4L_0\sum_{i=0}^{n-1}(3/4)^{n-1-i}
-       +C_E\sum_{i=0}^{n-1}(3/4)^{n-1-i}E_i\nonumber\\
- &\le(3/4)^nP_0+16L_0+C_EL_1^{3/2}\Delta.
-                                      \label{eq:potential-expansion}
-\end{align}
-For $n=0$, the sums are empty and the first inequality is equality.
-For $n\ge1$, the last line uses
-$\sum_{i=0}^{n-1}(3/4)^i\le4$, the nonnegativity of $E_i$, and
-\eqref{eq:weighted-budget}. Since
-$P_0=2\sigma_0+10000L_1\norm{\nabla f(x_0)}$ and
-$C_E\ge10000,16,2$, this also shows $P_n\le C_EQ_0$.
-
-The definition of $j_\sigma$ ensures
-$(3/4)^nP_0\le Q$ whenever $n\ge j_\sigma$.
-For such $n$, \eqref{eq:potential-expansion} implies
-\[
- P_n\le Q+16L_0+C_EL_1^{3/2}\Delta
-      =17L_0+(C_E+1)L_1^{3/2}\Delta\le C_PQ.
-\]
-Because $P_0\le10000Q_0$ and $Q_0\ge Q>0$,
-\[
- j_\sigma\le1+
- \frac{\log10000+\lp(Q_0/Q)}{\log(4/3)}.
-\]
-Also $\sigma_{\tau_j}\le P_{j+1}$ by definition and $v_{j+1}\ge0$.
-These facts prove \eqref{eq:scale-global}.
-
-For the suffix sum, let $W=\sum_{j=b}^{b+m-1}P_{j+1}$.
-The exact endpoint identity
-\[
- \sum_{j=b}^{b+m-1}P_j=P_b+W-P_{b+m}
-\]
-and \eqref{eq:potential} give
-\[
- W\le\tfrac34(P_b+W-P_{b+m})
-          +4mL_0+C_E\sum_{j=b}^{b+m-1}E_j.
-\]
-Subtract $3W/4$ and use $P_{b+m}\ge0$ and
-\eqref{eq:weighted-budget}. Multiplication by $4$ yields
-\begin{align*}
+ g_j&\le C(\Delta^2Q)^{1/3}
+                         &&(j_0\le j\le K),\label{eq:initial-gradient}\\
  \sum_{j=b}^{b+m-1}\sigma_{\tau_j}
- &\le W\le3P_b+16mL_0+4C_EL_1^{3/2}\Delta\\
- &\le3C_PQ+16mL_0+4C_EL_1^{3/2}\Delta\\
- &\le(3C_P+16)mL_0+(3C_P+4C_E)L_1^{3/2}\Delta\\
- &\le C_T\bigl(mL_0+L_1^{3/2}\Delta\bigr).
-\end{align*}
-The second line uses $b\ge j_\sigma$, and the third uses
-$Q=L_0+L_1^{3/2}\Delta$ and $m\ge1$.
+ &\le C\bigl(mL_0+L_1^{3/2}\Delta\bigr)
+                         &&(j_0\le b<b+m\le K).
+                         \label{eq:scale-sum}
+\end{align}
+\end{lemma}
+\begin{proof}
+Set
+\[
+ j_\sigma=\left\lceil\frac{\lp(P_0/Q)}{\log(4/3)}\right\rceil.
+\]
+By \eqref{eq:potential-expansion},
+\begin{equation}\label{eq:scale-stabilized}
+ P_j\le CQ\quad(j_\sigma\le j\le K),\qquad
+ \sigma_{\tau_j}\le CQ\quad(j_\sigma\le j<K).
+\end{equation}
+Also $P_0\le10^4Q_0$ gives
+$j_\sigma=O(1+\lp(Q_0/Q))$.
+Equation~\eqref{eq:scale-sum-general} and $m\ge1$ now prove
+\eqref{eq:scale-sum} for every $b\ge j_\sigma$.
+
+For $j\in\mathcal B$,
+\begin{equation}\label{eq:boundary-gradient}
+ g_{j+1}\underset{(a)}{\le}51\sigma_{\tau_j}r_{\tau_j}^2
+       \underset{(b)}{\le}
+       \frac{51}{3^{2/3}}\sigma_{\tau_j}^{1/3}\Delta_j^{2/3}.
+\end{equation}
+Here (a) is \eqref{eq:boundary} and (b) uses
+$3\sigma_{\tau_j}r_{\tau_j}^3\le\Delta_j$ from
+\eqref{eq:descent-sum}.
+For $j\in\mathcal I$, $g_{j+1}\le11g_j/16$. Since
+$\Delta_j\le\Delta$ and $\sigma_{\tau_j}\le CQ_0$, these two
+cases imply
+\[
+ g_j\le\max\{g_0,C(\Delta^2Q_0)^{1/3}\}\qquad(0\le j\le K).
+\]
+After $j_\sigma$, the sharper scale bound
+\eqref{eq:scale-stabilized} gives
+\[
+ g_{j+1}\le
+ \begin{cases}
+ C(\Delta^2Q)^{1/3},&j\in\mathcal B,\\
+ (11/16)g_j,&j\in\mathcal I.
+ \end{cases}
+\]
+Choose a common universal $C\ge1$ for the preceding two displays.
+Their iteration yields, for $j_\sigma\le j\le K$,
+\[
+ g_j\le\max\left\{
+ (11/16)^{j-j_\sigma}
+       \max\{g_0,C(\Delta^2Q_0)^{1/3}\},\
+ C(\Delta^2Q)^{1/3}\right\}.
+\]
+It therefore suffices to take
+\begin{equation}\label{eq:initial-index}
+ j_0=j_\sigma+
+ \left\lceil
+ \frac{\displaystyle\lp\frac{g_0}{(\Delta^2Q)^{1/3}}
+             +\frac13\log\frac{Q_0}{Q}}
+      {\log(16/11)}
+ \right\rceil.
+\end{equation}
+This proves \eqref{eq:initial-gradient} and \eqref{eq:initial-count}.
 \end{proof}
