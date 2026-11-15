@@ -75,20 +75,19 @@ Taylor's formula and \eqref{eq:linear-segment} give, for $0\le u\le1$,
        +\tfrac12M_kr_k^2.
  \end{aligned}
 \end{equation}
-Taking maxima in \eqref{eq:assumption} and using
-\eqref{eq:segment-gradient}, \eqref{eq:safe-radius}, and \eqref{eq:safe},
+Taking maxima along the segment gives
 \[
  \begin{aligned}
  M_k
- &\le
+ &\underset{\eqref{eq:assumption},\,\eqref{eq:segment-gradient}}{\le}
        L_0+L_1\norm{\nabla f(x_k)}
        +L_1[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k
        +\tfrac12L_1M_kr_k^2\\
- &\le
+ &\underset{\eqref{eq:safe-radius}}{\le}
        L_0+L_1\norm{\nabla f(x_k)}
        +\tfrac14\sqrt{L_1}[-\lambda_{\min}(\nabla^2f(x_k))]_+
        +\tfrac1{32}M_k\\
- &\le\sigma_k+\tfrac1{32}M_k.
+ &\underset{\eqref{eq:safe}}{\le}\sigma_k+\tfrac1{32}M_k.
  \end{aligned}
 \]
 Rearranging gives
