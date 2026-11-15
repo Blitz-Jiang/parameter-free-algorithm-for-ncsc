@@ -36,11 +36,10 @@ $r_{\tau_j}=R_{\tau_j}=\chi_j/(32\sigma_{\tau_j})$. Hence
  3\sigma_{\tau_j}r_{\tau_j}^3
  =\frac{3\chi_j^3}{32^3\sigma_{\tau_j}^2}.
 \end{equation}
-Young's inequality with exponents $3/2$ and $3$, applied to
-\eqref{eq:curvature-descent}, yields
+Young's inequality with exponents $3/2$ and $3$ yields
 \[
  \sqrt{L_1}\chi_j
- \le
+ \underset{\eqref{eq:curvature-descent}}{\le}
  \frac{32}{3^{1/3}}\sigma_{\tau_j}^{2/3}
                       (L_1^{3/2}\Delta_j)^{1/3}
  \le\frac{\sigma_{\tau_j}}{16}+CL_1^{3/2}\Delta_j.
@@ -60,14 +59,13 @@ from \eqref{eq:interior}. For $j\in\mathcal B$, Young's inequality gives
  \end{aligned}
 \]
 Together with the interior case, this proves \eqref{eq:gradient-young}.
-Bounding the maximum in \eqref{eq:backtrack-upper} by the sum and
-using \eqref{eq:curvature-young} gives
+Moreover,
 \[
  \begin{aligned}
  \sigma_{\tau_j}
- &\le
+ &\underset{\eqref{eq:backtrack-upper}}{\le}
  \tfrac12\sigma_{\tau_{j-1}}+2L_0+2L_1g_j+2\sqrt{L_1}\chi_j\\
- &\le
+ &\underset{\eqref{eq:curvature-young}}{\le}
  \tfrac12\sigma_{\tau_{j-1}}+2L_0+514L_1g_j
                   +\tfrac18\sigma_{\tau_j}+CL_1^{3/2}\Delta_j.
  \end{aligned}
@@ -100,16 +98,15 @@ For integers $b\ge0$ and $m\ge1$ with $b+m\le K$,
 \end{proposition}
 \begin{proof}
 The weight $10^4$ absorbs the $600L_1g_j$ term in the scale recursion
-while retaining contraction. Taking $\eta=10^{-6}$ in
-\eqref{eq:gradient-young}--\eqref{eq:scale-recursion} gives
+while retaining contraction. Taking $\eta=10^{-6}$ gives
 \[
  \begin{aligned}
  P_{j+1}
- &\le
+ &\underset{\eqref{eq:gradient-young},\,\eqref{eq:potential-definition}}{\le}
        1.01\sigma_{\tau_j}+6875L_1g_j+CL_1^{3/2}\Delta_j\\
- &\le\tfrac{101}{175}\sigma_{\tau_{j-1}}
+ &\underset{\eqref{eq:scale-recursion}}{\le}\tfrac{101}{175}\sigma_{\tau_{j-1}}
           +3.03L_0+7481L_1g_j+CL_1^{3/2}\Delta_j\\
- &\le
+ &\underset{\eqref{eq:potential-definition}}{\le}
        \tfrac34P_j+4L_0+CL_1^{3/2}\Delta_j.
  \end{aligned}
 \]
@@ -153,39 +150,37 @@ Set
  j_\sigma=\left\lceil\frac{\lp(P_0/Q)}{\log(4/3)}\right\rceil.
 \]
 By construction, $(3/4)^{j_\sigma}P_0\le Q$.
-Thus \eqref{eq:potential-expansion} gives
+Hence,
 \begin{equation}\label{eq:scale-stabilized}
- P_j\le CQ\quad(j_\sigma\le j\le K),\qquad
+ P_j\underset{\eqref{eq:potential-expansion}}{\le}CQ\quad(j_\sigma\le j\le K),\qquad
  \sigma_{\tau_j}\le CQ\quad(j_\sigma\le j<K).
 \end{equation}
 Also $P_0\le10^4Q_0$ gives
 $j_\sigma=O(1+\lp(Q_0/Q))$.
-For $j_\sigma\le b<b+m\le K$, \eqref{eq:scale-sum-general},
-\eqref{eq:scale-stabilized}, and $m\ge1$ give
+For $j_\sigma\le b<b+m\le K$ with $m\ge1$,
 \[
  \begin{aligned}
  \sum_{j=b}^{b+m-1}\sigma_{\tau_j}
- &\le
+ &\underset{\eqref{eq:scale-sum-general},\,\eqref{eq:scale-stabilized}}{\le}
  CQ+16mL_0+CL_1^{3/2}\Delta\\
  &\le C\bigl(mL_0+L_1^{3/2}\Delta\bigr).
  \end{aligned}
 \]
 
-For $j\in\mathcal B$, \eqref{eq:boundary} and \eqref{eq:descent-sum} give
+For $j\in\mathcal B$,
 \begin{equation}\label{eq:boundary-gradient}
- g_{j+1}\le51\sigma_{\tau_j}r_{\tau_j}^2
-       \le
+ g_{j+1}\underset{\eqref{eq:boundary}}{\le}51\sigma_{\tau_j}r_{\tau_j}^2
+       \underset{\eqref{eq:descent-sum}}{\le}
        \frac{51}{3^{2/3}}\sigma_{\tau_j}^{1/3}\Delta_j^{2/3}.
 \end{equation}
-Together with \eqref{eq:interior}, \eqref{eq:potential-expansion},
-and $\Delta_j\le\Delta$, this gives by induction
+Induction over the two cases, using $\Delta_j\le\Delta$, gives
 \begin{equation}\label{eq:global-gradient-bound}
- g_j\le\max\{g_0,C(\Delta^2Q_0)^{1/3}\}\qquad(0\le j\le K).
+ g_j\underset{\eqref{eq:interior},\,\eqref{eq:potential-expansion},\,\eqref{eq:boundary-gradient}}{\le}
+       \max\{g_0,C(\Delta^2Q_0)^{1/3}\}\qquad(0\le j\le K).
 \end{equation}
-For $j_\sigma\le j<K$, the sharper scale bound
-\eqref{eq:scale-stabilized} instead gives
+For $j_\sigma\le j<K$, the sharper scale bound instead gives
 \begin{equation}\label{eq:stabilized-gradient-recursion}
- g_{j+1}\le
+ g_{j+1}\underset{\eqref{eq:interior},\,\eqref{eq:scale-stabilized},\,\eqref{eq:boundary-gradient}}{\le}
  \begin{cases}
  C(\Delta^2Q)^{1/3},&j\in\mathcal B,\\
  (11/16)g_j,&j\in\mathcal I.

@@ -40,20 +40,20 @@ Taking the inner product of \eqref{eq:kkt-stationarity} with $s_k/r_k$ gives
        +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k.
  \end{aligned}
 \end{equation}
-For $0\le u\le1$, \eqref{eq:linear-gradient} implies
+For $0\le u\le1$,
 \begin{equation}\label{eq:linear-segment}
  \norm{\nabla f(x_k)+u\nabla^2f(x_k)s_k}
- \le\norm{\nabla f(x_k)}
+ \underset{\eqref{eq:linear-gradient}}{\le}\norm{\nabla f(x_k)}
        +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k.
 \end{equation}
 
-By \eqref{eq:model-scales} and \eqref{eq:safe},
+Also,
 \begin{equation}\label{eq:safe-model-scale}
  L_1h_k
- =\max\left\{L_1\norm{\nabla f(x_k)},
+ \underset{\eqref{eq:model-scales}}{=}\max\left\{L_1\norm{\nabla f(x_k)},
        \frac{L_1[-\lambda_{\min}(\nabla^2f(x_k))]_+^2}
             {64\sigma_k}\right\}
- \le\sigma_k.
+ \underset{\eqref{eq:safe}}{\le}\sigma_k.
 \end{equation}
 Hence,
 \begin{equation}\label{eq:safe-radius}
@@ -63,13 +63,13 @@ Hence,
  \le\frac14,\qquad L_1r_k^2\le\frac1{16}.
 \end{equation}
 Let $M_k=\max_{0\le u\le1}\norm{\nabla^3f(x_k+us_k)}$.
-Taylor's formula and \eqref{eq:linear-segment} give, for $0\le u\le1$,
+Taylor's formula gives, for $0\le u\le1$,
 \begin{equation}\label{eq:segment-gradient}
  \begin{aligned}
  \norm{\nabla f(x_k+us_k)}
  &\le\norm{\nabla f(x_k)+u\nabla^2f(x_k)s_k}
        +\tfrac12M_kr_k^2\\
- &\le
+ &\underset{\eqref{eq:linear-segment}}{\le}
        \norm{\nabla f(x_k)}
        +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k
        +\tfrac12M_kr_k^2.
@@ -94,44 +94,45 @@ Rearranging gives
 \begin{equation}\label{eq:third-derivative-bound}
  M_k\le\frac{32}{31}\sigma_k.
 \end{equation}
-Taylor's formula with \eqref{eq:third-derivative-bound} yields
+Taylor's formula yields
 \begin{align}
  \bigl|f(x_k+s_k)-f(x_k)-\nabla f(x_k)^Ts_k
                -\tfrac12s_k^T\nabla^2f(x_k)s_k\bigr|
  &\le M_kr_k^3/6
-       \le\sigma_kr_k^3,
+       \underset{\eqref{eq:third-derivative-bound}}{\le}\sigma_kr_k^3,
        \label{eq:value-remainder}\\
  \norm{\nabla f(x_k+s_k)-\nabla f(x_k)-\nabla^2f(x_k)s_k}
  &\le M_kr_k^2/2
-       \le3\sigma_kr_k^2.
+       \underset{\eqref{eq:third-derivative-bound}}{\le}3\sigma_kr_k^2.
        \label{eq:gradient-remainder}
 \end{align}
-The optimality conditions \eqref{eq:kkt-stationarity}--\eqref{eq:kkt-psd} give
+The optimality conditions give
 \begin{equation}\label{eq:model-decrease}
  \begin{aligned}
  -\nabla f(x_k)^Ts_k-\tfrac12s_k^T\nabla^2f(x_k)s_k
- &=
+ &\underset{\eqref{eq:kkt-stationarity}}{=}
        \tfrac12s_k^T\nabla^2f(x_k)s_k
        +(2\sqrt{\sigma_kh_k}+\lambda_k)r_k^2\\
- &\ge
+ &\underset{\eqref{eq:kkt-psd}}{\ge}
        \left(\sqrt{\sigma_kh_k}+\tfrac12\lambda_k\right)r_k^2.
  \end{aligned}
 \end{equation}
-Using $\sigma_kr_k\le\sqrt{\sigma_kh_k}/4$ from
-\eqref{eq:model-scales}--\eqref{eq:subproblem},
+Using $\sigma_kr_k\le\sqrt{\sigma_kh_k}/4$,
 \begin{align*}
  f(x_k)-f(x_k+s_k)
  &\underset{\eqref{eq:model-decrease},\,\eqref{eq:value-remainder}}{\ge}
        \left(\sqrt{\sigma_kh_k}+\tfrac12\lambda_k\right)r_k^2
           -\sigma_kr_k^3\\
- &\ge\tfrac34\sqrt{\sigma_kh_k}\,r_k^2
+ &\underset{\eqref{eq:model-scales},\,\eqref{eq:subproblem}}{\ge}
+       \tfrac34\sqrt{\sigma_kh_k}\,r_k^2
           +\tfrac12\lambda_kr_k^2.
 \end{align*}
 \begin{align*}
  \norm{\nabla f(x_k+s_k)}
  &\underset{\eqref{eq:linear-gradient},\,\eqref{eq:gradient-remainder}}{\le}
        (2\sqrt{\sigma_kh_k}+\lambda_k)r_k+3\sigma_kr_k^2\\
- &\le\tfrac12h_k+\lambda_kr_k+\tfrac3{16}h_k
+ &\underset{\eqref{eq:model-scales},\,\eqref{eq:subproblem}}{\le}
+       \tfrac12h_k+\lambda_kr_k+\tfrac3{16}h_k
  =\tfrac{11}{16}h_k+\lambda_kr_k.
 \end{align*}
 Thus \eqref{eq:accept-value} and \eqref{eq:accept-gradient} hold.
@@ -179,11 +180,12 @@ which must violate \eqref{eq:safe} by Lemma~\ref{lem:safe}. Hence
        2\bigl(L_0+L_1g_j+\sqrt{L_1}\chi_j\bigr)\right\}
        \quad(0\le j<K).
 \end{equation}
-By \eqref{eq:accept-value} and $r_{\tau_j}\le R_{\tau_j}$,
+Since $r_{\tau_j}\le R_{\tau_j}$,
 \begin{equation}\label{eq:descent-sum}
  \begin{aligned}
- \Delta_j&\ge\tfrac34\sqrt{\sigma_{\tau_j}h_{\tau_j}}\,r_{\tau_j}^2
-       \ge3\sigma_{\tau_j}r_{\tau_j}^3>0
+ \Delta_j&\underset{\eqref{eq:accept-value}}{\ge}
+       \tfrac34\sqrt{\sigma_{\tau_j}h_{\tau_j}}\,r_{\tau_j}^2
+       \underset{\eqref{eq:model-scales}}{\ge}3\sigma_{\tau_j}r_{\tau_j}^3>0
                   &&(0\le j<K),\\
  3\sum_{j=0}^{K-1}\sigma_{\tau_j}r_{\tau_j}^3
  &\le\sum_{j=0}^{K-1}\Delta_j
@@ -213,17 +215,16 @@ By \eqref{eq:model-scales} and \eqref{eq:accepted-measures},
 $g_j\le h_{\tau_j}$ and
 $\chi_j\le8\sqrt{\sigma_{\tau_j}h_{\tau_j}}$.
 If $j\in\mathcal B$, then $r_{\tau_j}=R_{\tau_j}$, so
-\eqref{eq:model-scales} gives
 \begin{equation}\label{eq:boundary-identities}
- h_{\tau_j}=16\sigma_{\tau_j}r_{\tau_j}^2,
+ h_{\tau_j}\underset{\eqref{eq:model-scales}}{=}16\sigma_{\tau_j}r_{\tau_j}^2,
  \qquad \sqrt{\sigma_{\tau_j}h_{\tau_j}}
        =4\sigma_{\tau_j}r_{\tau_j}.
 \end{equation}
-Since $r_{\tau_j}=R_{\tau_j}>0$, \eqref{eq:linear-gradient} gives
+Since $r_{\tau_j}=R_{\tau_j}>0$,
 \begin{equation}\label{eq:boundary-multiplier}
  \begin{aligned}
  \lambda_{\tau_j}
- &\le
+ &\underset{\eqref{eq:linear-gradient}}{\le}
        \frac{g_j}{R_{\tau_j}}+\chi_j
        -2\sqrt{\sigma_{\tau_j}h_{\tau_j}}\\
  &\le
@@ -231,13 +232,13 @@ Since $r_{\tau_j}=R_{\tau_j}>0$, \eqref{eq:linear-gradient} gives
        =10\sqrt{\sigma_{\tau_j}h_{\tau_j}}.
  \end{aligned}
 \end{equation}
-The gradient test \eqref{eq:accept-gradient} and
-\eqref{eq:boundary-identities}--\eqref{eq:boundary-multiplier} give
+The gradient test gives
 \[
  \begin{aligned}
- g_{j+1}&\le\tfrac{11}{16}h_{\tau_j}
+ g_{j+1}&\underset{\eqref{eq:accept-gradient},\,\eqref{eq:boundary-multiplier}}{\le}
+       \tfrac{11}{16}h_{\tau_j}
        +10\sqrt{\sigma_{\tau_j}h_{\tau_j}}\,r_{\tau_j}\\
- &=
+ &\underset{\eqref{eq:boundary-identities}}{=}
        (11+40)\sigma_{\tau_j}r_{\tau_j}^2
        =51\sigma_{\tau_j}r_{\tau_j}^2.
  \end{aligned}
