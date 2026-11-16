@@ -1,5 +1,9 @@
 \section{Technical estimates}
 \label{sec:analysis}
+The analysis separates boundary and interior steps. Boundary steps yield
+decrease-based gradient and curvature estimates, while interior steps
+contract the gradient. A joint potential then controls the adaptive scale.
+
 For the estimates in this section, fix a pair $(L_0,L_1)$ satisfying
 Assumption~\ref{ass:setting} and assume $\Delta>0$. Define
 \begin{equation}\label{eq:Q}

@@ -29,7 +29,8 @@ Consequently, backtracking terminates after finitely many rejections.
 \begin{proof}
 Fix a trial satisfying \eqref{eq:safe}.
 By Lemma~\ref{lem:nonzero}, $r_k>0$.
-Taking the inner product of \eqref{eq:kkt-stationarity} with $s_k/r_k$ gives
+Taking norms in \eqref{eq:kkt-stationarity}, and then taking its
+inner product with $s_k/r_k$, yields
 \begin{equation}\label{eq:linear-gradient}
  \begin{aligned}
  \norm{\nabla f(x_k)+\nabla^2f(x_k)s_k}
@@ -40,21 +41,21 @@ Taking the inner product of \eqref{eq:kkt-stationarity} with $s_k/r_k$ gives
        +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k.
  \end{aligned}
 \end{equation}
-For $0\le u\le1$,
+By convexity of the norm, \eqref{eq:linear-gradient} implies, for $0\le u\le1$,
 \begin{equation}\label{eq:linear-segment}
  \norm{\nabla f(x_k)+u\nabla^2f(x_k)s_k}
- \underset{\eqref{eq:linear-gradient}}{\le}\norm{\nabla f(x_k)}
+ \le\norm{\nabla f(x_k)}
        +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k.
 \end{equation}
 
-Also,
-\begin{equation}\label{eq:safe-model-scale}
+By \eqref{eq:model-scales} and \eqref{eq:safe},
+\[
  L_1h_k
- \underset{\eqref{eq:model-scales}}{=}\max\left\{L_1\norm{\nabla f(x_k)},
+ =\max\left\{L_1\norm{\nabla f(x_k)},
        \frac{L_1[-\lambda_{\min}(\nabla^2f(x_k))]_+^2}
             {64\sigma_k}\right\}
- \underset{\eqref{eq:safe}}{\le}\sigma_k.
-\end{equation}
+ \le\sigma_k.
+\]
 Hence,
 \begin{equation}\label{eq:safe-radius}
  \sqrt{L_1}r_k
@@ -94,18 +95,18 @@ Rearranging gives
 \begin{equation}\label{eq:third-derivative-bound}
  M_k\le\frac{32}{31}\sigma_k.
 \end{equation}
-Taylor's formula yields
-\begin{align}
+Taylor's formula and \eqref{eq:third-derivative-bound} give
+\[
+ \begin{aligned}
  \bigl|f(x_k+s_k)-f(x_k)-\nabla f(x_k)^Ts_k
                -\tfrac12s_k^T\nabla^2f(x_k)s_k\bigr|
  &\le M_kr_k^3/6
-       \underset{\eqref{eq:third-derivative-bound}}{\le}\sigma_kr_k^3,
-       \label{eq:value-remainder}\\
+       \le\sigma_kr_k^3,\\
  \norm{\nabla f(x_k+s_k)-\nabla f(x_k)-\nabla^2f(x_k)s_k}
  &\le M_kr_k^2/2
-       \underset{\eqref{eq:third-derivative-bound}}{\le}3\sigma_kr_k^2.
-       \label{eq:gradient-remainder}
-\end{align}
+       \le3\sigma_kr_k^2.
+ \end{aligned}
+\]
 The optimality conditions give
 \begin{equation}\label{eq:model-decrease}
  \begin{aligned}
@@ -117,19 +118,19 @@ The optimality conditions give
        \left(\sqrt{\sigma_kh_k}+\tfrac12\lambda_k\right)r_k^2.
  \end{aligned}
 \end{equation}
-Using $\sigma_kr_k\le\sqrt{\sigma_kh_k}/4$,
+Using the remainder bounds and $\sigma_kr_k\le\sqrt{\sigma_kh_k}/4$,
 \begin{align*}
  f(x_k)-f(x_k+s_k)
- &\underset{\eqref{eq:model-decrease},\,\eqref{eq:value-remainder}}{\ge}
+ &\underset{\eqref{eq:model-decrease}}{\ge}
        \left(\sqrt{\sigma_kh_k}+\tfrac12\lambda_k\right)r_k^2
           -\sigma_kr_k^3\\
- &\underset{\eqref{eq:model-scales},\,\eqref{eq:subproblem}}{\ge}
+ &\ge
        \tfrac34\sqrt{\sigma_kh_k}\,r_k^2
           +\tfrac12\lambda_kr_k^2.
 \end{align*}
 \begin{align*}
  \norm{\nabla f(x_k+s_k)}
- &\underset{\eqref{eq:linear-gradient},\,\eqref{eq:gradient-remainder}}{\le}
+ &\underset{\eqref{eq:linear-gradient}}{\le}
        (2\sqrt{\sigma_kh_k}+\lambda_k)r_k+3\sigma_kr_k^2\\
  &\underset{\eqref{eq:model-scales},\,\eqref{eq:subproblem}}{\le}
        \tfrac12h_k+\lambda_kr_k+\tfrac3{16}h_k
