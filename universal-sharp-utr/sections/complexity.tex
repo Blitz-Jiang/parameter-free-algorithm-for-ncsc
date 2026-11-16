@@ -1,121 +1,80 @@
-\paragraph{1. Sum the boundary and interior estimates.}
 Let $K$ be any finite number of accepted steps.
-If $K\le j_0$, then
-\[
- K\le j_0=O(\mathcal L)
-\]
-by \eqref{eq:initial-count}, so only $K>j_0$ requires a further
-bound. In this case, set
+If $K\le j_0$, then $K=O(\mathcal L)$ by \eqref{eq:initial-count}.
+Otherwise, set
 \[
  m=K-j_0,\qquad \mathcal J=\{j_0,\ldots,K-1\}.
 \]
-By \eqref{eq:descent-sum} and Lemma~\ref{lem:initial-stage},
 \begin{equation}\label{eq:summation-bounds}
- g_{j_0}\le C(\Delta^2Q)^{1/3},\qquad
+ g_{j_0}\underset{\eqref{eq:initial-gradient}}{\le}C(\Delta^2Q)^{1/3},\qquad
  \sum_{j\in\mathcal J}\sigma_{\tau_j}
-       \le C(mL_0+L_1^{3/2}\Delta),\qquad
- \sum_{j\in\mathcal J}\sigma_{\tau_j}r_{\tau_j}^3\le\Delta/3.
+       \underset{\eqref{eq:scale-sum}}{\le}C(mL_0+L_1^{3/2}\Delta),\qquad
+ \sum_{j\in\mathcal J}\sigma_{\tau_j}r_{\tau_j}^3
+       \underset{\eqref{eq:descent-sum}}{\le}\Delta/3.
 \end{equation}
-For $p=1,2$,
+For $p=1,2$, H\"older's inequality gives
 \begin{align}
  \sum_{j\in\mathcal J\cap\mathcal B}\sigma_{\tau_j}r_{\tau_j}^p
- &\underset{(a)}{\le}
+ &\le
        \left(\sum_{j\in\mathcal J\cap\mathcal B}
                          \sigma_{\tau_j}r_{\tau_j}^3\right)^{p/3}
        \left(\sum_{j\in\mathcal J\cap\mathcal B}
                          \sigma_{\tau_j}\right)^{1-p/3}\nonumber\\
- &\underset{(b)}{\le} C\Delta^{p/3}
+ &\underset{\eqref{eq:summation-bounds}}{\le}C\Delta^{p/3}
              (mL_0+L_1^{3/2}\Delta)^{1-p/3}.
  \label{eq:boundary-sums}
 \end{align}
-Here (a) is H\"older's inequality with exponents $3/p$ and
-$3/(3-p)$, and (b) uses \eqref{eq:summation-bounds}.
 
-For the gradient sum,
-\[
- \begin{aligned}
- \sum_{j\in\mathcal J}g_{j+1}
- &\underset{(a)}{\le}
-       \tfrac{11}{16}\sum_{j\in\mathcal J\cap\mathcal I}g_j
-       +51\sum_{j\in\mathcal J\cap\mathcal B}
-                        \sigma_{\tau_j}r_{\tau_j}^2\\
- &\underset{(b)}{\le}
-       \tfrac{11}{16}\sum_{j\in\mathcal J}g_j
-       +51\sum_{j\in\mathcal J\cap\mathcal B}
-                        \sigma_{\tau_j}r_{\tau_j}^2.
- \end{aligned}
-\]
-Here (a) uses \eqref{eq:boundary} and \eqref{eq:interior}, and
-(b) uses $g_j\ge0$. Consequently,
+Summing the boundary and interior estimates and using
+$\sum_{j\in\mathcal J}(g_{j+1}-g_j)=g_K-g_{j_0}$ gives
 \begin{align}
  \tfrac5{16}\sum_{j\in\mathcal J}g_j
- &\underset{(a)}{\le}g_{j_0}-g_K
+ &\underset{\eqref{eq:boundary},\,\eqref{eq:interior}}{\le}g_{j_0}-g_K
        +51\sum_{j\in\mathcal J\cap\mathcal B}
                         \sigma_{\tau_j}r_{\tau_j}^2\nonumber\\
- &\underset{(b)}{\le}C\Delta^{2/3}Q^{1/3}
+ &\underset{\eqref{eq:summation-bounds},\,\eqref{eq:boundary-sums}}{\le}C\Delta^{2/3}Q^{1/3}
        +C\Delta^{2/3}(mL_0+L_1^{3/2}\Delta)^{1/3}\nonumber\\
- &\underset{(c)}{\le}C\Delta^{2/3}
+ &\le C\Delta^{2/3}
                          (mL_0+L_1^{3/2}\Delta)^{1/3}.
  \label{eq:sum-g}
 \end{align}
-In (a), we rearrange the preceding estimate using
-$\sum_{j\in\mathcal J}g_{j+1}
- =\sum_{j\in\mathcal J}g_j+g_K-g_{j_0}$.
-In (b), we use $g_K\ge0$, the bound on $g_{j_0}$ in
-\eqref{eq:summation-bounds}, and \eqref{eq:boundary-sums} with $p=2$.
-In (c), we use $m\ge1$, which gives
-$Q=L_0+L_1^{3/2}\Delta\le mL_0+L_1^{3/2}\Delta$.
+Here $Q\le mL_0+L_1^{3/2}\Delta$ since $m\ge1$.
 
 For the curvature sum,
 \begin{align}
  \sum_{j\in\mathcal J}\chi_j
- &\underset{(a)}{\le}
+ &\underset{\eqref{eq:boundary},\,\eqref{eq:interior}}{\le}
        32\sum_{j\in\mathcal J\cap\mathcal B}
                          \sigma_{\tau_j}r_{\tau_j}
        +2\sum_{j\in\mathcal J\cap\mathcal I}
                          \sqrt{\sigma_{\tau_j}g_j}\nonumber\\
- &\underset{(b)}{\le}
+ &\le
        32\sum_{j\in\mathcal J\cap\mathcal B}
                          \sigma_{\tau_j}r_{\tau_j}
        +2\left(\sum_{j\in\mathcal J}\sigma_{\tau_j}\right)^{1/2}
           \left(\sum_{j\in\mathcal J}g_j\right)^{1/2}\nonumber\\
- &\underset{(c)}{\le}C\Delta^{1/3}
+ &\underset{\eqref{eq:summation-bounds},\,\eqref{eq:boundary-sums},\,\eqref{eq:sum-g}}{\le}C\Delta^{1/3}
                          (mL_0+L_1^{3/2}\Delta)^{2/3}.
  \label{eq:sum-curvature}
 \end{align}
-Here (a) uses the curvature bounds in \eqref{eq:boundary} and
-\eqref{eq:interior}; in particular, the interior bound follows
-from \eqref{eq:kkt-psd} and \eqref{eq:kkt-complementarity}.
-Step (b) is Cauchy--Schwarz, with the nonnegative sums extended to
-$\mathcal J$. Step (c) uses \eqref{eq:boundary-sums} with $p=1$,
-the scale sum in \eqref{eq:summation-bounds}, and \eqref{eq:sum-g}.
 
-\paragraph{2. Use the failed stopping tests to bound accepted steps.}
-At every $j\in\mathcal J$, the stopping test failed, so
-\[
- g_j>\epsilon\ \text{or}\ \chi_j>\delta,
- \qquad 1<g_j/\epsilon+\chi_j/\delta.
-\]
-Summing gives
+Since the stopping test fails for every $j\in\mathcal J$,
 \begin{align}
  m
  &<\frac1\epsilon\sum_{j\in\mathcal J}g_j
        +\frac1\delta\sum_{j\in\mathcal J}\chi_j\nonumber\\
- &\underset{(a)}{\le}C\left[
+ &\underset{\eqref{eq:sum-g},\,\eqref{eq:sum-curvature}}{\le}C\left[
  \frac{\Delta^{2/3}L_0^{1/3}}{\epsilon}m^{1/3}
  +\frac{\sqrt{L_1}\Delta}{\epsilon}
  +\frac{\Delta^{1/3}L_0^{2/3}}{\delta}m^{2/3}
  +\frac{L_1\Delta}{\delta}\right]\nonumber\\
- &\underset{(b)}{\le}\frac m2+C\Delta\left[
+ &\le\frac m2+C\Delta\left[
  \frac{\sqrt{L_0}}{\epsilon^{3/2}}
  +\frac{\sqrt{L_1}}{\epsilon}
  +\frac{L_0^2}{\delta^3}
  +\frac{L_1}{\delta}\right].
  \label{eq:accepted-absorption}
 \end{align}
-Here (a) uses \eqref{eq:sum-g}--\eqref{eq:sum-curvature} and
-$(a+b)^p\le a^p+b^p$ for $a,b\ge0$ and $0<p<1$.
-Step (b) uses Young's inequality in the forms
+The last inequality follows from Young's inequality in the forms
 \[
  \begin{aligned}
  C\frac{\Delta^{2/3}L_0^{1/3}}{\epsilon}m^{1/3}
@@ -132,51 +91,45 @@ Subtracting $m/2$ and using $K=j_0+m$ proves
  +\frac{L_0^2}{\delta^3}
  +\frac{L_1}{\delta}\right].
 \end{equation}
-This also holds for $K\le j_0$, since the four terms are nonnegative.
-Thus the same bound applies to every finite number of accepted
-steps. An infinite run would have infinitely many accepted steps
-by Lemma~\ref{lem:safe}, contradicting \eqref{eq:accepted-count}.
+Thus \eqref{eq:accepted-count} holds for every finite number of accepted steps.
+By Lemma~\ref{lem:safe}, an infinite run would have infinitely many
+accepted steps, contradicting \eqref{eq:accepted-count}.
 The algorithm therefore terminates at an
 $(\epsilon,\delta)$-second-order stationary point.
 
-\paragraph{3. Count rejected trials and oracle evaluations.}
 Initial termination costs at most three oracle evaluations.
-Otherwise let $K\ge1$ and $J\ge0$ count the accepted and rejected
+Otherwise, let $K\ge1$ and $U\ge0$ count the accepted and rejected
 trials before termination. Since a rejection leaves the point
 unchanged, termination follows an accepted step. Hence
 \[
- \sigma_{\tau_{K-1}}=\sigma_0\,2^{J-K+1},
+ \sigma_{\tau_{K-1}}=\sigma_0\,2^{U-K+1},
  \qquad
- J=K-1+\log_2\frac{\sigma_{\tau_{K-1}}}{\sigma_0}.
+ U=K-1+\log_2\frac{\sigma_{\tau_{K-1}}}{\sigma_0}.
 \]
-The global scale bound in \eqref{eq:potential-expansion} gives
+Hence,
 \begin{equation}\label{eq:rejected-count}
- J\le K+C\left(1+\lp\frac{Q_0}{\sigma_0}\right).
+ U\underset{\eqref{eq:potential-expansion}}{\le}
+       K+C\left(1+\lp\frac{Q_0}{\sigma_0}\right).
 \end{equation}
-There are $K+J$ subproblem solves. Reusing the current values and
+There are $K+U$ subproblem solves. Reusing the current values and
 derivatives as specified in Algorithm~\ref{alg:utr} gives
 \[
- N_f\le1+K+J,\qquad
- N_{\nabla f}\le1+K+J,\qquad
+ N_f\le1+K+U,\qquad
+ N_{\nabla f}\le1+K+U,\qquad
  N_{\nabla^2 f}\le1+K.
 \]
 It follows that
 \begin{align}
- \max\{K+J,N_f+N_{\nabla f}+N_{\nabla^2f}\}
- &\underset{(a)}{\le}3+3K+2J\nonumber\\
- &\underset{(b)}{\le}5K+C\left(1+\lp\frac{Q_0}{\sigma_0}\right)\nonumber\\
- &\underset{(c)}{\le}C\Delta\left[
+ \max\{K+U,N_f+N_{\nabla f}+N_{\nabla^2f}\}
+ &\le3+3K+2U\nonumber\\
+ &\underset{\eqref{eq:rejected-count}}{\le}5K+C\left(1+\lp\frac{Q_0}{\sigma_0}\right)\nonumber\\
+ &\underset{\eqref{eq:accepted-count},\,\eqref{eq:initial-count},\,\eqref{eq:logs}}{\le}C\Delta\left[
  \frac{\sqrt{L_0}}{\epsilon^{3/2}}
  +\frac{\sqrt{L_1}}{\epsilon}
  +\frac{L_0^2}{\delta^3}
  +\frac{L_1}{\delta}\right]+C\mathcal L.
  \label{eq:total-count}
 \end{align}
-Here (a) uses the three evaluation counts above,
-(b) uses \eqref{eq:rejected-count}, and
-(c) uses \eqref{eq:accepted-count},
-$j_0=O(\mathcal L)$ from \eqref{eq:initial-count}, and
-$1+\lp(Q_0/\sigma_0)\le\mathcal L$ from \eqref{eq:logs}.
 Since $O(\mathcal L)=\widetilde O(1)$ is independent of
 $\epsilon,\delta$, \eqref{eq:total-count} proves
 \eqref{eq:complexity}. The algorithm uses neither $L_0$ nor $L_1$,

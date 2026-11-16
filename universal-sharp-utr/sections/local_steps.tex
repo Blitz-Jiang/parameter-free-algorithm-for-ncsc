@@ -1,135 +1,154 @@
 \subsection{Nonzero steps and finite backtracking}
 
-Write $r_k=\norm{s_k}$, where $k$ indexes all trials, including
-rejected ones.
+Write $r_k=\norm{s_k}$.
 
 \begin{lemma}[Nonzero trial steps]\label{lem:nonzero}
 Every trial has $h_k,R_k,r_k>0$.
 \end{lemma}
 \begin{proof}
-If $h_k=0$, then $\nabla f(x_k)=0$ and $\nabla^2f(x_k)\succeq0$,
-so the stopping test would have succeeded. Thus $h_k,R_k>0$.
+By \eqref{eq:model-scales}, $h_k=0$ would imply
+$\nabla f(x_k)=0$ and $\nabla^2f(x_k)\succeq0$, so the stopping
+test would have succeeded. Thus $h_k,R_k>0$.
 If $\nabla f(x_k)\ne0$, \eqref{eq:kkt-stationarity}
 rules out $s_k=0$. Otherwise failure of the stopping test gives
 $\lambda_{\min}(\nabla^2f(x_k))<-\delta$, and
-\[
- 2\sqrt{\sigma_kh_k}=-\tfrac14\lambda_{\min}(\nabla^2f(x_k)).
-\]
-The model Hessian therefore has a negative eigenvalue. A small
-nonzero step in a corresponding eigenvector direction has negative
+$2\sqrt{\sigma_kh_k}=-\tfrac14\lambda_{\min}(\nabla^2f(x_k))$.
+The model Hessian therefore has a negative eigenvalue. A sufficiently
+small nonzero step along a corresponding eigenvector has negative
 model value, whereas the value at zero is zero. Hence $r_k>0$.
 \end{proof}
 
-\begin{lemma}[Safe trial scale]\label{lem:safe}
-Trial $k$ is accepted if
+\begin{lemma}[Sufficient condition for acceptance]\label{lem:safe}
+A trial is accepted whenever
 \begin{equation}\label{eq:safe}
  \sigma_k\ge L_0+L_1\norm{\nabla f(x_k)}
         +\sqrt{L_1}[-\lambda_{\min}(\nabla^2 f(x_k))]_+.
 \end{equation}
+Consequently, backtracking terminates after finitely many rejections.
 \end{lemma}
 \begin{proof}
-Equation~\eqref{eq:kkt-stationarity} and $r_k>0$ imply
+Fix a trial satisfying \eqref{eq:safe}.
+By Lemma~\ref{lem:nonzero}, $r_k>0$.
+Taking norms in \eqref{eq:kkt-stationarity}, and then taking its
+inner product with $s_k/r_k$, yields
 \begin{equation}\label{eq:linear-gradient}
  \begin{aligned}
  \norm{\nabla f(x_k)+\nabla^2f(x_k)s_k}
- &=(2\sqrt{\sigma_kh_k}+\lambda_k)r_k,\\
+ &=
+       (2\sqrt{\sigma_kh_k}+\lambda_k)r_k,\\
  (2\sqrt{\sigma_kh_k}+\lambda_k)r_k
  &\le\norm{\nabla f(x_k)}
        +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k.
  \end{aligned}
 \end{equation}
-The inequality follows by taking the inner product of
-\eqref{eq:kkt-stationarity} with $s_k$. Convexity of the norm
-then gives, for
-$0\le u\le1$,
+By convexity of the norm, \eqref{eq:linear-gradient} implies, for $0\le u\le1$,
 \begin{equation}\label{eq:linear-segment}
  \norm{\nabla f(x_k)+u\nabla^2f(x_k)s_k}
  \le\norm{\nabla f(x_k)}
        +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k.
 \end{equation}
 
-Under \eqref{eq:safe}, the definition of $h_k$ yields
+By \eqref{eq:model-scales} and \eqref{eq:safe},
 \[
  L_1h_k
  =\max\left\{L_1\norm{\nabla f(x_k)},
        \frac{L_1[-\lambda_{\min}(\nabla^2f(x_k))]_+^2}
-            {64\sigma_k}\right\}\le\sigma_k.
+            {64\sigma_k}\right\}
+ \le\sigma_k.
 \]
-Thus
+Hence,
 \begin{equation}\label{eq:safe-radius}
- \sqrt{L_1}r_k\underset{(a)}{\le}\sqrt{L_1}R_k
-       \underset{(b)}{\le}\tfrac14,
- \qquad L_1r_k^2\le\tfrac1{16}.
+ \sqrt{L_1}r_k
+ \le\sqrt{L_1}R_k=
+       \frac14\sqrt{\frac{L_1h_k}{\sigma_k}}
+ \le\frac14,\qquad L_1r_k^2\le\frac1{16}.
 \end{equation}
-Here (a) is feasibility in \eqref{eq:subproblem}, and (b) uses
-$R_k=\sqrt{h_k}/(4\sqrt{\sigma_k})$ and $L_1h_k\le\sigma_k$.
-Let $M_k=\max_{0\le u\le1}\norm{\nabla^3f(x_k+us_k)}$, which
-is finite by continuity. Taylor's formula and
-\eqref{eq:linear-segment} give
-\[
+Let $M_k=\max_{0\le u\le1}\norm{\nabla^3f(x_k+us_k)}$.
+Taylor's formula gives, for $0\le u\le1$,
+\begin{equation}\label{eq:segment-gradient}
+ \begin{aligned}
  \norm{\nabla f(x_k+us_k)}
- \le\norm{\nabla f(x_k)}
+ &\le\norm{\nabla f(x_k)+u\nabla^2f(x_k)s_k}
+       +\tfrac12M_kr_k^2\\
+ &\underset{\eqref{eq:linear-segment}}{\le}
+       \norm{\nabla f(x_k)}
        +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k
        +\tfrac12M_kr_k^2.
-\]
-It follows that
+ \end{aligned}
+\end{equation}
+Taking maxima along the segment gives
 \[
  \begin{aligned}
  M_k
- &\underset{(a)}{\le} L_0+L_1\norm{\nabla f(x_k)}
+ &\underset{\eqref{eq:assumption},\,\eqref{eq:segment-gradient}}{\le}
+       L_0+L_1\norm{\nabla f(x_k)}
        +L_1[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k
        +\tfrac12L_1M_kr_k^2\\
- &\underset{(b)}{\le}\sigma_k+\tfrac1{32}M_k.
+ &\underset{\eqref{eq:safe-radius}}{\le}
+       L_0+L_1\norm{\nabla f(x_k)}
+       +\tfrac14\sqrt{L_1}[-\lambda_{\min}(\nabla^2f(x_k))]_+
+       +\tfrac1{32}M_k\\
+ &\underset{\eqref{eq:safe}}{\le}\sigma_k+\tfrac1{32}M_k.
  \end{aligned}
 \]
-Here (a) applies Assumption~\ref{ass:setting} to the preceding
-gradient bound along the segment, and (b) uses
-\eqref{eq:safe-radius} and \eqref{eq:safe}.
-Thus $M_k\le32\sigma_k/31$, and the Taylor remainders satisfy
-\begin{align*}
+Rearranging gives
+\begin{equation}\label{eq:third-derivative-bound}
+ M_k\le\frac{32}{31}\sigma_k.
+\end{equation}
+Taylor's formula and \eqref{eq:third-derivative-bound} give
+\[
+ \begin{aligned}
  \bigl|f(x_k+s_k)-f(x_k)-\nabla f(x_k)^Ts_k
                -\tfrac12s_k^T\nabla^2f(x_k)s_k\bigr|
- &\underset{(a)}{\le} M_kr_k^3/6
-       \underset{(b)}{\le}\sigma_kr_k^3,\\
+ &\le M_kr_k^3/6
+       \le\sigma_kr_k^3,\\
  \norm{\nabla f(x_k+s_k)-\nabla f(x_k)-\nabla^2f(x_k)s_k}
- &\underset{(a)}{\le} M_kr_k^2/2
-       \underset{(b)}{\le}3\sigma_kr_k^2.
-\end{align*}
-Here (a) is Taylor's theorem and (b) uses $M_k\le32\sigma_k/31$.
-Equations~\eqref{eq:kkt-stationarity} and \eqref{eq:kkt-psd}
-also imply
-\[
- -\nabla f(x_k)^Ts_k-\tfrac12s_k^T\nabla^2f(x_k)s_k
- \ge\left(\sqrt{\sigma_kh_k}+\tfrac12\lambda_k\right)r_k^2.
+ &\le M_kr_k^2/2
+       \le3\sigma_kr_k^2.
+ \end{aligned}
 \]
-Consequently,
+The optimality conditions give
+\begin{equation}\label{eq:model-decrease}
+ \begin{aligned}
+ -\nabla f(x_k)^Ts_k-\tfrac12s_k^T\nabla^2f(x_k)s_k
+ &\underset{\eqref{eq:kkt-stationarity}}{=}
+       \tfrac12s_k^T\nabla^2f(x_k)s_k
+       +(2\sqrt{\sigma_kh_k}+\lambda_k)r_k^2\\
+ &\underset{\eqref{eq:kkt-psd}}{\ge}
+       \left(\sqrt{\sigma_kh_k}+\tfrac12\lambda_k\right)r_k^2.
+ \end{aligned}
+\end{equation}
+Using the remainder bounds and $\sigma_kr_k\le\sqrt{\sigma_kh_k}/4$,
 \begin{align*}
  f(x_k)-f(x_k+s_k)
- &\underset{(a)}{\ge}
+ &\underset{\eqref{eq:model-decrease}}{\ge}
        \left(\sqrt{\sigma_kh_k}+\tfrac12\lambda_k\right)r_k^2
           -\sigma_kr_k^3\\
- &\underset{(b)}{\ge}\tfrac34\sqrt{\sigma_kh_k}\,r_k^2
-          +\tfrac12\lambda_kr_k^2,\\
- \norm{\nabla f(x_k+s_k)}
- &\underset{(c)}{\le}
-       (2\sqrt{\sigma_kh_k}+\lambda_k)r_k+3\sigma_kr_k^2\\
- &\underset{(d)}{\le}\tfrac{11}{16}h_k+\lambda_kr_k.
+ &\ge
+       \tfrac34\sqrt{\sigma_kh_k}\,r_k^2
+          +\tfrac12\lambda_kr_k^2.
 \end{align*}
-Here (a) combines the model decrease and value remainder;
-(b) uses $\sigma_kr_k\le\sqrt{\sigma_kh_k}/4$;
-(c) uses \eqref{eq:linear-gradient} and the gradient remainder;
-and (d) uses $r_k\le R_k$ and \eqref{eq:model-scales}.
-These are \eqref{eq:accept-value} and \eqref{eq:accept-gradient}.
-At a fixed point, the right-hand side of \eqref{eq:safe}
-is finite and unchanged by rejection, so finitely many doublings
-of $\sigma_k$ ensure acceptance.
+\begin{align*}
+ \norm{\nabla f(x_k+s_k)}
+ &\underset{\eqref{eq:linear-gradient}}{\le}
+       (2\sqrt{\sigma_kh_k}+\lambda_k)r_k+3\sigma_kr_k^2\\
+ &\underset{\eqref{eq:model-scales},\,\eqref{eq:subproblem}}{\le}
+       \tfrac12h_k+\lambda_kr_k+\tfrac3{16}h_k
+ =\tfrac{11}{16}h_k+\lambda_kr_k.
+\end{align*}
+Thus \eqref{eq:accept-value} and \eqref{eq:accept-gradient} hold.
+Rejections leave the iterate, and hence the finite threshold in
+\eqref{eq:safe}, unchanged while doubling the scale, so
+backtracking terminates after finitely many doublings.
 \end{proof}
 
 \subsection{Accepted steps: boundary and interior cases}
 \label{sec:accepted-steps}
 
-Let $\tau_0<\cdots<\tau_{K-1}$ be the trial indices of the first
-$K\ge1$ accepted steps, and set $\tau_K=\tau_{K-1}+1$ for the final point.
+Let $\tau_0<\cdots<\tau_{K-1}$ be the indices of the first
+$K\ge1$ accepted trials of Algorithm~\ref{alg:utr}.
+Set $\tau_K=\tau_{K-1}+1$, so that $x_{\tau_K}$ is the point
+immediately after the $K$-th accepted step.
 Rejections leave the point unchanged, so
 \begin{equation}\label{eq:accepted-points}
  x_{\tau_0}=x_0,\qquad
@@ -146,30 +165,28 @@ and function decrease by
        &&(0\le j<K).
  \end{aligned}
 \end{equation}
-We use the same partition throughout the proof:
+Partition the accepted steps into boundary and interior steps:
 \begin{equation}\label{eq:step-sets}
  \mathcal B=\{0\le j<K:r_{\tau_j}=R_{\tau_j}\},\qquad
  \mathcal I=\{0,\ldots,K-1\}\setminus\mathcal B.
 \end{equation}
-Thus $\mathcal B$ contains boundary steps and $\mathcal I$ contains
-interior steps.
-
-Set $\sigma_{\tau_{-1}}=2\sigma_0$ for the following recurrence.
-The first trial at $x_{\tau_j}$ uses scale
-$\sigma_{\tau_{j-1}}/2$. If it is rejected, the last rejected
-scale is $\sigma_{\tau_j}/2$ and must be below the threshold in
-Lemma~\ref{lem:safe}. Therefore
+With the convention $\sigma_{\tau_{-1}}=2\sigma_0$, the initial
+trial for the $j$-th accepted step uses scale $\sigma_{\tau_{j-1}}/2$.
+If this trial is accepted, then $\sigma_{\tau_j}=\sigma_{\tau_{j-1}}/2$.
+Otherwise, the last rejected trial uses scale $\sigma_{\tau_j}/2$,
+which must violate \eqref{eq:safe} by Lemma~\ref{lem:safe}. Hence
 \begin{equation}\label{eq:backtrack-upper}
  \sigma_{\tau_j}\le\max\left\{
        \frac{\sigma_{\tau_{j-1}}}{2},\,
        2\bigl(L_0+L_1g_j+\sqrt{L_1}\chi_j\bigr)\right\}
        \quad(0\le j<K).
 \end{equation}
-The value acceptance test and
-$\sqrt{\sigma_kh_k}\ge4\sigma_kr_k$ give
+Since $r_{\tau_j}\le R_{\tau_j}$,
 \begin{equation}\label{eq:descent-sum}
  \begin{aligned}
- \Delta_j&\ge3\sigma_{\tau_j}r_{\tau_j}^3>0
+ \Delta_j&\underset{\eqref{eq:accept-value}}{\ge}
+       \tfrac34\sqrt{\sigma_{\tau_j}h_{\tau_j}}\,r_{\tau_j}^2
+       \underset{\eqref{eq:model-scales}}{\ge}3\sigma_{\tau_j}r_{\tau_j}^3>0
                   &&(0\le j<K),\\
  3\sum_{j=0}^{K-1}\sigma_{\tau_j}r_{\tau_j}^3
  &\le\sum_{j=0}^{K-1}\Delta_j
@@ -195,41 +212,50 @@ For every $j\in\mathcal I$,
 \end{equation}
 \end{lemma}
 \begin{proof}
-The definition of $h_{\tau_j}$ gives
+By \eqref{eq:model-scales} and \eqref{eq:accepted-measures},
 $g_j\le h_{\tau_j}$ and
 $\chi_j\le8\sqrt{\sigma_{\tau_j}h_{\tau_j}}$.
-If $j\in\mathcal B$, then
-\[
- h_{\tau_j}=16\sigma_{\tau_j}r_{\tau_j}^2,
+If $j\in\mathcal B$, then $r_{\tau_j}=R_{\tau_j}$, so
+\begin{equation}\label{eq:boundary-identities}
+ h_{\tau_j}\underset{\eqref{eq:model-scales}}{=}16\sigma_{\tau_j}r_{\tau_j}^2,
  \qquad \sqrt{\sigma_{\tau_j}h_{\tau_j}}
        =4\sigma_{\tau_j}r_{\tau_j}.
-\]
-These identities prove the bounds on $g_j$ and $\chi_j$.
-Moreover,
-\[
+\end{equation}
+Since $r_{\tau_j}=R_{\tau_j}>0$,
+\begin{equation}\label{eq:boundary-multiplier}
+ \begin{aligned}
  \lambda_{\tau_j}
- \underset{(a)}{\le}\frac{g_j}{R_{\tau_j}}+\chi_j
-       -2\sqrt{\sigma_{\tau_j}h_{\tau_j}}
- \underset{(b)}{\le}10\sqrt{\sigma_{\tau_j}h_{\tau_j}}.
-\]
-Here (a) is \eqref{eq:linear-gradient} with $r_{\tau_j}=R_{\tau_j}$,
-and (b) uses $g_j\le h_{\tau_j}$,
-$\chi_j\le8\sqrt{\sigma_{\tau_j}h_{\tau_j}}$, and the formula for
-$R_{\tau_j}$ in \eqref{eq:model-scales}. Hence
+ &\underset{\eqref{eq:linear-gradient}}{\le}
+       \frac{g_j}{R_{\tau_j}}+\chi_j
+       -2\sqrt{\sigma_{\tau_j}h_{\tau_j}}\\
+ &\le
+       (4+8-2)\sqrt{\sigma_{\tau_j}h_{\tau_j}}
+       =10\sqrt{\sigma_{\tau_j}h_{\tau_j}}.
+ \end{aligned}
+\end{equation}
+The gradient test gives
 \[
- g_{j+1}\underset{(a)}{\le}\tfrac{11}{16}h_{\tau_j}
-                  +\lambda_{\tau_j}r_{\tau_j}
- \underset{(b)}{\le}(11+40)\sigma_{\tau_j}r_{\tau_j}^2.
+ \begin{aligned}
+ g_{j+1}&\underset{\eqref{eq:accept-gradient},\,\eqref{eq:boundary-multiplier}}{\le}
+       \tfrac{11}{16}h_{\tau_j}
+       +10\sqrt{\sigma_{\tau_j}h_{\tau_j}}\,r_{\tau_j}\\
+ &\underset{\eqref{eq:boundary-identities}}{=}
+       (11+40)\sigma_{\tau_j}r_{\tau_j}^2
+       =51\sigma_{\tau_j}r_{\tau_j}^2.
+ \end{aligned}
 \]
-Here (a) is \eqref{eq:accept-gradient}, and (b) uses the bound
-on $\lambda_{\tau_j}$ and the two boundary identities above.
 
-If $j\in\mathcal I$, \eqref{eq:kkt-complementarity} gives
-$\lambda_{\tau_j}=0$, and \eqref{eq:kkt-psd} gives
-$\chi_j\le2\sqrt{\sigma_{\tau_j}h_{\tau_j}}$.
-Were $h_{\tau_j}>g_j$, its defining curvature term would imply
-$2\sqrt{\sigma_{\tau_j}h_{\tau_j}}=\chi_j/4>0$, a contradiction.
-Thus $h_{\tau_j}=g_j$; the last two assertions follow from the
-semidefinite condition \eqref{eq:kkt-psd} and
-\eqref{eq:accept-gradient}.
+If $j\in\mathcal I$, complementary slackness
+\eqref{eq:kkt-complementarity} gives $\lambda_{\tau_j}=0$, and
+\eqref{eq:kkt-psd} yields $\chi_j\le2\sqrt{\sigma_{\tau_j}h_{\tau_j}}$.
+If $h_{\tau_j}>g_j$, then \eqref{eq:model-scales} implies $\chi_j>0$,
+and hence
+\[
+ \chi_j\le
+ 2\sqrt{\sigma_{\tau_j}h_{\tau_j}}
+ =\frac{\chi_j}{4}<\chi_j,
+\]
+a contradiction. Thus $h_{\tau_j}=g_j$.
+The curvature bound above and \eqref{eq:accept-gradient} give
+the remaining estimates.
 \end{proof}
