@@ -2,7 +2,7 @@
 
 Write $r_k=\norm{s_k}$.
 
-\begin{lemma}[Sufficient condition for acceptance]\label{lem:safe}
+\begin{lemma}\label{lem:safe}
 A trial is accepted whenever
 \begin{equation}\label{eq:safe}
  \sigma_k\ge L_0+L_1\norm{\nabla f(x_k)}
@@ -11,14 +11,12 @@ A trial is accepted whenever
 Consequently, backtracking terminates after finitely many rejections.
 \end{lemma}
 \begin{proof}
-Fix a trial satisfying \eqref{eq:safe}. We first prove that $r_k>0$.
-Suppose $r_k=0$. Then \eqref{eq:kkt-stationarity} gives $\nabla f(x_k)=0$.
-Since the stopping test failed, $\mu:=\lambda_{\min}(\nabla^2 f(x_k))<-\delta$.
-By \eqref{eq:model-scales}, $2\sqrt{\sigma_k h_k}=-\mu/4$ and $R_k>0$,
-so \eqref{eq:kkt-complementarity} gives $\lambda_k=0$.
-The smallest eigenvalue in \eqref{eq:kkt-psd} is therefore
-$\mu+2\sqrt{\sigma_k h_k}+\lambda_k=3\mu/4<0$, a contradiction.
+We first show that $r_k>0$. If $s_k=0$, then \eqref{eq:kkt-stationarity}
+gives $\nabla f(x_k)=0$, while the failed stopping test and \eqref{eq:model-scales}
+imply that the model Hessian has a negative eigenvalue. Since $R_k>0$,
+this contradicts the global optimality of $s_k=0$.
 
+Now fix a trial satisfying \eqref{eq:safe}.
 Let $M_k=\max_{0\le u\le1}\norm{\nabla^3 f(x_k+us_k)}$ as in
 Lemma~\ref{lem:taylor-remainders}. For the function decrease,
 \begin{subequations}
@@ -46,8 +44,9 @@ For the gradient at the trial point,
 \end{equation}
 \end{subequations}
 
-We now bound $M_k$ using \eqref{eq:assumption}.
-Taking norms in \eqref{eq:kkt-stationarity} gives the first equality below.
+To bound $M_k$ using \eqref{eq:assumption}, we use the following estimate,
+which holds for every trial. Taking norms in \eqref{eq:kkt-stationarity}
+gives the first equality below.
 Taking the inner product of the same condition with $s_k/r_k$ gives the second.
 We then use Cauchy--Schwarz and the Rayleigh quotient bound
 $s_k^T\nabla^2f(x_k)s_k\ge\lambda_{\min}(\nabla^2 f(x_k))r_k^2$ to obtain
@@ -141,7 +140,7 @@ Rejections leave the iterate, and hence the finite threshold in
 backtracking terminates after finitely many doublings.
 \end{proof}
 
-\subsection{Accepted steps: boundary and interior cases}
+\subsection{Boundary and interior steps}
 \label{sec:accepted-steps}
 Let $\tau_j$ denote the trial index of the $(j+1)$st accepted step, starting
 with $j=0$. Write $y_j$ for the iterate after $j$ accepted steps, so that
@@ -163,44 +162,8 @@ Partition the accepted steps into boundary and interior steps:
  \mathcal B=\{j:r_{\tau_j}=R_{\tau_j}\},\qquad
  \mathcal I=\{j:r_{\tau_j}<R_{\tau_j}\}.
 \end{equation}
-For $j\ge1$, accepting trial $\tau_{j-1}$ moves the iterate to $y_j$
-and halves the scale for trial $\tau_{j-1}+1$:
-\[
- \sigma_{\tau_{j-1}+1}=\tfrac12\sigma_{\tau_{j-1}}.
-\]
-If this next trial is accepted, then $\tau_j=\tau_{j-1}+1$ and
-$\sigma_{\tau_j}=\sigma_{\tau_{j-1}}/2$.
-At $y_0$, the first trial uses $\sigma_0$. Setting
-$\sigma_{\tau_{-1}}:=2\sigma_0$ gives the same identity when $\tau_0=0$.
 
-If one or more trials at $y_j$ are rejected before trial $\tau_j$,
-the last rejected trial has index $\tau_j-1$ and
-$x_{\tau_j-1}=x_{\tau_j}=y_j$. By Lemma~\ref{lem:safe}, its scale
-must fall below the threshold in \eqref{eq:safe}. Doubling that scale gives
-\[
- \sigma_{\tau_j}=2\sigma_{\tau_j-1}
- <2\bigl(L_0+L_1g_j+\sqrt{L_1}\chi_j\bigr).
-\]
-Combining the two cases gives
-\begin{equation}\label{eq:backtrack-upper}
- \sigma_{\tau_j}\le\max\left\{
-       \frac{\sigma_{\tau_{j-1}}}{2},\,
-       2\bigl(L_0+L_1g_j+\sqrt{L_1}\chi_j\bigr)\right\}.
-\end{equation}
-Since $r_{\tau_j}\le R_{\tau_j}$, each step gives a positive decrease.
-Summing over any $m\ge1$ consecutive accepted steps starting at $b\ge0$ then gives
-\begin{equation}\label{eq:descent-sum}
- \begin{aligned}
- \Delta_j&\underset{\eqref{eq:accept-value}}{\ge}
-       \tfrac34\sqrt{\sigma_{\tau_j}h_{\tau_j}}\,r_{\tau_j}^2
-       \underset{\eqref{eq:model-scales}}{\ge}3\sigma_{\tau_j}r_{\tau_j}^3>0,\\
- 3\sum_{j=b}^{b+m-1}\sigma_{\tau_j}r_{\tau_j}^3
- &\le\sum_{j=b}^{b+m-1}\Delta_j
- =f(y_b)-f(y_{b+m})\le f(x_0)-f_*=\Delta.
- \end{aligned}
-\end{equation}
-
-\begin{lemma}[Boundary and interior estimates]\label{lem:geometry}
+\begin{lemma}\label{lem:geometry}
 For every $j\in\mathcal B$,
 \begin{equation}\label{eq:boundary}
  \begin{aligned}

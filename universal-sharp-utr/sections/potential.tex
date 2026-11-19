@@ -1,7 +1,46 @@
 \subsection{Scale control and initial gradient reduction}
 \label{sec:potential-proof}
 
-\begin{lemma}[One-step scale and gradient estimates]\label{lem:young}
+We first establish two estimates for accepted steps that will be used to control the adaptive scale.
+
+For $j\ge1$, accepting trial $\tau_{j-1}$ moves the iterate to $y_j$
+and halves the scale for trial $\tau_{j-1}+1$:
+\[
+ \sigma_{\tau_{j-1}+1}=\tfrac12\sigma_{\tau_{j-1}}.
+\]
+If this next trial is accepted, then $\tau_j=\tau_{j-1}+1$ and
+$\sigma_{\tau_j}=\sigma_{\tau_{j-1}}/2$.
+At $y_0$, the first trial uses $\sigma_0$. Setting
+$\sigma_{\tau_{-1}}:=2\sigma_0$ gives the same identity when $\tau_0=0$.
+
+If one or more trials at $y_j$ are rejected before trial $\tau_j$,
+the last rejected trial has index $\tau_j-1$ and
+$x_{\tau_j-1}=x_{\tau_j}=y_j$. By Lemma~\ref{lem:safe}, its scale
+must fall below the threshold in \eqref{eq:safe}. Doubling that scale gives
+\[
+ \sigma_{\tau_j}=2\sigma_{\tau_j-1}
+ <2\bigl(L_0+L_1g_j+\sqrt{L_1}\chi_j\bigr).
+\]
+Combining the two cases gives
+\begin{equation}\label{eq:backtrack-upper}
+ \sigma_{\tau_j}\le\max\left\{
+       \frac{\sigma_{\tau_{j-1}}}{2},\,
+       2\bigl(L_0+L_1g_j+\sqrt{L_1}\chi_j\bigr)\right\}.
+\end{equation}
+Since $r_{\tau_j}\le R_{\tau_j}$, each step gives a positive decrease.
+Summing over any $m\ge1$ consecutive accepted steps starting at $b\ge0$ then gives
+\begin{equation}\label{eq:descent-sum}
+ \begin{aligned}
+ \Delta_j&\underset{\eqref{eq:accept-value}}{\ge}
+       \tfrac34\sqrt{\sigma_{\tau_j}h_{\tau_j}}\,r_{\tau_j}^2
+       \underset{\eqref{eq:model-scales}}{\ge}3\sigma_{\tau_j}r_{\tau_j}^3>0,\\
+ 3\sum_{j=b}^{b+m-1}\sigma_{\tau_j}r_{\tau_j}^3
+ &\le\sum_{j=b}^{b+m-1}\Delta_j
+ =f(y_b)-f(y_{b+m})\le f(x_0)-f_*=\Delta.
+ \end{aligned}
+\end{equation}
+
+\begin{lemma}\label{lem:young}
 There is a universal constant $C>0$ such that, for every
 accepted step $j$ and every $\eta>0$,
 \begin{align}
@@ -74,7 +113,7 @@ Moving $\sigma_{\tau_j}/8$ to the left and rounding up the
 coefficients proves \eqref{eq:scale-recursion}.
 \end{proof}
 
-\begin{proposition}[Joint potential and scale sums]\label{prop:potential}
+\begin{proposition}\label{prop:potential}
 At each iterate $y_j$, define the potential
 \begin{equation}\label{eq:potential-definition}
  P_j=\sigma_{\tau_{j-1}}+10^4L_1g_j.
@@ -124,7 +163,7 @@ Dropping the nonpositive endpoint term and using
 proves \eqref{eq:scale-sum-general}.
 \end{proof}
 
-\begin{lemma}[Initial-stage bounds]
+\begin{lemma}
 \label{lem:initial-stage}
 There exists an integer
 \begin{equation}\label{eq:initial-count}
