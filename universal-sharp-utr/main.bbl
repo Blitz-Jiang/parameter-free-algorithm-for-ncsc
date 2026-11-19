@@ -1,9 +1,91 @@
-\begin{thebibliography}{2}
+\begin{thebibliography}{21}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Arjevani et~al.(2020)Arjevani, Carmon, Duchi, Foster, Sekhari, and
+  Sridharan]{arjevani2020second}
+Yossi Arjevani, Yair Carmon, John~C. Duchi, Dylan~J. Foster, Ayush Sekhari, and
+  Karthik Sridharan.
+\newblock Second-order information in non-convex stochastic optimization: Power
+  and limitations.
+\newblock In \emph{Proceedings of the Thirty Third Conference on Learning
+  Theory}, volume 125 of \emph{Proceedings of Machine Learning Research}, pages
+  242--299. PMLR, 2020.
+\newblock URL \url{https://proceedings.mlr.press/v125/arjevani20a.html}.
+
+\bibitem[Carmon et~al.(2020)Carmon, Duchi, Hinder, and
+  Sidford]{carmon2020lower}
+Yair Carmon, John~C. Duchi, Oliver Hinder, and Aaron Sidford.
+\newblock Lower bounds for finding stationary points {I}.
+\newblock \emph{Mathematical Programming}, 184\penalty0 (1--2):\penalty0
+  71--120, 2020.
+\newblock \doi{10.1007/s10107-019-01406-y}.
+\newblock URL \url{https://doi.org/10.1007/s10107-019-01406-y}.
+
+\bibitem[Cartis et~al.(2011)Cartis, Gould, and Toint]{cartis2011adaptive2}
+Coralia Cartis, Nicholas I.~M. Gould, and Philippe~L. Toint.
+\newblock Adaptive cubic regularisation methods for unconstrained optimization.
+  {Part II}: Worst-case function- and derivative-evaluation complexity.
+\newblock \emph{Mathematical Programming}, 130\penalty0 (2):\penalty0 295--319,
+  2011.
+\newblock \doi{10.1007/s10107-009-0337-y}.
+\newblock URL \url{https://doi.org/10.1007/s10107-009-0337-y}.
+
+\bibitem[Cartis et~al.(2012)Cartis, Gould, and Toint]{cartis2012second}
+Coralia Cartis, Nicholas I.~M. Gould, and Philippe~L. Toint.
+\newblock Complexity bounds for second-order optimality in unconstrained
+  optimization.
+\newblock \emph{Journal of Complexity}, 28\penalty0 (1):\penalty0 93--108,
+  2012.
+\newblock \doi{10.1016/j.jco.2011.06.001}.
+\newblock URL \url{https://doi.org/10.1016/j.jco.2011.06.001}.
+
+\bibitem[Cartis et~al.(2019)Cartis, Gould, and Toint]{cartis2019universal}
+Coralia Cartis, Nicholas I.~M. Gould, and Philippe~L. Toint.
+\newblock Universal regularization methods: Varying the power, the smoothness
+  and the accuracy.
+\newblock \emph{SIAM Journal on Optimization}, 29\penalty0 (1):\penalty0
+  595--615, 2019.
+\newblock \doi{10.1137/16M1106316}.
+\newblock URL \url{https://doi.org/10.1137/16M1106316}.
+
+\bibitem[Curtis et~al.(2017)Curtis, Robinson, and Samadi]{curtis2017trust}
+Frank~E. Curtis, Daniel~P. Robinson, and Mohammadreza Samadi.
+\newblock A trust region algorithm with a worst-case iteration complexity of
+  {$O(\epsilon^{-3/2})$} for nonconvex optimization.
+\newblock \emph{Mathematical Programming}, 162:\penalty0 1--32, 2017.
+\newblock \doi{10.1007/s10107-016-1026-2}.
+\newblock URL \url{https://doi.org/10.1007/s10107-016-1026-2}.
+
+\bibitem[Curtis et~al.(2018)Curtis, Lubberts, and Robinson]{curtis2018concise}
+Frank~E. Curtis, Zachary Lubberts, and Daniel~P. Robinson.
+\newblock Concise complexity analyses for trust region methods.
+\newblock \emph{Optimization Letters}, 12\penalty0 (8):\penalty0 1713--1724,
+  2018.
+\newblock \doi{10.1007/s11590-018-1286-2}.
+\newblock URL \url{https://doi.org/10.1007/s11590-018-1286-2}.
+
+\bibitem[Curtis et~al.(2021)Curtis, Robinson, Royer, and
+  Wright]{curtis2021trust}
+Frank~E. Curtis, Daniel~P. Robinson, Cl{\'e}ment~W. Royer, and Stephen~J.
+  Wright.
+\newblock Trust-region {Newton-CG} with strong second-order complexity
+  guarantees for nonconvex optimization.
+\newblock \emph{SIAM Journal on Optimization}, 31\penalty0 (1):\penalty0
+  518--544, 2021.
+\newblock \doi{10.1137/19M130563X}.
+\newblock URL \url{https://doi.org/10.1137/19M130563X}.
+
+\bibitem[Diouane et~al.(2026)Diouane, Habiboullah, Khouna, and
+  Orban]{diouane2026generalized}
+Youssef Diouane, Mohamed~L. Habiboullah, Awa Khouna, and Dominique Orban.
+\newblock Complexity analysis of trust-region methods under
+  {$(\alpha,L_0,L_1)$}-smoothness.
+\newblock \emph{arXiv preprint arXiv:2609.33238}, 2026.
+\newblock URL \url{https://arxiv.org/abs/2609.33238}.
 
 \bibitem[Fang et~al.(2026)Fang, Marumo, and Takeda]{fang2026parameter}
 Shaoying Fang, Naoki Marumo, and Akiko Takeda.
@@ -12,11 +94,90 @@ Shaoying Fang, Naoki Marumo, and Akiko Takeda.
 \newblock \emph{arXiv preprint arXiv:2607.10741}, 2026.
 \newblock URL \url{https://arxiv.org/abs/2607.10741}.
 
+\bibitem[Grapiglia and Nesterov(2017)]{grapiglia2017regularized}
+Geovani~N. Grapiglia and Yurii Nesterov.
+\newblock Regularized {Newton} methods for minimizing functions with {H\"older}
+  continuous {Hessians}.
+\newblock \emph{SIAM Journal on Optimization}, 27\penalty0 (1):\penalty0
+  478--506, 2017.
+\newblock \doi{10.1137/16M1087801}.
+\newblock URL \url{https://doi.org/10.1137/16M1087801}.
+
+\bibitem[Gratton et~al.(2026)Gratton, Jerad, and Toint]{gratton2026fast}
+Serge Gratton, Sadok Jerad, and Philippe~L. Toint.
+\newblock A fast {Newton} method under local {Lipschitz} smoothness.
+\newblock \emph{EURO Journal on Computational Optimization}, 14:\penalty0
+  100128, 2026.
+\newblock \doi{10.1016/j.ejco.2026.100128}.
+\newblock URL \url{https://doi.org/10.1016/j.ejco.2026.100128}.
+
+\bibitem[Hamad and Hinder(2022)]{hamad2022consistently}
+Fadi Hamad and Oliver Hinder.
+\newblock A consistently adaptive trust-region method.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~35, pages 6640--6653, 2022.
+\newblock \doi{10.52202/068431-0481}.
+\newblock URL \url{https://doi.org/10.52202/068431-0481}.
+
+\bibitem[Hamad and Hinder(2024)]{hamad2024simple}
+Fadi Hamad and Oliver Hinder.
+\newblock A simple and practical adaptive trust-region method.
+\newblock \emph{arXiv preprint arXiv:2412.02079}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2412.02079}.
+\newblock Revised September 2026.
+
+\bibitem[Jiang et~al.(2026)Jiang, He, Zhang, Ge, Jiang, and
+  Ye]{jiang2026beyond}
+Yuntian Jiang, Chang He, Chuwen Zhang, Dongdong Ge, Bo~Jiang, and Yinyu Ye.
+\newblock Beyond nonconvexity: A universal trust-region method with new
+  analyses.
+\newblock \emph{Journal of Scientific Computing}, 106\penalty0 (1):\penalty0
+  28, 2026.
+\newblock \doi{10.1007/s10915-025-03154-y}.
+\newblock URL \url{https://doi.org/10.1007/s10915-025-03154-y}.
+
+\bibitem[Nesterov and Polyak(2006)]{nesterov2006cubic}
+Yurii Nesterov and Boris~T. Polyak.
+\newblock Cubic regularization of {Newton} method and its global performance.
+\newblock \emph{Mathematical Programming}, 108\penalty0 (1):\penalty0 177--205,
+  2006.
+\newblock \doi{10.1007/s10107-006-0706-8}.
+\newblock URL \url{https://doi.org/10.1007/s10107-006-0706-8}.
+
 \bibitem[Nocedal and Wright(2006)]{nocedal2006numerical}
 Jorge Nocedal and Stephen~J. Wright.
 \newblock \emph{Numerical Optimization}.
 \newblock Springer, New York, 2nd edition, 2006.
 \newblock \doi{10.1007/978-0-387-40065-5}.
 \newblock URL \url{https://doi.org/10.1007/978-0-387-40065-5}.
+
+\bibitem[Semenov et~al.(2026)Semenov, Jaggi, and Doikov]{semenov2026gradient}
+Andrei Semenov, Martin Jaggi, and Nikita Doikov.
+\newblock Gradient-normalized smoothness for optimization with approximate
+  {Hessians}.
+\newblock In \emph{International Conference on Learning Representations}, 2026.
+\newblock URL \url{https://openreview.net/forum?id=Epu8Lm6VMK}.
+
+\bibitem[Sirotenko(2026)]{sirotenko2026on}
+Clemens Sirotenko.
+\newblock On the universality of simple trust-region algorithms.
+\newblock \emph{arXiv preprint arXiv:2607.19647}, 2026.
+\newblock URL \url{https://arxiv.org/abs/2607.19647}.
+
+\bibitem[Xie et~al.(2024)Xie, Li, Zhang, Deng, Ge, and Ye]{xie2024trust}
+Chenghan Xie, Chenxi Li, Chuwen Zhang, Qi~Deng, Dongdong Ge, and Yinyu Ye.
+\newblock Trust region methods for nonconvex stochastic optimization beyond
+  {Lipschitz} smoothness.
+\newblock In \emph{Proceedings of the AAAI Conference on Artificial
+  Intelligence}, volume~38, pages 16049--16057, 2024.
+\newblock \doi{10.1609/aaai.v38i14.29537}.
+\newblock URL \url{https://doi.org/10.1609/aaai.v38i14.29537}.
+
+\bibitem[Zhang et~al.(2020)Zhang, He, Sra, and Jadbabaie]{zhang2020clipping}
+Jingzhao Zhang, Tianxing He, Suvrit Sra, and Ali Jadbabaie.
+\newblock Why gradient clipping accelerates training: A theoretical
+  justification for adaptivity.
+\newblock In \emph{International Conference on Learning Representations}, 2020.
+\newblock URL \url{https://arxiv.org/abs/1905.11881}.
 
 \end{thebibliography}

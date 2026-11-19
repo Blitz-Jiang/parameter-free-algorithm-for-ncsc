@@ -1,4 +1,4 @@
-Let $K$ be any finite number of accepted steps.
+Suppose the algorithm completes at least $K$ accepted steps, where $K\ge1$ is finite.
 If $K\le j_0$, then $K=O(\mathcal L)$ by \eqref{eq:initial-count}.
 Otherwise, set
 \[
@@ -91,9 +91,9 @@ Subtracting $m/2$ and using $K=j_0+m$ proves
  +\frac{L_0^2}{\delta^3}
  +\frac{L_1}{\delta}\right].
 \end{equation}
-Thus \eqref{eq:accepted-count} holds for every finite number of accepted steps.
-By Lemma~\ref{lem:safe}, an infinite run would have infinitely many
-accepted steps, contradicting \eqref{eq:accepted-count}.
+Thus \eqref{eq:accepted-count} holds whenever the algorithm completes at least
+$K$ accepted steps. By Lemma~\ref{lem:safe}, an infinite run would complete
+arbitrarily many accepted steps, contradicting this uniform bound.
 The algorithm therefore terminates at an
 $(\epsilon,\delta)$-second-order stationary point.
 

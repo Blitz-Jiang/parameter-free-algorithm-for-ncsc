@@ -3,7 +3,7 @@
 
 \begin{lemma}[One-step scale and gradient estimates]\label{lem:young}
 There is a universal constant $C>0$ such that, for every
-$0\le j<K$ and $\eta>0$,
+accepted step $j$ and every $\eta>0$,
 \begin{align}
  \sqrt{L_1}\chi_j
  &\le\frac{\sigma_{\tau_j}}{16}+256L_1g_j
@@ -75,22 +75,20 @@ coefficients proves \eqref{eq:scale-recursion}.
 \end{proof}
 
 \begin{proposition}[Joint potential and scale sums]\label{prop:potential}
-Define the potential
+At each iterate $y_j$, define the potential
 \begin{equation}\label{eq:potential-definition}
- P_j=\sigma_{\tau_{j-1}}+10^4L_1g_j\quad(0\le j\le K).
+ P_j=\sigma_{\tau_{j-1}}+10^4L_1g_j.
 \end{equation}
-Then, for a universal constant $C>0$,
+For a universal constant $C>0$ and every accepted step $j$,
 \begin{equation}\label{eq:potential}
- P_{j+1}\le\tfrac34P_j+4L_0+CL_1^{3/2}\Delta_j
-                  \quad(0\le j<K).
+ P_{j+1}\le\tfrac34P_j+4L_0+CL_1^{3/2}\Delta_j.
 \end{equation}
-In particular,
+In particular, at each iterate $y_j$ and each accepted step $j$, respectively,
 \begin{equation}\label{eq:potential-expansion}
- P_j\le(3/4)^jP_0+16L_0+CL_1^{3/2}\Delta
-                  \quad(0\le j\le K),
- \qquad \sigma_{\tau_j}\le CQ_0\quad(0\le j<K).
+ P_j\le(3/4)^jP_0+16L_0+CL_1^{3/2}\Delta,
+ \qquad \sigma_{\tau_j}\le CQ_0.
 \end{equation}
-For integers $b\ge0$ and $m\ge1$ with $b+m\le K$,
+For any $m\ge1$ consecutive accepted steps starting at $b\ge0$,
 \begin{equation}\label{eq:scale-sum-general}
  \sum_{j=b}^{b+m-1}\sigma_{\tau_j}
  \le3P_b+16mL_0+CL_1^{3/2}\Delta.
@@ -136,10 +134,10 @@ There exists an integer
 such that
 \begin{align}
  g_j&\le C(\Delta^2Q)^{1/3}
-                         &&(j_0\le j\le K),\label{eq:initial-gradient}\\
+                         &&(j\ge j_0),\label{eq:initial-gradient}\\
  \sum_{j=b}^{b+m-1}\sigma_{\tau_j}
  &\le C\bigl(mL_0+L_1^{3/2}\Delta\bigr)
-                         &&(j_0\le b<b+m\le K).
+                         &&(b\ge j_0,\ m\ge1).
                          \label{eq:scale-sum}
 \end{align}
 \end{lemma}
@@ -151,12 +149,12 @@ Set
 By construction, $(3/4)^{j_\sigma}P_0\le Q$.
 Hence,
 \begin{equation}\label{eq:scale-stabilized}
- P_j\underset{\eqref{eq:potential-expansion}}{\le}CQ\quad(j_\sigma\le j\le K),\qquad
- \sigma_{\tau_j}\le CQ\quad(j_\sigma\le j<K).
+ P_j\underset{\eqref{eq:potential-expansion}}{\le}CQ,\qquad
+ \sigma_{\tau_j}\le CQ\qquad(j\ge j_\sigma).
 \end{equation}
 Also $P_0\le10^4Q_0$ gives
 $j_\sigma=O(1+\lp(Q_0/Q))$.
-For $j_\sigma\le b<b+m\le K$ with $m\ge1$,
+For any block of $m\ge1$ accepted steps starting at $b\ge j_\sigma$,
 \[
  \begin{aligned}
  \sum_{j=b}^{b+m-1}\sigma_{\tau_j}
@@ -175,9 +173,9 @@ For $j\in\mathcal B$,
 Induction over the two cases, using $\Delta_j\le\Delta$, gives
 \begin{equation}\label{eq:global-gradient-bound}
  g_j\underset{\eqref{eq:interior},\,\eqref{eq:potential-expansion},\,\eqref{eq:boundary-gradient}}{\le}
-       \max\{g_0,C(\Delta^2Q_0)^{1/3}\}\qquad(0\le j\le K).
+       \max\{g_0,C(\Delta^2Q_0)^{1/3}\}.
 \end{equation}
-For $j_\sigma\le j<K$, the sharper scale bound instead gives
+For each accepted step $j\ge j_\sigma$, the sharper scale bound instead gives
 \begin{equation}\label{eq:stabilized-gradient-recursion}
  g_{j+1}\underset{\eqref{eq:interior},\,\eqref{eq:scale-stabilized},\,\eqref{eq:boundary-gradient}}{\le}
  \begin{cases}
@@ -189,7 +187,7 @@ Thus, boundary steps bound the gradient at the target scale, while
 interior steps reduce it geometrically.
 With a common universal $C\ge1$, iterating
 \eqref{eq:stabilized-gradient-recursion} from \eqref{eq:global-gradient-bound}
-gives, for $j_\sigma\le j\le K$,
+gives, at each iterate $y_j$ with $j\ge j_\sigma$,
 \[
  g_j\le\max\left\{
  (11/16)^{j-j_\sigma}

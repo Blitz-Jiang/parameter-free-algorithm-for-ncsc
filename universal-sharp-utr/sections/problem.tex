@@ -21,14 +21,19 @@ point satisfies
  \lambda_{\min}(\nabla^2 f(x))\ge-\delta.
 \end{equation}
 
-{\color{red} write a lemma here, let $M_k=\max_{0\le u\le1}\norm{\nabla^3f(x_k+us_k)}$ introduce the follow two inequalities
-\[
-\begin{aligned}
+\begin{lemma}\label{lem:taylor-remainders}
+For any $x_k,s_k\in\R^n$, let
+$M_k=\max_{0\le u\le1}\norm{\nabla^3f(x_k+us_k)}$. Then
+\begin{subequations}
+\begin{align}
  \bigl|f(x_k+s_k)-f(x_k)-\nabla f(x_k)^Ts_k
                -\tfrac12s_k^T\nabla^2f(x_k)s_k\bigr|
- &\le M_kr_k^3/6,\\
+ &\le \tfrac16 M_k\norm{s_k}^3, \label{eq:taylor-value}\\
  \norm{\nabla f(x_k+s_k)-\nabla f(x_k)-\nabla^2f(x_k)s_k}
- &\le M_kr_k^2/2.
-\end{aligned}
-\]
-}
+ &\le \tfrac12 M_k\norm{s_k}^2. \label{eq:taylor-gradient}
+\end{align}
+\end{subequations}
+\end{lemma}
+\begin{proof}
+Apply Taylor's formula with integral remainder to $f$ and $\nabla f$ along the segment from $x_k$ to $x_k+s_k$.
+\end{proof}

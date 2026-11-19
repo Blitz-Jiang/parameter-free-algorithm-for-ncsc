@@ -1,22 +1,6 @@
 \subsection{Nonzero steps and finite backtracking}
 
 Write $r_k=\norm{s_k}$.
-{\color{red} the following Lemma~\ref{lem:nonzero} is auxiliary. you could remove it, just mention it whenever it is used. or simplify the proof, the proof can be done in 2 lines.}
-\begin{lemma}[Nonzero trial steps]\label{lem:nonzero}
-Every trial has $h_k,R_k,r_k>0$.
-\end{lemma}
-\begin{proof}
-By \eqref{eq:model-scales}, $h_k=0$ would imply
-$\nabla f(x_k)=0$ and $\nabla^2f(x_k)\succeq0$, so the stopping
-test would have succeeded. Thus $h_k,R_k>0$.
-If $\nabla f(x_k)\ne0$, \eqref{eq:kkt-stationarity}
-rules out $s_k=0$. Otherwise failure of the stopping test gives
-$\lambda_{\min}(\nabla^2f(x_k))<-\delta$, and
-$2\sqrt{\sigma_kh_k}=-\tfrac14\lambda_{\min}(\nabla^2f(x_k))$.
-The model Hessian therefore has a negative eigenvalue. A sufficiently
-small nonzero step along a corresponding eigenvector has negative
-model value, whereas the value at zero is zero. Hence $r_k>0$.
-\end{proof}
 
 \begin{lemma}[Sufficient condition for acceptance]\label{lem:safe}
 A trial is accepted whenever
@@ -26,34 +10,69 @@ A trial is accepted whenever
 \end{equation}
 Consequently, backtracking terminates after finitely many rejections.
 \end{lemma}
-{\color{red} in this proof, please start from the LHS of \eqref{eq:accept-value},\eqref{eq:accept-gradient}. i.e., first, use the new lemma in the preliminary to derive
-\[f(x_k)-f(x_k+s_k) \ge ??\]
-and 
-\[\|\nabla f(x_k+s_k)\| \le ??\]
-(?? should be some thing w.r.t. $M_k$.)
-finally, bound $M_k$ from upper and \eqref{eq:safe} follows. 
-}
 \begin{proof}
-Fix a trial satisfying \eqref{eq:safe}.
-By Lemma~\ref{lem:nonzero}, $r_k>0$.
-Taking norms in \eqref{eq:kkt-stationarity}, and then taking its
-inner product with $s_k/r_k$, yields
+Fix a trial satisfying \eqref{eq:safe}. We first prove that $r_k>0$.
+Suppose $r_k=0$. Then \eqref{eq:kkt-stationarity} gives $\nabla f(x_k)=0$.
+Since the stopping test failed, $\mu:=\lambda_{\min}(\nabla^2 f(x_k))<-\delta$.
+By \eqref{eq:model-scales}, $2\sqrt{\sigma_k h_k}=-\mu/4$ and $R_k>0$,
+so \eqref{eq:kkt-complementarity} gives $\lambda_k=0$.
+The smallest eigenvalue in \eqref{eq:kkt-psd} is therefore
+$\mu+2\sqrt{\sigma_k h_k}+\lambda_k=3\mu/4<0$, a contradiction.
+
+Let $M_k=\max_{0\le u\le1}\norm{\nabla^3 f(x_k+us_k)}$ as in
+Lemma~\ref{lem:taylor-remainders}. For the function decrease,
+\begin{subequations}
+\begin{equation}\label{eq:trial-value-remainder}
+\begin{aligned}
+ f(x_k)-f(x_k+s_k)
+ &\underset{\eqref{eq:taylor-value}}{\ge}
+ -\nabla f(x_k)^Ts_k-\tfrac12s_k^T\nabla^2 f(x_k)s_k-\tfrac16M_kr_k^3\\
+ &\underset{\eqref{eq:kkt-stationarity}}{=}
+ \tfrac12s_k^T\nabla^2 f(x_k)s_k
+ +(2\sqrt{\sigma_kh_k}+\lambda_k)r_k^2-\tfrac16M_kr_k^3\\
+ &\underset{\eqref{eq:kkt-psd}}{\ge}
+ \bigl(\sqrt{\sigma_kh_k}+\tfrac12\lambda_k\bigr)r_k^2-\tfrac16M_kr_k^3.
+\end{aligned}
+\end{equation}
+For the gradient at the trial point,
+\begin{equation}\label{eq:trial-gradient-remainder}
+\begin{aligned}
+ \norm{\nabla f(x_k+s_k)}
+ &\underset{\eqref{eq:taylor-gradient}}{\le}
+ \norm{\nabla f(x_k)+\nabla^2 f(x_k)s_k}+\tfrac12M_kr_k^2\\
+ &\underset{\eqref{eq:kkt-stationarity}}{=}
+ (2\sqrt{\sigma_kh_k}+\lambda_k)r_k+\tfrac12M_kr_k^2.
+\end{aligned}
+\end{equation}
+\end{subequations}
+
+We now bound $M_k$ using \eqref{eq:assumption}.
+Taking norms in \eqref{eq:kkt-stationarity} gives the first equality below.
+Taking the inner product of the same condition with $s_k/r_k$ gives the second.
+We then use Cauchy--Schwarz and the Rayleigh quotient bound
+$s_k^T\nabla^2f(x_k)s_k\ge\lambda_{\min}(\nabla^2 f(x_k))r_k^2$ to obtain
 \begin{equation}\label{eq:linear-gradient}
  \begin{aligned}
  \norm{\nabla f(x_k)+\nabla^2f(x_k)s_k}
- &=
-       (2\sqrt{\sigma_kh_k}+\lambda_k)r_k,\\
- (2\sqrt{\sigma_kh_k}+\lambda_k)r_k
- &{\color{red}\le\norm{\nabla f(x_k)}
-       +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k.}
+ &= (2\sqrt{\sigma_kh_k}+\lambda_k)r_k\\
+ &= -\frac{\nabla f(x_k)^Ts_k}{r_k}
+    -\frac{s_k^T\nabla^2f(x_k)s_k}{r_k}\\
+ &\le \norm{\nabla f(x_k)}+[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k.
  \end{aligned}
 \end{equation}
-{\color{red} both the inequality above and below need more interpretation}
-By convexity of the norm, \eqref{eq:linear-gradient} implies, for $0\le u\le1$,
+For $0\le u\le1$, the vector $\nabla f(x_k)+u\nabla^2f(x_k)s_k$
+is the convex combination of $\nabla f(x_k)$ and
+$\nabla f(x_k)+\nabla^2f(x_k)s_k$ with weights $1-u$ and $u$.
+By convexity of the norm,
 \begin{equation}\label{eq:linear-segment}
- {\color{red}\norm{\nabla f(x_k)+u\nabla^2f(x_k)s_k}
- \le\norm{\nabla f(x_k)}
-       +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k.}
+ \begin{aligned}
+ \norm{\nabla f(x_k)+u\nabla^2f(x_k)s_k}
+ &\le (1-u)\norm{\nabla f(x_k)}
+       +u\norm{\nabla f(x_k)+\nabla^2f(x_k)s_k}\\
+ &\underset{\eqref{eq:linear-gradient}}{\le}
+       \norm{\nabla f(x_k)}+u[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k\\
+ &\le \norm{\nabla f(x_k)}+[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k.
+ \end{aligned}
 \end{equation}
 
 By \eqref{eq:model-scales} and \eqref{eq:safe},
@@ -71,8 +90,8 @@ Hence,
        \frac14\sqrt{\frac{L_1h_k}{\sigma_k}}
  \le\frac14,\qquad L_1r_k^2\le\frac1{16}.
 \end{equation}
-Let $M_k=\max_{0\le u\le1}\norm{\nabla^3f(x_k+us_k)}$.
-Taylor's formula gives, for $0\le u\le1$,
+For $0\le u\le1$, apply \eqref{eq:taylor-gradient} to the step $us_k$.
+The maximum of $\norm{\nabla^3f}$ on this shorter segment is at most $M_k$, so
 \begin{equation}\label{eq:segment-gradient}
  \begin{aligned}
  \norm{\nabla f(x_k+us_k)}
@@ -103,45 +122,17 @@ Rearranging gives
 \begin{equation}\label{eq:third-derivative-bound}
  M_k\le\frac{32}{31}\sigma_k.
 \end{equation}
-Taylor's formula and \eqref{eq:third-derivative-bound} give
-\[
- \begin{aligned}
- \bigl|f(x_k+s_k)-f(x_k)-\nabla f(x_k)^Ts_k
-               -\tfrac12s_k^T\nabla^2f(x_k)s_k\bigr|
- &\le M_kr_k^3/6
-       \le\sigma_kr_k^3,\\
- \norm{\nabla f(x_k+s_k)-\nabla f(x_k)-\nabla^2f(x_k)s_k}
- &\le M_kr_k^2/2
-       \le3\sigma_kr_k^2.
- \end{aligned}
-\]
-The optimality conditions give
-\begin{equation}\label{eq:model-decrease}
- \begin{aligned}
- -\nabla f(x_k)^Ts_k-\tfrac12s_k^T\nabla^2f(x_k)s_k
- &\underset{\eqref{eq:kkt-stationarity}}{=}
-       \tfrac12s_k^T\nabla^2f(x_k)s_k
-       +(2\sqrt{\sigma_kh_k}+\lambda_k)r_k^2\\
- &\underset{\eqref{eq:kkt-psd}}{\ge}
-       \left(\sqrt{\sigma_kh_k}+\tfrac12\lambda_k\right)r_k^2.
- \end{aligned}
-\end{equation}
-Using the remainder bounds and $\sigma_kr_k\le\sqrt{\sigma_kh_k}/4$,
+By \eqref{eq:third-derivative-bound}, $M_k/6\le\sigma_k$ and
+$M_k/2\le3\sigma_k$. Substituting in
+\eqref{eq:trial-value-remainder} and \eqref{eq:trial-gradient-remainder}
+and using $r_k\le R_k=\sqrt{h_k}/(4\sqrt{\sigma_k})$ gives
 \begin{align*}
  f(x_k)-f(x_k+s_k)
- &\underset{\eqref{eq:model-decrease}}{\ge}
-       \left(\sqrt{\sigma_kh_k}+\tfrac12\lambda_k\right)r_k^2
-          -\sigma_kr_k^3\\
- &\ge
-       \tfrac34\sqrt{\sigma_kh_k}\,r_k^2
-          +\tfrac12\lambda_kr_k^2.
-\end{align*}
-\begin{align*}
+ &\ge \bigl(\sqrt{\sigma_kh_k}+\tfrac12\lambda_k-\sigma_kr_k\bigr)r_k^2
+ \ge \bigl(\tfrac34\sqrt{\sigma_kh_k}+\tfrac12\lambda_k\bigr)r_k^2,\\
  \norm{\nabla f(x_k+s_k)}
- &\underset{\eqref{eq:linear-gradient}}{\le}
-       (2\sqrt{\sigma_kh_k}+\lambda_k)r_k+3\sigma_kr_k^2\\
- &\underset{\eqref{eq:model-scales},\,\eqref{eq:subproblem}}{\le}
-       \tfrac12h_k+\lambda_kr_k+\tfrac3{16}h_k
+ &\le (2\sqrt{\sigma_kh_k}+\lambda_k)r_k+3\sigma_kr_k^2\\
+ &\le \tfrac12h_k+\lambda_kr_k+\tfrac3{16}h_k
  =\tfrac{11}{16}h_k+\lambda_kr_k.
 \end{align*}
 Thus \eqref{eq:accept-value} and \eqref{eq:accept-gradient} hold.
@@ -152,56 +143,60 @@ backtracking terminates after finitely many doublings.
 
 \subsection{Accepted steps: boundary and interior cases}
 \label{sec:accepted-steps}
-{\color{red} based on my understanding, in section 4.2, 4.3, we don't need to introduce the notation $K$. all results in these section holds for any $j,m >0$. introducing an additional $K$ here will make the proof harder to follow.}
-Let $\tau_0<\cdots<\tau_{K-1}$ be the indices of the first
-$K\ge1$ accepted trials of Algorithm~\ref{alg:utr}.
-Set $\tau_K=\tau_{K-1}+1$, so that $x_{\tau_K}$ is the point
-immediately after the $K$-th accepted step.
-Rejections leave the point unchanged, so
+Let $\tau_j$ denote the trial index of the $(j+1)$st accepted step, starting
+with $j=0$. Write $y_j$ for the iterate after $j$ accepted steps, so that
 \begin{equation}\label{eq:accepted-points}
- x_{\tau_0}=x_0,\qquad
- x_{\tau_{j+1}}=x_{\tau_j}+s_{\tau_j}\quad(0\le j<K).
+ y_0=x_0,\qquad y_{j+1}=x_{\tau_j}+s_{\tau_j}.
 \end{equation}
-For these points define the gradient norm, negative curvature,
-and function decrease by
+Since rejected trials leave the iterate unchanged, $x_{\tau_j}=y_j$ at
+each accepted step. In this section and Section~\ref{sec:potential-proof},
+estimates for iterates, steps, and blocks of steps apply whenever the
+corresponding iterates or steps have been generated.
+Define
 \begin{equation}\label{eq:accepted-measures}
- \begin{aligned}
- g_j&=\norm{\nabla f(x_{\tau_j})},\qquad
- \chi_j=[-\lambda_{\min}(\nabla^2f(x_{\tau_j}))]_+
-       &&(0\le j\le K),\\
- \Delta_j&=f(x_{\tau_j})-f(x_{\tau_{j+1}})
-       &&(0\le j<K).
- \end{aligned}
+ g_j=\norm{\nabla f(y_j)},\qquad
+ \chi_j=[-\lambda_{\min}(\nabla^2f(y_j))]_+,\qquad
+ \Delta_j=f(y_j)-f(y_{j+1}).
 \end{equation}
 Partition the accepted steps into boundary and interior steps:
 \begin{equation}\label{eq:step-sets}
- \mathcal B=\{0\le j<K:r_{\tau_j}=R_{\tau_j}\},\qquad
- \mathcal I=\{0,\ldots,K-1\}\setminus\mathcal B.
+ \mathcal B=\{j:r_{\tau_j}=R_{\tau_j}\},\qquad
+ \mathcal I=\{j:r_{\tau_j}<R_{\tau_j}\}.
 \end{equation}
-{\color{blue}With the convention $\sigma_{\tau_{-1}}=2\sigma_0$, the initial
-trial for the $j$-th accepted step uses scale $\sigma_{\tau_{j-1}}/2$.
-If this trial is accepted, then $\sigma_{\tau_j}=\sigma_{\tau_{j-1}}/2$.
-Otherwise, the last rejected trial uses scale $\sigma_{\tau_j}/2$,
-which must violate \eqref{eq:safe} by Lemma~\ref{lem:safe}. Hence}
+For $j\ge1$, accepting trial $\tau_{j-1}$ moves the iterate to $y_j$
+and halves the scale for trial $\tau_{j-1}+1$:
+\[
+ \sigma_{\tau_{j-1}+1}=\tfrac12\sigma_{\tau_{j-1}}.
+\]
+If this next trial is accepted, then $\tau_j=\tau_{j-1}+1$ and
+$\sigma_{\tau_j}=\sigma_{\tau_{j-1}}/2$.
+At $y_0$, the first trial uses $\sigma_0$. Setting
+$\sigma_{\tau_{-1}}:=2\sigma_0$ gives the same identity when $\tau_0=0$.
 
-{\color{red} the blue colored content is very confusing. you can use intermediate index like $\tau_j + 1$, $\tau_{j+1}-1$ to make it more readable. as i understand, ``the initial
-trial for the $j$-th accepted step uses scale $\sigma_{\tau_{j-1}}/2$.'' is basically saying ``$\sigma_{\tau_{j-1}+1} = \sigma_{\tau_{j-1}}/2$''} 
+If one or more trials at $y_j$ are rejected before trial $\tau_j$,
+the last rejected trial has index $\tau_j-1$ and
+$x_{\tau_j-1}=x_{\tau_j}=y_j$. By Lemma~\ref{lem:safe}, its scale
+must fall below the threshold in \eqref{eq:safe}. Doubling that scale gives
+\[
+ \sigma_{\tau_j}=2\sigma_{\tau_j-1}
+ <2\bigl(L_0+L_1g_j+\sqrt{L_1}\chi_j\bigr).
+\]
+Combining the two cases gives
 \begin{equation}\label{eq:backtrack-upper}
  \sigma_{\tau_j}\le\max\left\{
        \frac{\sigma_{\tau_{j-1}}}{2},\,
-       2\bigl(L_0+L_1g_j+\sqrt{L_1}\chi_j\bigr)\right\}
-       \quad(0\le j<K).
+       2\bigl(L_0+L_1g_j+\sqrt{L_1}\chi_j\bigr)\right\}.
 \end{equation}
-Since $r_{\tau_j}\le R_{\tau_j}$,
+Since $r_{\tau_j}\le R_{\tau_j}$, each step gives a positive decrease.
+Summing over any $m\ge1$ consecutive accepted steps starting at $b\ge0$ then gives
 \begin{equation}\label{eq:descent-sum}
  \begin{aligned}
  \Delta_j&\underset{\eqref{eq:accept-value}}{\ge}
        \tfrac34\sqrt{\sigma_{\tau_j}h_{\tau_j}}\,r_{\tau_j}^2
-       \underset{\eqref{eq:model-scales}}{\ge}3\sigma_{\tau_j}r_{\tau_j}^3>0
-                  &&(0\le j<K),\\
- 3\sum_{j=0}^{K-1}\sigma_{\tau_j}r_{\tau_j}^3
- &\le\sum_{j=0}^{K-1}\Delta_j
- =f(x_0)-f(x_{\tau_K})\le\Delta.
+       \underset{\eqref{eq:model-scales}}{\ge}3\sigma_{\tau_j}r_{\tau_j}^3>0,\\
+ 3\sum_{j=b}^{b+m-1}\sigma_{\tau_j}r_{\tau_j}^3
+ &\le\sum_{j=b}^{b+m-1}\Delta_j
+ =f(y_b)-f(y_{b+m})\le f(x_0)-f_*=\Delta.
  \end{aligned}
 \end{equation}
 
