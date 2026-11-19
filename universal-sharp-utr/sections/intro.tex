@@ -1,4 +1,148 @@
 \section{Introduction}
+
+\subsection{Related work}
+We review complexity results for regularized Newton and trust-region
+methods, emphasizing adaptation to unknown smoothness parameters and
+the distinction between first- and second-order stationarity.
+In the comparisons below, $\Delta=f(x_0)-\inf f$, and $\epsilon$ and
+$\delta$ denote the gradient and negative-curvature tolerances,
+respectively.
+
+\paragraph{Regularized Newton methods and classical complexity.}
+\citet{nesterov2006cubic} establish the classical cubic-regularization
+benchmark
+$O\!\left(1+\Delta[\sqrt{L_0}\epsilon^{-3/2}+L_0^2\delta^{-3}]\right)$
+for second-order stationarity when the Hessian Lipschitz constant
+$L_0$ is known.
+\citet{cartis2011adaptive2} analyze adaptive cubic regularization
+(ARC), retaining the $O(\epsilon^{-3/2})$ first-order evaluation bound
+while allowing approximate Hessians and inexact subproblem solutions
+under suitable accuracy conditions.
+\citet{cartis2012second} derive second-order evaluation bounds for
+both cubic regularization and classical trust-region methods,
+including sharp $\delta^{-3}$ dependence for their algorithmic
+frameworks.
+\citet{grapiglia2017regularized} develop regularized Newton methods
+that adapt to unknown H\"older regularity of the Hessian and attain
+the corresponding nonconvex first-order complexity rates.
+\citet{cartis2019universal} extend this universality principle to
+higher-order Taylor models, with bounds that reflect the regularity,
+regularization power, and model accuracy without requiring the
+smoothness parameters in advance.
+
+\paragraph{Trust-region methods and parameter adaptivity.}
+\citet{curtis2017trust} introduce TRACE, whose modified acceptance
+and radius-update rules attain $O(\epsilon^{-3/2})$ first-order
+evaluation complexity under Lipschitz-Hessian smoothness.
+\citet{curtis2018concise} give concise analyses of radius-controlled
+trust-region methods, including a fixed-radius scheme attaining
+$O(1+\Delta\sqrt{L_0}\epsilon^{-3/2})$ first-order complexity when $L_0$ and
+$\epsilon$ are available to choose the radius.
+\citet{curtis2021trust} develop exact and Newton--CG trust-region
+variants with strong second-order iteration and Hessian-vector
+product complexity guarantees, explicitly accounting for inexact
+subproblem solutions.
+\citet{jiang2026beyond} combine gradient-dependent quadratic
+regularization with a trust-region constraint in the universal
+trust-region (UTR) method, obtaining
+$\widetilde O(\epsilon^{-3/2})$ nonconvex second-order complexity
+under Lipschitz-Hessian smoothness, together with convex and local
+convergence guarantees and an adaptive implementation.
+Their nonconvex analysis incurs a multiplicative logarithmic factor,
+and their regularized quadratic subproblem is the algorithmic
+starting point of the present work.
+
+\citet{hamad2022consistently} introduce the consistently adaptive
+trust-region method (CAT), which achieves the sharp first-order
+leading bound $O(\Delta\sqrt{L_0}\epsilon^{-3/2})$, up to additive
+logarithmic terms, without knowing $L_0$ or $\Delta$.
+\citet{hamad2024simple} refine CAT into a practical method with
+inexact subproblem solves, retaining this leading bound while
+improving its implementation and numerical performance.
+\citet{sirotenko2026on} extend the CAT approach to unknown
+$\nu$-H\"older Hessian regularity, obtaining
+$O(\epsilon^{-(2+\nu)/(1+\nu)})$ nonconvex first-order complexity
+for exact UniCAT, as well as universal convex and local rates.
+These first-order results motivate sharp parameter dependence, but
+do not provide the independent curvature-tolerance guarantee studied
+here.
+
+\paragraph{Generalized smoothness.}
+\citet{zhang2020clipping} motivate gradient-dependent smoothness
+through a Hessian bound growing with the gradient norm and use it
+to explain the advantage of clipped and normalized gradient methods.
+\citet{xie2024trust} extend trust-region analysis to stochastic
+problems with generalized first- and second-order smoothness,
+obtaining $O(\epsilon^{-7/2})$ stochastic oracle complexity for
+approximate second-order stationarity and improving it to
+$O(\epsilon^{-3})$ through variance reduction.
+\citet{diouane2026generalized} establish parameter-agnostic
+first-order complexity for classical trust-region methods under
+generalized gradient smoothness, allowing general Hessian
+approximations, including limited-memory quasi-Newton models.
+\citet{gratton2026fast} analyze an adaptive Newton method with
+negative-curvature steps under a local two-point generalized
+Hessian condition and a lower Hessian bound on the initial sublevel
+set, obtaining second-order complexity of order
+$|\log\epsilon|(\epsilon^{-3/2}+\delta^{-3})$ when problem
+parameters are fixed.
+
+\citet{semenov2026gradient} introduce gradient-normalized smoothness
+to relate Hessian approximation quality to convergence of
+gradient-regularized methods, with adaptive search removing the need
+to specify the local smoothness scale.
+Under the global two-point condition
+\[
+ \norm{\nabla^2f(y)-\nabla^2f(x)}
+ \le (L_0+L_1\norm{\nabla f(x)})\norm{y-x}
+ \qquad\text{for all }x,y,
+\]
+their exact-Hessian case gives the first-order leading
+bound $O\!\left(\Delta[\sqrt{L_0}\epsilon^{-3/2}
++\sqrt{L_1}\epsilon^{-1}]\right)$.
+This specialization requires the exact Hessian to be an admissible
+positive-semidefinite model; their general nonconvex theory also
+accounts for Hessian approximation error and targets first-order
+stationarity.
+
+Most directly related is \citet{fang2026parameter}, who analyze a
+parameter-free cubic-regularized Newton method under
+$f\in C^3$ and the pointwise condition
+$\norm{\nabla^3 f(x)}\le L_0+L_1\norm{\nabla f(x)}$.
+Their Corollary~1 gives the second-order oracle bound
+\[
+ O\!\left(\Delta\left[
+ \frac{\sqrt{L_0}}{\epsilon^{3/2}}+
+ \frac{\sqrt{L_1}}{\epsilon}+
+ \frac{L_0^2}{\delta^3}+
+ \frac{L_1}{\delta}\right]\right)+\widetilde O(1),
+\]
+where the additive logarithmic terms are independent of
+$\epsilon$ and $\delta$, and inexact cubic subproblem solutions are
+allowed.
+Their pointwise condition is weaker than the corresponding global
+two-point Hessian condition within the common $C^3$ class; the latter
+condition, however, can also be imposed on merely $C^2$ functions.
+We work under the same pointwise assumption and obtain the same
+four-term rate using quadratic trust-region subproblems.
+The distinction is the UTR construction and its analysis: a joint
+scale--gradient potential controls boundary and interior steps and
+removes the multiplicative logarithmic loss of the earlier UTR
+analysis.
+
+\paragraph{Lower bounds.}
+\citet{carmon2020lower} prove the oracle lower bound
+$\Omega(\Delta\sqrt{L_0}\epsilon^{-3/2})$ for first-order
+stationarity on the Lipschitz-Hessian class, even for randomized
+algorithms with access to all derivatives.
+\citet{arjevani2020second} establish a complementary
+negative-curvature lower bound whose noiseless second-order
+specialization is $\Omega(\Delta L_0^2\delta^{-3})$ for
+zero-respecting algorithms.
+These results provide the sharp Lipschitz-Hessian benchmarks for
+the two tolerance terms; optimality of the additional
+$L_1$-dependent terms under generalized smoothness remains open.
+
 \paragraph{Notations.}
 Write $[z]_+:=\max\{z,0\}$ and
 $\lp t:=\max\{\log t,0\}$ for $t>0$, with $\lp0:=0$.

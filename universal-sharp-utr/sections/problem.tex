@@ -1,4 +1,4 @@
-\section{Problem setting and assumptions}
+\section{Preliminaries}
 \label{sec:setting}
 We consider $\min_{x\in\R^n}f(x)$ under the generalized smoothness
 condition of \citet[Assumption~1]{fang2026parameter}.
@@ -20,3 +20,15 @@ point satisfies
  \norm{\nabla f(x)}\le\epsilon,\qquad
  \lambda_{\min}(\nabla^2 f(x))\ge-\delta.
 \end{equation}
+
+{\color{red} write a lemma here, let $M_k=\max_{0\le u\le1}\norm{\nabla^3f(x_k+us_k)}$ introduce the follow two inequalities
+\[
+\begin{aligned}
+ \bigl|f(x_k+s_k)-f(x_k)-\nabla f(x_k)^Ts_k
+               -\tfrac12s_k^T\nabla^2f(x_k)s_k\bigr|
+ &\le M_kr_k^3/6,\\
+ \norm{\nabla f(x_k+s_k)-\nabla f(x_k)-\nabla^2f(x_k)s_k}
+ &\le M_kr_k^2/2.
+\end{aligned}
+\]
+}

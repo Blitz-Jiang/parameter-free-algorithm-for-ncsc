@@ -1,7 +1,7 @@
 \subsection{Nonzero steps and finite backtracking}
 
 Write $r_k=\norm{s_k}$.
-
+{\color{red} the following Lemma~\ref{lem:nonzero} is auxiliary. you could remove it, just mention it whenever it is used. or simplify the proof, the proof can be done in 2 lines.}
 \begin{lemma}[Nonzero trial steps]\label{lem:nonzero}
 Every trial has $h_k,R_k,r_k>0$.
 \end{lemma}
@@ -26,6 +26,13 @@ A trial is accepted whenever
 \end{equation}
 Consequently, backtracking terminates after finitely many rejections.
 \end{lemma}
+{\color{red} in this proof, please start from the LHS of \eqref{eq:accept-value},\eqref{eq:accept-gradient}. i.e., first, use the new lemma in the preliminary to derive
+\[f(x_k)-f(x_k+s_k) \ge ??\]
+and 
+\[\|\nabla f(x_k+s_k)\| \le ??\]
+(?? should be some thing w.r.t. $M_k$.)
+finally, bound $M_k$ from upper and \eqref{eq:safe} follows. 
+}
 \begin{proof}
 Fix a trial satisfying \eqref{eq:safe}.
 By Lemma~\ref{lem:nonzero}, $r_k>0$.
@@ -37,15 +44,16 @@ inner product with $s_k/r_k$, yields
  &=
        (2\sqrt{\sigma_kh_k}+\lambda_k)r_k,\\
  (2\sqrt{\sigma_kh_k}+\lambda_k)r_k
- &\le\norm{\nabla f(x_k)}
-       +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k.
+ &{\color{red}\le\norm{\nabla f(x_k)}
+       +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k.}
  \end{aligned}
 \end{equation}
+{\color{red} both the inequality above and below need more interpretation}
 By convexity of the norm, \eqref{eq:linear-gradient} implies, for $0\le u\le1$,
 \begin{equation}\label{eq:linear-segment}
- \norm{\nabla f(x_k)+u\nabla^2f(x_k)s_k}
+ {\color{red}\norm{\nabla f(x_k)+u\nabla^2f(x_k)s_k}
  \le\norm{\nabla f(x_k)}
-       +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k.
+       +[-\lambda_{\min}(\nabla^2f(x_k))]_+r_k.}
 \end{equation}
 
 By \eqref{eq:model-scales} and \eqref{eq:safe},
@@ -144,7 +152,7 @@ backtracking terminates after finitely many doublings.
 
 \subsection{Accepted steps: boundary and interior cases}
 \label{sec:accepted-steps}
-
+{\color{red} based on my understanding, in section 4.2, 4.3, we don't need to introduce the notation $K$. all results in these section holds for any $j,m >0$. introducing an additional $K$ here will make the proof harder to follow.}
 Let $\tau_0<\cdots<\tau_{K-1}$ be the indices of the first
 $K\ge1$ accepted trials of Algorithm~\ref{alg:utr}.
 Set $\tau_K=\tau_{K-1}+1$, so that $x_{\tau_K}$ is the point
@@ -170,11 +178,14 @@ Partition the accepted steps into boundary and interior steps:
  \mathcal B=\{0\le j<K:r_{\tau_j}=R_{\tau_j}\},\qquad
  \mathcal I=\{0,\ldots,K-1\}\setminus\mathcal B.
 \end{equation}
-With the convention $\sigma_{\tau_{-1}}=2\sigma_0$, the initial
+{\color{blue}With the convention $\sigma_{\tau_{-1}}=2\sigma_0$, the initial
 trial for the $j$-th accepted step uses scale $\sigma_{\tau_{j-1}}/2$.
 If this trial is accepted, then $\sigma_{\tau_j}=\sigma_{\tau_{j-1}}/2$.
 Otherwise, the last rejected trial uses scale $\sigma_{\tau_j}/2$,
-which must violate \eqref{eq:safe} by Lemma~\ref{lem:safe}. Hence
+which must violate \eqref{eq:safe} by Lemma~\ref{lem:safe}. Hence}
+
+{\color{red} the blue colored content is very confusing. you can use intermediate index like $\tau_j + 1$, $\tau_{j+1}-1$ to make it more readable. as i understand, ``the initial
+trial for the $j$-th accepted step uses scale $\sigma_{\tau_{j-1}}/2$.'' is basically saying ``$\sigma_{\tau_{j-1}+1} = \sigma_{\tau_{j-1}}/2$''} 
 \begin{equation}\label{eq:backtrack-upper}
  \sigma_{\tau_j}\le\max\left\{
        \frac{\sigma_{\tau_{j-1}}}{2},\,

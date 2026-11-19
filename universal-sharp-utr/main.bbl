@@ -7,8 +7,8 @@
 
 \bibitem[Fang et~al.(2026)Fang, Marumo, and Takeda]{fang2026parameter}
 Shaoying Fang, Naoki Marumo, and Akiko Takeda.
-\newblock Parameter-free cubic-regularized newton method: Sharp complexity and
-  generalized smoothness.
+\newblock Parameter-free cubic-regularized {Newton} method: Sharp complexity
+  and generalized smoothness.
 \newblock \emph{arXiv preprint arXiv:2607.10741}, 2026.
 \newblock URL \url{https://arxiv.org/abs/2607.10741}.
 
